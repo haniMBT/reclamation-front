@@ -81,7 +81,7 @@ module.exports = {
     },
   },
   plugins: [],
-  prefix: 'tw-',
+  // prefix: 'tw-', // Préfixe retiré pour utiliser Tailwind sans préfixe
   safelist: [
     {
       pattern: /bg-(red|orange|blue|yellow|gray|lime|cyan|rose|violet|indigo)-(100|200|300|400|500|600|700|800|900)/

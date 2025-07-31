@@ -3,25 +3,25 @@
     <!-- Modal -->
     <div
       v-if="showModal"
-      class="tw-fixed tw-inset-0 tw-flex tw-items-center tw-justify-center tw-z-50"
+      class="fixed inset-0 flex items-center justify-center z-50"
     >
-      <div class="tw-bg-white tw-w-1/2 tw-rounded-lg tw-shadow-lg tw-p-6">
+      <div class="bg-white w-1/2 rounded-lg shadow-lg p-6">
         <!-- Modal Content -->
-        <h2 class="tw-text-lg tw-font-semibold tw-border-b tw-pb-2 tw-mb-4">
+        <h2 class="text-lg font-semibold border-b pb-2 mb-4">
           {{titleModal }}
         </h2>
 
         <slot name="profile"></slot>
 
-        <div class="tw-mt-6 tw-flex tw-justify-end">
+        <div class="mt-6 flex justify-end">
             <button
               @click="close"
-              class="tw-bg-gray-300 tw-hover:bg-gray-400 tw-text-gray-800 tw-font-semibold tw-py-2 tw-px-4 tw-rounded tw-mr-2"
+              class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 px-4 rounded mr-2"
             >
               Fermer
             </button>
             <button
-              class="tw-bg-blue-500 tw-hover:bg-blue-600 tw-text-white tw-font-semibold tw-py-2 tw-px-4 tw-rounded"
+              class="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
               @click="submitForm"
             >
               Enregistrer

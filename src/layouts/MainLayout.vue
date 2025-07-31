@@ -4,43 +4,43 @@
 
 
 
-    <q-header elevated class="tw-bg-white">
-      <q-toolbar class="tw-px-2">
+    <q-header elevated class="bg-white">
+      <q-toolbar class="px-2">
 
-        <q-btn flat round dense :icon="drawer ? 'close' : 'menu'" @click="drawer = !drawer" class="tw-text-black tw-text-lg">
-          <q-tooltip transition-show="flip-right" transition-hide="flip-left" anchor="center left" self="center right" class="tw-text-sm tw-bg-gray-800 shadow-4">
+        <q-btn flat round dense :icon="drawer ? 'close' : 'menu'" @click="drawer = !drawer" class="text-black text-lg">
+          <q-tooltip transition-show="flip-right" transition-hide="flip-left" anchor="center left" self="center right" class="text-sm bg-gray-800 shadow-4">
             {{ drawer ? 'Masquer' : 'Afficher' }}
           </q-tooltip>
         </q-btn>
 
-        <div class="tw-w-full tw-flex tw-justify-between tw-items-center">
+        <div class="w-full flex justify-between items-center">
           <!-- Logo/Title -->
-          <div class="tw-flex tw-items-center">
-            <q-img class="tw-w-8 tw-h-8 tw-mr-2" src="/logo epal.png" />
+          <div class="flex items-center">
+            <q-img class="w-8 h-8 mr-2" src="/logo epal.png" />
           </div>
 
           <!-- Right side controls -->
-          <div class="tw-flex tw-items-center tw-gap-2">
+          <div class="flex items-center gap-2">
           
             <!-- User Profile Dropdown -->
             <q-btn-dropdown 
               flat 
               round 
-              class="tw-text-gray-600"
+              class="text-gray-600"
               dropdown-icon="none"
             >
               <template v-slot:label>
-                <div class="tw-flex tw-items-center">
-                  <q-avatar size="32px" class="tw-mr-2">
+                <div class="flex items-center">
+                  <q-avatar size="32px" class="mr-2">
                     <img 
                           v-if="userPhoto" 
                           :src="userPhoto" 
-                          class="tw-w-full tw-h-full tw-object-cover"
+                          class="w-full h-full object-cover"
                         />
                   </q-avatar>
-                  <div class="tw-text-left tw-hidden md:tw-block">
-                    <div class="tw-text-sm tw-font-semibold tw-text-gray-800">{{ authStore.userProfile?.fullName || 'Utilisateur' }}</div>
-                    <div class="tw-text-xs">{{ authStore.userProfile?.email || 'user@epal.dz' }}</div>
+                  <div class="text-left md:block">
+                    <div class="text-sm font-semibold text-gray-800">{{ authStore.userProfile?.fullName || 'Utilisateur' }}</div>
+                    <div class="text-xs">{{ authStore.userProfile?.email || 'user@epal.dz' }}</div>
                   </div>
                 </div>
               </template>
@@ -71,7 +71,7 @@
                     <q-icon name="logout" color="negative" />
                   </q-item-section>
                   <q-item-section>
-                    <q-item-label class="tw-text-red-600">Déconnexion</q-item-label>
+                    <q-item-label class="text-red-600">Déconnexion</q-item-label>
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -87,22 +87,22 @@
 
 
 
-    <q-drawer v-model="drawer" show-if-above :mini="miniState" @mouseover="miniState = false" @mouseout="miniState = true" class="tw-bg-white tw-flex tw-flex-col" :breakpoint="500" elevated :mini-width="50">
-      <q-item class="tw-px-1 tw-my-2 tw-shadow">
+    <q-drawer v-model="drawer" show-if-above :mini="miniState" @mouseover="miniState = false" @mouseout="miniState = true" class="bg-white flex flex-col" :breakpoint="500" elevated :mini-width="50">
+      <q-item class="px-1 my-2 shadow">
         <q-item-section avatar>
           <q-icon size="xl">
             <q-img src="/logo epal.png" />
           </q-icon>
         </q-item-section>
-        <q-item-section class="tw-flex tw-flex-col tw-items-center tw-font-black tw-text-blue-800">
-          <q-separator class="tw-w-4/5 tw-bg-blue-800" />
-          <p class="tw-text-xl">Entreprise Portuaire</p>
-          <q-separator class="tw-w-1/2 tw-bg-blue-800" />
+        <q-item-section class="flex flex-col items-center font-black text-blue-800">
+          <q-separator class="w-4/5 bg-blue-800" />
+          <p class="text-xl">Entreprise Portuaire</p>
+          <q-separator class="w-1/2 bg-blue-800" />
           <p> d'Alger | DPI</p>
-          <q-separator class="tw-w-4/5 tw-bg-blue-800" />
+          <q-separator class="w-4/5 bg-blue-800" />
         </q-item-section>
       </q-item>
-      <q-scroll-area class="tw-flex-grow" :horizontal-thumb-style="{ opacity: 1 }">
+      <q-scroll-area class="flex-grow" :horizontal-thumb-style="{ opacity: 1 }">
         <q-list padding>
           <!--    Dashboard    -->
           <q-item to="/" clickable v-ripple>
@@ -230,7 +230,7 @@
       <router-view />
     </q-page-container>
     
-    <q-footer elevated class="tw-bg-white tw-text-gray-600 tw-text-xxs tw-text-center tw-py-2">
+    <q-footer elevated class="bg-white text-gray-600 text-xxs text-center py-2">
       {{ currentYear }} © Entreprise Portuaire d'Alger / D.P.I
     </q-footer>
    

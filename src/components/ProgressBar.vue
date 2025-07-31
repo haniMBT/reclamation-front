@@ -1,17 +1,17 @@
 <template>
   <div
     v-if="uploadProgress"
-    class="tw-flex tw-flex-col tw-justify-center tw-items-center tw-my-2 tw-gap-2"
+    class="flex flex-col justify-center items-center my-2 gap-2"
   >
     <div
-      class="tw-w-full tw-bg-[#e0e0e0] tw-h-6 tw-rounded tw-overflow-hidden"
+      class="w-full bg-[#e0e0e0] h-6 rounded overflow-hidden"
     >
       <div
-        class="tw-h-full tw-bg-[#4caf50] tw-flex tw-justify-end tw-items-center tw-rounded tw-text-white tw-px-2 tw-gap-3 tw-text-[1.03rem]"
+        class="h-full bg-[#4caf50] flex justify-end items-center rounded text-white px-2 gap-3 text-[1.03rem]"
         :style="{ width: uploadProgress.percentage + '%' }"
       >
         <label
-          class="tw-font-bold"
+          class="font-bold"
         >
           {{uploadProgress.percentage}}%
         </label>
