@@ -244,7 +244,7 @@
                     <div class="tw-flex tw-justify-end">
                       <q-btn
                         type="submit"
-                        color="emerald-6"
+                        color="blue-6"
                         icon="lock"
                         label="Changer le mot de passe"
                         :loading="passwordLoading"
@@ -447,6 +447,7 @@ const updateProfile = async () => {
   const formData = new FormData();
   formData.append('nom', profileForm.nom);
   formData.append('prenom', profileForm.prenom);
+  formData.append('id', authStore.user.id);
   
   if (profileForm.photo) {
     formData.append('photo', profileForm.photo);

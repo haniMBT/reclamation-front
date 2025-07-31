@@ -5,10 +5,10 @@ import { LocalStorage, SessionStorage } from 'quasar'
 export const useAuthStore = defineStore('auth', {
 
   state: () => ({
-    isLoggedIn: LocalStorage.getItem('isLoggedIn') ?? null,
+    isLoggedIn: LocalStorage.getItem('isLoggedIn') ?? false,
     access_token: LocalStorage.getItem('access_token') ?? null,
     user: LocalStorage.getItem('user') ?? {},
-     loginErrors: false,
+    loginErrors: false,
     changePassword: LocalStorage.getItem('changePassword'),
     profile: LocalStorage.getItem('profile'),
     // Nouvelles données utilisateur
@@ -24,20 +24,32 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     // Getters pour les données utilisateur
     getUserFullName: (state) => {
-      console.log('azeazeaz', state.user);
+      console.log('Données utilisateur:', state.user);
       
-      if (state.user.Prenom && state.user.Nom) {
+      // Si les données sont dans userProfile, les utiliser
+      if (state.userProfile?.fullName && state.userProfile?.fullName.trim() !== '') {
+        return state.userProfile.fullName;
+      }
+      
+      // Sinon, construire depuis les données user
+      if (state.user?.Prenom && state.user?.Nom) {
         return `${state.user.Prenom} ${state.user.Nom}`;
       }
-      return state.user?.Name + ' ' + state.user?.Prenom || 'Utilisateur';
+      
+      // Fallback pour d'autres formats possibles
+      if (state.user?.prenom && state.user?.nom) {
+        return `${state.user.prenom} ${state.user.nom}`;
+      }
+      
+      return 'Utilisateur';
     },
     
     getUserPhoto: (state) => {
-      return state.user.photo || null;
+      return state.userProfile?.photo || state.user?.photo || null;
     },
     
     getUserEmail: (state) => {
-      return state.user.Email;
+      return state.userProfile?.email || state.user?.Email || state.user?.email || '';
     },
   },
 
@@ -69,6 +81,7 @@ export const useAuthStore = defineStore('auth', {
               
               LocalStorage.set('isLoggedIn', true)
               LocalStorage.set('user', res.data.user)
+              LocalStorage.set('userProfile', this.userProfile)
             })
         })
         .catch(error => {
@@ -193,22 +206,47 @@ export const useAuthStore = defineStore('auth', {
       await api.get("/api/user")
       .then((res) => {
         this.user = res.data.user
+        
+        // Mettre à jour userProfile aussi
+        this.userProfile = {
+          nom: res.data.user.Nom || '',
+          prenom: res.data.user.Prenom || '',
+          email: res.data.user.Email || '',
+          photo: res.data.user.photo || null,
+          fullName: `${res.data.user.Prenom || ''} ${res.data.user.Nom || ''}`.trim()
+        }
+        
         LocalStorage.set('user', res.data.user)
+        LocalStorage.set('userProfile', this.userProfile)
       });
     },
 
-    // get privileges
-    async getPrivileges() {
-      if (this.isLoggedIn)
-        await api
-          .post('/api/privileges', {
-            volet: this.volet
-          })
-          .then((res) => {
-
-          })
+    // Initialiser l'AuthStore depuis localStorage
+    initializeFromStorage() {
+      this.isLoggedIn = LocalStorage.getItem('isLoggedIn') ?? false
+      this.access_token = LocalStorage.getItem('access_token') ?? null
+      this.user = LocalStorage.getItem('user') ?? {}
+      this.userProfile = LocalStorage.getItem('userProfile') ?? {
+        nom: '',
+        prenom: '',
+        email: '',
+        photo: null,
+        fullName: ''
+      }
+      this.changePassword = LocalStorage.getItem('changePassword')
+      this.profile = LocalStorage.getItem('profile')
+      
+      // Si l'utilisateur est connecté mais que userProfile est vide, le reconstruire
+      if (this.isLoggedIn && this.user && Object.keys(this.user).length > 0 && !this.userProfile.fullName) {
+        this.userProfile = {
+          nom: this.user.Nom || '',
+          prenom: this.user.Prenom || '',
+          email: this.user.Email || '',
+          photo: this.user.photo || null,
+          fullName: `${this.user.Prenom || ''} ${this.user.Nom || ''}`.trim()
+        }
+        LocalStorage.set('userProfile', this.userProfile)
+      }
     },
-
-
   }
 })

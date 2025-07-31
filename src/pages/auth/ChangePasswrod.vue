@@ -191,7 +191,7 @@ const handleLogin = async () => {
           </a>
         </div>
         <div class="tw-flex tw-flex-col tw-items-center tw-text-white tw-px-24 tw-py-6">
-          <a href="/acceuil"><q-btn class="tw-ml-6 tw-mt-8" outline icon="home" color="" label="Accueil"
+          <a href="/acceuil"><q-btn class="tw-ml-6 tw-mt-8" outline icon="home" color="" label="acceuil"
               @click="acceuil" />
           </a>
         </div>

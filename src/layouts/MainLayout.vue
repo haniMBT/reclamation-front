@@ -279,6 +279,9 @@ onBeforeMount(async () => {
   // Load saved theme preference
   const isDarkMode = localStorage.getItem('epal_dark_mode') === 'true';
   $q.dark.set(isDarkMode);
+  
+  // Initialiser l'AuthStore depuis localStorage
+  authStore.initializeFromStorage();
 });
 
 onMounted(async () => {

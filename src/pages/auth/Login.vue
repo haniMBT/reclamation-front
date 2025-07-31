@@ -56,13 +56,13 @@
             </div>
           </div>
 
-          <!-- Retour accueil -->
+          <!-- Retour acceuil -->
           <div class="tw-text-center lg:tw-text-left">
             <q-btn 
               to="/acceuil" 
               outline 
               icon="home" 
-              label="Retour à l'accueil" 
+              label="Retour à l'acceuil" 
               class="tw-text-white tw-border-white/60 hover:tw-bg-white/10 hover:tw-border-white"
               size="md"
             />
