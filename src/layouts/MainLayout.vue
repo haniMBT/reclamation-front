@@ -32,7 +32,11 @@
               <template v-slot:label>
                 <div class="tw-flex tw-items-center">
                   <q-avatar size="32px" class="tw-mr-2">
-                    <img src="https://i.pravatar.cc/150?img=3" alt="User Avatar" />
+                    <img 
+                          v-if="userPhoto" 
+                          :src="userPhoto" 
+                          class="tw-w-full tw-h-full tw-object-cover"
+                        />
                   </q-avatar>
                   <div class="tw-text-left tw-hidden md:tw-block">
                     <div class="tw-text-sm tw-font-semibold tw-text-gray-800">{{ authStore.userProfile?.fullName || 'Utilisateur' }}</div>
@@ -243,6 +247,7 @@ import { useAuthStore } from "stores/auth";
 import moment from "moment/moment";
 import { api } from "boot/axios";
 import { useMeta, useQuasar } from "quasar";
+const userPhoto = computed(() => authStore.getUserPhoto);
 let drawer = ref(false);
 let visible = ref(true);
 let miniState = ref(true);

@@ -457,8 +457,15 @@ const updateProfile = async () => {
   
   if (result.success) {
     profileMessage.value = 'Profil mis à jour avec succès';
+    
+    // Actualiser les données du formulaire avec les nouvelles valeurs
+    profileForm.nom = authStore.userProfile.nom;
+    profileForm.prenom = authStore.userProfile.prenom;
     profileForm.photo = null;
     profileForm.photoPreview = null;
+    
+    // Recharger les données utilisateur pour synchroniser
+    await authStore.getUser();
     
     $q.notify({
       type: 'positive',
@@ -482,7 +489,7 @@ const changePassword = async () => {
   passwordMessage.value = '';
   passwordError.value = '';
 
-  const result = await authStore.changePassword({
+  const result = await authStore.changePasswordd({
     current_password: passwordForm.current_password,
     password: passwordForm.password,
     password_confirmation: passwordForm.password_confirmation

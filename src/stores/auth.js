@@ -45,7 +45,17 @@ export const useAuthStore = defineStore('auth', {
     },
     
     getUserPhoto: (state) => {
-      return state.userProfile?.photo || state.user?.photo || null;
+      const photo = state.userProfile?.photo || state.user?.photo;
+      if (photo) {
+        // Si la photo contient déjà une URL complète, la retourner telle quelle
+        if (photo.startsWith('http')) {
+          return photo;
+        }
+        // Sinon, construire l'URL complète vers le backend
+        const baseUrl = process.env.API_BASE_URL || 'http://localhost:8000';
+        return `${baseUrl}/storage/photos/${photo}`;
+      }
+      return null;
     },
     
     getUserEmail: (state) => {
@@ -142,14 +152,25 @@ export const useAuthStore = defineStore('auth', {
           },
         });
         
-        // Mettre à jour les données locales
+        // Mettre à jour les données locales - IMPORTANT: synchroniser user ET userProfile
+        this.user = {
+          ...this.user,  // Conserver les données existantes
+          Nom: response.data.user.nom,
+          Prenom: response.data.user.prenom,
+          Email: response.data.user.email || this.user.Email,  // Préserver l'email si absent
+          photo: response.data.user.photo
+        };
+        
         this.userProfile = {
           nom: response.data.user.nom,
           prenom: response.data.user.prenom,
-          email: response.data.user.email,
+          email: response.data.user.email || this.user.Email,  // Préserver l'email si absent
           photo: response.data.user.photo,
           fullName: `${response.data.user.prenom} ${response.data.user.nom}`.trim()
         };
+        
+        // Sauvegarder les deux structures
+        LocalStorage.set('user', this.user);
         LocalStorage.set('userProfile', this.userProfile);
         
         return { success: true, data: response.data };
@@ -162,7 +183,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     // GESTION PROFIL - Changer mot de passe (méthode classique)
-    async changePassword(data) {
+    async changePasswordd(data) {
       try {
         const response = await api.post("/api/profile/change-password", data);
         return { success: true, data: response.data };
@@ -200,25 +221,33 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // get privileges
+    // Récupérer les informations utilisateur complètes
     async getUser() {
-      if (this.isLoggedIn)
-      await api.get("/api/user")
-      .then((res) => {
-        this.user = res.data.user
+      if (!this.isLoggedIn || !this.access_token) return;
+      
+      try {
+        const response = await api.get("/api/user");
         
-        // Mettre à jour userProfile aussi
+        // Synchroniser les deux structures de données
+        this.user = response.data.user;
+        
         this.userProfile = {
-          nom: res.data.user.Nom || '',
-          prenom: res.data.user.Prenom || '',
-          email: res.data.user.Email || '',
-          photo: res.data.user.photo || null,
-          fullName: `${res.data.user.Prenom || ''} ${res.data.user.Nom || ''}`.trim()
-        }
+          nom: response.data.user.Nom || '',
+          prenom: response.data.user.Prenom || '',
+          email: response.data.user.Email || '',
+          photo: response.data.user.photo || null,
+          fullName: `${response.data.user.Prenom || ''} ${response.data.user.Nom || ''}`.trim()
+        };
         
-        LocalStorage.set('user', res.data.user)
-        LocalStorage.set('userProfile', this.userProfile)
-      });
+        // Sauvegarder dans localStorage
+        LocalStorage.set('user', this.user);
+        LocalStorage.set('userProfile', this.userProfile);
+        
+        return { success: true, data: response.data };
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données utilisateur:', error);
+        return { success: false, error: error.response?.data?.message || 'Erreur de récupération' };
+      }
     },
 
     // Initialiser l'AuthStore depuis localStorage
