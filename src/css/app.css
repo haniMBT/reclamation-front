@@ -1,0 +1,7 @@
+/* app global css */
+
+@import url('fonts.css');
+
+body {
+  font-family: 'Poppins', sans-serif;
+}

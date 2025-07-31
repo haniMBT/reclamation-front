@@ -1,0 +1,51 @@
+<svg width="60.49999999999999" height="63.22999999999999" xmlns="http://www.w3.org/2000/svg" data-name="Calque 1">
+ <defs>
+  <linearGradient y2="0.50566" x2="0.06265" y1="0.4749" x1="1.06264" data-name="Dégradé sans nom 67" id="Dégradé_sans_nom_67">
+   <stop stop-color="#959dd2" offset="0"/>
+   <stop stop-color="#8c94ce" offset="0.18"/>
+   <stop stop-color="#737dc3" offset="0.46"/>
+   <stop stop-color="#4a58b2" offset="0.83"/>
+   <stop stop-color="#3544a9" offset="1"/>
+  </linearGradient>
+  <linearGradient y2="0.04046" x2="-0.06449" y1="1.01175" x1="0.78173" data-name="Dégradé sans nom 69" id="Dégradé_sans_nom_69">
+   <stop stop-color="#8d96cf" offset="0"/>
+   <stop stop-color="#5663b7" offset="0.59"/>
+   <stop stop-color="#3544a9" offset="1"/>
+  </linearGradient>
+  <linearGradient y2="-0.06895" x2="0.66705" y1="1.01849" x1="-0.08005" data-name="Dégradé sans nom 73" id="Dégradé_sans_nom_73">
+   <stop stop-color="#bcc1e2" offset="0"/>
+   <stop stop-color="#3544a9" offset="1"/>
+  </linearGradient>
+  <linearGradient y2="0.49988" x2="1.00037" y1="0.49988" x1="-0.00068" data-name="Dégradé sans nom 27" id="Dégradé_sans_nom_27">
+   <stop stop-color="#9ba2d4" offset="0"/>
+   <stop stop-color="#8890cc" offset="0.1"/>
+   <stop stop-color="#646fbd" offset="0.31"/>
+   <stop stop-color="#4a57b2" offset="0.51"/>
+   <stop stop-color="#3a49ab" offset="0.68"/>
+   <stop stop-color="#3544a9" offset="0.82"/>
+  </linearGradient>
+ </defs>
+ <g>
+  <title>Layer 1</title>
+  <g stroke-width="0" id="svg_27">
+   <path id="svg_1" fill="url(#Dégradé_sans_nom_67)" d="m18.73665,44.42l34.17,0s2.9,1.39 3.31,3.83s-1.86,5.69 -2.78,6.79s-5.53,7.3 -15.93,7.91c-7.85,0.03 -18.91,-7.19 -18.77,-18.53z" class="cls-1"/>
+   <path id="svg_2" fill="url(#Dégradé_sans_nom_69)" d="m18.70665,44.48s0.45,17.4 19.64,18.39c-20.11,2.32 -27.13,-7.78 -28,-8.08s-10.52,-12.79 8.28,-27.66c0.02,-0.02 0.08,17.35 0.08,17.35z" class="cls-2"/>
+   <path id="svg_3" fill="url(#Dégradé_sans_nom_73)" d="m10.64665,54.99s-14.82,-13.03 -9.49,-30.87c9.11,-14.19 30.26,-6.88 30.74,-5.5c-1.61,1.55 -12.48,7.4 -18.38,13.21c-5.63,6.27 -9.08,15.5 -2.87,23.16z" class="cls-3"/>
+   <path id="svg_4" fill="url(#Dégradé_sans_nom_27)" d="m32.02665,18.77l15.13,9.52a10.44,10.44 0 0 0 10.5,-2.9c3.93,-4.59 1.74,-10.33 1.74,-10.33s-4,-9.57 -17.06,-13.63s-26.26,1.68 -30.18,5.1a32.6,32.6 0 0 0 -11,17.64c8.13,-12.07 25.89,-8.99 30.87,-5.4z" class="cls-4"/>
+   <circle id="svg_5" fill="#334ba0" r="2.42" cy="29.66" cx="27.31666" class="cls-5"/>
+   <circle id="svg_6" fill="#334ba0" r="2.42" cy="29.66" cx="35.00666" class="cls-5"/>
+   <circle id="svg_7" fill="#334ba0" r="2.42" cy="37.31" cx="35.00666" class="cls-5"/>
+   <circle id="svg_8" fill="#334ba0" r="2.42" cy="37.31" cx="27.31666" class="cls-5"/>
+  </g>
+  <g stroke-width="0" id="svg_36">
+   <path id="svg_28" fill="url(#Dégradé_sans_nom_67)" d="m18.73665,44.42l34.17,0s2.9,1.39 3.31,3.83s-1.86,5.69 -2.78,6.79s-5.53,7.3 -15.93,7.91c-7.85,0.03 -18.91,-7.19 -18.77,-18.53z" class="cls-1"/>
+   <path id="svg_29" fill="url(#Dégradé_sans_nom_69)" d="m18.70665,44.48s0.45,17.4 19.64,18.39c-20.11,2.32 -27.13,-7.78 -28,-8.08s-10.52,-12.79 8.28,-27.66c0.02,-0.02 0.08,17.35 0.08,17.35z" class="cls-2"/>
+   <path id="svg_30" fill="url(#Dégradé_sans_nom_73)" d="m10.64665,54.99s-14.82,-13.03 -9.49,-30.87c9.11,-14.19 30.26,-6.88 30.74,-5.5c-1.61,1.55 -12.48,7.4 -18.38,13.21c-5.63,6.27 -9.08,15.5 -2.87,23.16z" class="cls-3"/>
+   <path id="svg_31" fill="url(#Dégradé_sans_nom_27)" d="m32.02665,18.77l15.13,9.52a10.44,10.44 0 0 0 10.5,-2.9c3.93,-4.59 1.74,-10.33 1.74,-10.33s-4,-9.57 -17.06,-13.63s-26.26,1.68 -30.18,5.1a32.6,32.6 0 0 0 -11,17.64c8.13,-12.07 25.89,-8.99 30.87,-5.4z" class="cls-4"/>
+   <circle id="svg_32" fill="#334ba0" r="2.42" cy="29.66" cx="27.31666" class="cls-5"/>
+   <circle id="svg_33" fill="#334ba0" r="2.42" cy="29.66" cx="35.00666" class="cls-5"/>
+   <circle id="svg_34" fill="#334ba0" r="2.42" cy="37.31" cx="35.00666" class="cls-5"/>
+   <circle id="svg_35" fill="#334ba0" r="2.42" cy="37.31" cx="27.31666" class="cls-5"/>
+  </g>
+ </g>
+</svg>
