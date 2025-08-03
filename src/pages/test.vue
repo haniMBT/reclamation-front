@@ -1,6 +1,6 @@
 <template>
   <q-page class="flex flex-center">
-    <div class="tw-flex tw-flex-col tw-gap-4">
+    <div class="flex flex-col gap-4">
       <q-btn no-caps unelevated color="positive" @click="triggerPositive" label="Trigger 'positive'" />
       <q-btn no-caps unelevated color="negative" @click="triggerNegative" label="Trigger 'negative'" />
       <q-btn no-caps unelevated color="warning" text-color="dark" @click="triggerWarning" label="Trigger 'warning'" />

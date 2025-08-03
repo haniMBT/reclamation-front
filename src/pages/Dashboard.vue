@@ -1,91 +1,91 @@
 <template>
-  <q-page class="tw-bg-gray-50 tw-min-h-screen">
-    <div class="tw-container tw-mx-auto tw-p-6">
+  <q-page class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto p-6">
       <!-- Header -->
-      <div class="tw-mb-8">
-        <h1 class="tw-text-3xl tw-font-bold tw-text-gray-800 tw-mb-2">
+      <div class="mb-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">
           Tableau de bord EPAL
         </h1>
-        <p class="tw-text-gray-600">Vue d'ensemble de vos services portuaires</p>
+        <p class="text-gray-600">Vue d'ensemble de vos services portuaires</p>
       </div>
 
       <!-- Stats Cards -->
-      <div class="tw-grid tw-grid-cols-1 md:tw-grid-cols-2 lg:tw-grid-cols-4 tw-gap-6 tw-mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <!-- Total Transactions -->
-        <div class="tw-bg-white tw-rounded-xl tw-p-6 tw-shadow-lg tw-border-l-4 tw-border-emerald-500">
-          <div class="tw-flex tw-items-center tw-justify-between">
+        <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-emerald-500">
+          <div class="flex items-center justify-between">
             <div>
-              <p class="tw-text-sm tw-font-medium tw-text-gray-600 tw-uppercase">Total Transactions</p>
-              <p class="tw-text-2xl tw-font-bold tw-text-gray-900">{{ stats.totalTransactions }}</p>
+              <p class="text-sm font-medium text-gray-600 uppercase">Total Transactions</p>
+              <p class="text-2xl font-bold text-gray-900">{{ stats.totalTransactions }}</p>
             </div>
-            <div class="tw-p-3 tw-bg-emerald-100 tw-rounded-full">
-              <q-icon name="trending_up" class="tw-text-xl tw-text-emerald-600" />
+            <div class="p-3 bg-emerald-100 rounded-full">
+              <q-icon name="trending_up" class="text-xl text-emerald-600" />
             </div>
           </div>
-          <div class="tw-mt-4">
-            <span class="tw-text-emerald-500 tw-text-sm tw-font-semibold">+12%</span>
-            <span class="tw-text-gray-500 tw-text-sm tw-ml-2">ce mois</span>
+          <div class="mt-4">
+            <span class="text-emerald-500 text-sm font-semibold">+12%</span>
+            <span class="text-gray-500 text-sm ml-2">ce mois</span>
           </div>
         </div>
 
         <!-- E-paiements -->
-        <div class="tw-bg-white tw-rounded-xl tw-p-6 tw-shadow-lg tw-border-l-4 tw-border-teal-500">
-          <div class="tw-flex tw-items-center tw-justify-between">
+        <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-teal-500">
+          <div class="flex items-center justify-between">
             <div>
-              <p class="tw-text-sm tw-font-medium tw-text-gray-600 tw-uppercase">E-paiements</p>
-              <p class="tw-text-2xl tw-font-bold tw-text-gray-900">{{ stats.epaiements }}</p>
+              <p class="text-sm font-medium text-gray-600 uppercase">E-paiements</p>
+              <p class="text-2xl font-bold text-gray-900">{{ stats.epaiements }}</p>
             </div>
-            <div class="tw-p-3 tw-bg-teal-100 tw-rounded-full">
-              <q-icon name="account_balance_wallet" class="tw-text-xl tw-text-teal-600" />
+            <div class="p-3 bg-teal-100 rounded-full">
+              <q-icon name="account_balance_wallet" class="text-xl text-teal-600" />
             </div>
           </div>
-          <div class="tw-mt-4">
-            <span class="tw-text-teal-500 tw-text-sm tw-font-semibold">+8%</span>
-            <span class="tw-text-gray-500 tw-text-sm tw-ml-2">ce mois</span>
+          <div class="mt-4">
+            <span class="text-teal-500 text-sm font-semibold">+8%</span>
+            <span class="text-gray-500 text-sm ml-2">ce mois</span>
           </div>
         </div>
 
         <!-- Factures -->
-        <div class="tw-bg-white tw-rounded-xl tw-p-6 tw-shadow-lg tw-border-l-4 tw-border-orange-500">
-          <div class="tw-flex tw-items-center tw-justify-between">
+        <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-orange-500">
+          <div class="flex items-center justify-between">
             <div>
-              <p class="tw-text-sm tw-font-medium tw-text-gray-600 tw-uppercase">Factures</p>
-              <p class="tw-text-2xl tw-font-bold tw-text-gray-900">{{ stats.factures }}</p>
+              <p class="text-sm font-medium text-gray-600 uppercase">Factures</p>
+              <p class="text-2xl font-bold text-gray-900">{{ stats.factures }}</p>
             </div>
-            <div class="tw-p-3 tw-bg-orange-100 tw-rounded-full">
-              <q-icon name="receipt_long" class="tw-text-xl tw-text-orange-600" />
+            <div class="p-3 bg-orange-100 rounded-full">
+              <q-icon name="receipt_long" class="text-xl text-orange-600" />
             </div>
           </div>
-          <div class="tw-mt-4">
-            <span class="tw-text-orange-500 tw-text-sm tw-font-semibold">+15%</span>
-            <span class="tw-text-gray-500 tw-text-sm tw-ml-2">ce mois</span>
+          <div class="mt-4">
+            <span class="text-orange-500 text-sm font-semibold">+15%</span>
+            <span class="text-gray-500 text-sm ml-2">ce mois</span>
           </div>
         </div>
 
         <!-- Réclamations -->
-        <div class="tw-bg-white tw-rounded-xl tw-p-6 tw-shadow-lg tw-border-l-4 tw-border-red-500">
-          <div class="tw-flex tw-items-center tw-justify-between">
+        <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-red-500">
+          <div class="flex items-center justify-between">
             <div>
-              <p class="tw-text-sm tw-font-medium tw-text-gray-600 tw-uppercase">Réclamations</p>
-              <p class="tw-text-2xl tw-font-bold tw-text-gray-900">{{ stats.reclamations }}</p>
+              <p class="text-sm font-medium text-gray-600 uppercase">Réclamations</p>
+              <p class="text-2xl font-bold text-gray-900">{{ stats.reclamations }}</p>
             </div>
-            <div class="tw-p-3 tw-bg-red-100 tw-rounded-full">
-              <q-icon name="support_agent" class="tw-text-xl tw-text-red-600" />
+            <div class="p-3 bg-red-100 rounded-full">
+              <q-icon name="support_agent" class="text-xl text-red-600" />
             </div>
           </div>
-          <div class="tw-mt-4">
-            <span class="tw-text-red-500 tw-text-sm tw-font-semibold">-3%</span>
-            <span class="tw-text-gray-500 tw-text-sm tw-ml-2">ce mois</span>
+          <div class="mt-4">
+            <span class="text-red-500 text-sm font-semibold">-3%</span>
+            <span class="text-gray-500 text-sm ml-2">ce mois</span>
           </div>
         </div>
       </div>
 
               <!-- Charts Section -->
-        <div class="tw-grid tw-grid-cols-1 lg:tw-grid-cols-2 tw-gap-8 tw-mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <!-- ApexCharts Bar Chart -->
-          <div class="tw-bg-white tw-rounded-xl tw-p-6 tw-shadow-lg">
-            <div class="tw-flex tw-justify-between tw-items-center tw-mb-6">
-              <h3 class="tw-text-xl tw-font-bold tw-text-gray-800">Transactions par Mois</h3>
+          <div class="bg-white rounded-xl p-6 shadow-lg">
+            <div class="flex justify-between items-center mb-6">
+              <h3 class="text-xl font-bold text-gray-800">Transactions par Mois</h3>
               <q-btn 
                 @click="refreshChart"
                 icon="refresh"
@@ -107,11 +107,11 @@
           </div>
 
         <!-- Quick Actions -->
-        <div class="tw-bg-white tw-rounded-xl tw-p-16 tw-shadow-lg">
-          <h3 class="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-6">Actions Rapides</h3>
-          <div class="tw-space-y-4">
+        <div class="bg-white rounded-xl p-16 shadow-lg">
+          <h3 class="text-xl font-bold text-gray-800 mb-6">Actions Rapides</h3>
+          <div class="space-y-4">
             <q-btn 
-              class="tw-w-full tw-justify-start" 
+              class="w-full justify-start" 
               color="orange-6" 
               icon="account_balance_wallet" 
               to="/epayment/factures"
@@ -121,7 +121,7 @@
             />
 
             <q-btn 
-              class="tw-w-full tw-justify-start" 
+              class="w-full justify-start" 
               color="teal-6" 
               icon="support_agent" 
               label="Nouvelle Réclamation"
@@ -129,7 +129,7 @@
               size="lg"
             />
             <q-btn 
-              class="tw-w-full tw-justify-start" 
+              class="w-full justify-start" 
               color="gray-6" 
               icon="bar_chart" 
               label="Voir Rapports"
@@ -138,31 +138,32 @@
             />
           </div>
         </div>
+
       </div>
 
       <!-- Recent Activity -->
-      <div class="tw-bg-white tw-rounded-xl tw-p-6 tw-shadow-lg">
-        <h3 class="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-6">Activités Récentes</h3>
-        <div class="tw-space-y-4">
+      <div class="bg-white rounded-xl p-6 shadow-lg">
+        <h3 class="text-xl font-bold text-gray-800 mb-6">Activités Récentes</h3>
+        <div class="space-y-4">
           <div 
             v-for="activity in recentActivities" 
             :key="activity.id"
-            class="tw-flex tw-items-center tw-p-4 tw-bg-gray-50 tw-rounded-lg tw-transition-all tw-duration-300 hover:tw-bg-gray-100"
+            class="flex items-center p-4 bg-gray-50 rounded-lg transition-all duration-300 hover:bg-gray-100"
           >
             <div 
-              class="tw-w-10 tw-h-10 tw-rounded-full tw-flex tw-items-center tw-justify-center tw-mr-4"
+              class="w-10 h-10 rounded-full flex items-center justify-center mr-4"
               :class="getActivityColor(activity.type)"
             >
-              <q-icon :name="getActivityIcon(activity.type)" class="tw-text-white" />
+              <q-icon :name="getActivityIcon(activity.type)" class="text-white" />
             </div>
-            <div class="tw-flex-1">
-              <p class="tw-font-semibold tw-text-gray-800">{{ activity.title }}</p>
-              <p class="tw-text-sm tw-text-gray-600">{{ activity.description }}</p>
+            <div class="flex-1">
+              <p class="font-semibold text-gray-800">{{ activity.title }}</p>
+              <p class="text-sm text-gray-600">{{ activity.description }}</p>
             </div>
-            <div class="tw-text-right">
-              <p class="tw-text-sm tw-text-gray-500">{{ activity.time }}</p>
+            <div class="text-right">
+              <p class="text-sm text-gray-500">{{ activity.time }}</p>
               <span 
-                class="tw-text-xs tw-font-semibold tw-px-2 tw-py-1 tw-rounded-full"
+                class="text-xs font-semibold px-2 py-1 rounded-full"
                 :class="getStatusColor(activity.status)"
               >
                 {{ activity.status }}
@@ -322,19 +323,19 @@ const getActivityIcon = (type) => {
 
 const getActivityColor = (type) => {
   switch (type) {
-    case 'payment': return 'tw-bg-emerald-500';
-    case 'invoice': return 'tw-bg-orange-500';
-    case 'complaint': return 'tw-bg-teal-500';
-    default: return 'tw-bg-gray-500';
+    case 'payment': return 'bg-emerald-500';
+    case 'invoice': return 'bg-orange-500';
+    case 'complaint': return 'bg-teal-500';
+    default: return 'bg-gray-500';
   }
 };
 
 const getStatusColor = (status) => {
   switch (status) {
-    case 'Validé': return 'tw-bg-emerald-100 tw-text-emerald-800';
-    case 'En attente': return 'tw-bg-orange-100 tw-text-orange-800';
-    case 'En cours': return 'tw-bg-teal-100 tw-text-teal-800';
-    default: return 'tw-bg-gray-100 tw-text-gray-800';
+    case 'Validé': return 'bg-emerald-100 text-emerald-800';
+    case 'En attente': return 'bg-orange-100 text-orange-800';
+    case 'En cours': return 'bg-teal-100 text-teal-800';
+    default: return 'bg-gray-100 text-gray-800';
   }
 };
 
@@ -402,11 +403,11 @@ onMounted(() => {
 
 <style scoped>
 /* Animations au hover pour les cartes stats */
-.tw-shadow-lg {
+.shadow-lg {
   transition: all 0.3s ease;
 }
 
-.tw-shadow-lg:hover {
+.shadow-lg:hover {
   transform: translateY(-2px);
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }

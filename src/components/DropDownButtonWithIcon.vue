@@ -1,7 +1,7 @@
 <template>
   <div>
     <q-btn-dropdown
-      class="tw-w-full"
+      class="w-full"
       v-model="menu"
       color="white"
       text-color="black"
@@ -9,7 +9,7 @@
       dropdown-icon="expand_more"
     >
       <template v-slot:label>
-        <div class="tw-flex tw-justify-between tw-items-center tw-w-full">
+        <div class="flex justify-between items-center w-full">
           <span>
             {{ selected ? selectedItem : title }}
           </span>
@@ -21,10 +21,10 @@
           :clickable="selected != null"
           v-close-popup
           @click="cancelSelection"
-          class="tw-cursor-pointer"
+          class="cursor-pointer"
         >
           <q-item-section>
-            <q-item-label class="tw-text-blue-400">
+            <q-item-label class="text-blue-400">
               {{ selected == null ? selectMessage : "Annuler la sélection" }}
             </q-item-label>
           </q-item-section>
@@ -36,7 +36,7 @@
           @click="onItemClick(item, index)"
         >
           <q-item-section v-if="icons.length" avatar>
-            <img class="tw-max-h-6" :src="icons[index]" />
+            <img class="max-h-6" :src="icons[index]" />
           </q-item-section>
           <q-item-section>
             <q-item-label>
