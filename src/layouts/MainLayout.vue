@@ -16,7 +16,7 @@
         <div class="tw-w-full tw-flex tw-justify-between tw-items-center">
           <!-- Logo/Title -->
           <div class="tw-flex tw-items-center">
-            <q-img class="tw-w-8 tw-h-8 tw-mr-2" src="/logo epal.png" />
+            <q-img class="tw-w-8 tw-h-8 tw-mr-2" src="/logo-epal.png" />
           </div>
 
           <!-- Right side controls -->
@@ -91,7 +91,7 @@
       <q-item class="tw-px-1 tw-my-2 tw-shadow">
         <q-item-section avatar>
           <q-icon size="xl">
-            <q-img src="/logo epal.png" />
+            <q-img src="/logo-epal.png" />
           </q-icon>
         </q-item-section>
         <q-item-section class="tw-flex tw-flex-col tw-items-center tw-font-black tw-text-blue-800">
@@ -121,7 +121,7 @@
 
     
 
-          <q-expansion-item>
+          <q-expansion-item expand-icon="0" to="/epayment/factures">
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
                 <q-icon size="md">
@@ -133,14 +133,6 @@
               </q-item-section>
             </template>
 
-
-            <q-expansion-item :header-inset-level="1" expand-icon="0" to="/essais/dashboardP">
-              <template v-slot:header="{ expanded }">
-                <q-item-section>
-                  <q-item-section-label>Dashboard</q-item-section-label>
-                </q-item-section>
-              </template>
-            </q-expansion-item>
 
           </q-expansion-item>
 

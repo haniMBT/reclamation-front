@@ -15,7 +15,7 @@
       <!-- Logo Section -->
       <div class="tw-text-center tw-mb-8">
         <div class="tw-flex tw-items-center tw-justify-center tw-mb-4">
-          <q-img class="tw-w-16 tw-h-16" src="/logo epal.png" />
+          <q-img class="tw-w-16 tw-h-16" src="/logo-epal.png" />
         </div>
         <h1 class="tw-text-2xl tw-font-bold tw-text-white tw-mb-2">EPAL</h1>
         <p class="tw-text-white/80">Récupération de mot de passe</p>

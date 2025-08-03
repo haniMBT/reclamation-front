@@ -182,7 +182,7 @@ const handleLogin = async () => {
       class="tw-flex tw-flex-col tw-justify-center tw-w-1/2 tw-bg-purple-900 tw-items-center tw-rounded-bl-large tw-bg-[url('loginBG.png')] tw-bg-cover tw-bg-no-repeat">
       <div class="tw-grow-1"></div>
 
-      <img class="tw-flex-none tw-scale-50 tw-h-1/2" src="/logo epal.png" alt="Logo EPAL" />
+      <img class="tw-flex-none tw-scale-50 tw-h-1/2" src="/logo-epal.png" alt="Logo EPAL" />
       <div class="tw-grow-3">
         <div class="tw-flex tw-flex-col tw-items-center tw-text-white tw-border tw-rounded-medium tw-px-24 tw-py-6">
           <label class="tw-text-xs">En savoir plus sur EPAL</label>

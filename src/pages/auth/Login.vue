@@ -18,7 +18,7 @@
           <!-- Logo et titre -->
           <div class="tw-mb-8">
             <div class="tw-flex tw-items-center tw-justify-center lg:tw-justify-start tw-mb-6">
-              <q-img class="tw-w-16 tw-h-16 tw-mr-4" src="/logo epal.png" />
+              <q-img class="tw-w-16 tw-h-16 tw-mr-4" src="/logo-epal.png" />
               <div>
                 <h1 class="tw-text-3xl tw-font-bold">EPAL</h1>
                 <p class="tw-text-lg tw-opacity-90">Entreprise Portuaire d'Alger</p>

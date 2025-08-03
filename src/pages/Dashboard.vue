@@ -107,25 +107,19 @@
           </div>
 
         <!-- Quick Actions -->
-        <div class="tw-bg-white tw-rounded-xl tw-p-6 tw-shadow-lg">
+        <div class="tw-bg-white tw-rounded-xl tw-p-16 tw-shadow-lg">
           <h3 class="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-6">Actions Rapides</h3>
           <div class="tw-space-y-4">
             <q-btn 
               class="tw-w-full tw-justify-start" 
-              color="emerald-6" 
-              icon="account_balance_wallet" 
-              label="Nouveau Paiement"
-              flat
-              size="lg"
-            />
-            <q-btn 
-              class="tw-w-full tw-justify-start" 
               color="orange-6" 
-              icon="receipt_long" 
-              label="Créer Facture"
+              icon="account_balance_wallet" 
+              to="/epayment/factures"
+              label="Paiements"
               flat
               size="lg"
             />
+
             <q-btn 
               class="tw-w-full tw-justify-start" 
               color="teal-6" 

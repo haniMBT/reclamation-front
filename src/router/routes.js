@@ -68,6 +68,72 @@ const routes = [
       { path: '', name: 'logHistory', component: () => import('pages/logHistory/Index.vue') },
     ]
   },
+
+  // Module E-paiement
+  {
+    path: '/epayment',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { 
+        path: 'factures', 
+        name: 'epayment-factures',
+        component: () => import('pages/epayment/FacturesList.vue') 
+      },
+      { 
+        path: 'factures/:id', 
+        name: 'epayment-facture-detail',
+        component: () => import('pages/epayment/FactureDetail.vue') 
+      },
+      { 
+        path: 'payment/:id', 
+        name: 'epayment-payment',
+        component: () => import('pages/epayment/Payment.vue') 
+      },
+      { 
+        path: 'payment/success/:id', 
+        name: 'epayment-payment-success',
+        component: () => import('pages/epayment/PaymentSuccess.vue') 
+      },
+      { 
+        path: 'payment/failure/:id', 
+        name: 'epayment-payment-failure',
+        component: () => import('pages/epayment/PaymentFailure.vue') 
+      }
+    ]
+  },
+
+  // Pages publiques pour invités (module e-paiement)
+  {
+    path: '/guest',
+    component: () => import('layouts/GuestLayout.vue'), // Il faudra créer ce layout
+    children: [
+      { 
+        path: 'search', 
+        name: 'guest-search',
+        component: () => import('pages/epayment/GuestSearch.vue') 
+      },
+      { 
+        path: 'facture/:id', 
+        name: 'guest-facture',
+        component: () => import('pages/epayment/GuestFactureDetail.vue') 
+      },
+      { 
+        path: 'payment/:id', 
+        name: 'guest-payment',
+        component: () => import('pages/epayment/GuestPayment.vue') 
+      },
+      { 
+        path: 'payment/success/:id', 
+        name: 'guest-payment-success',
+        component: () => import('pages/epayment/GuestPaymentSuccess.vue') 
+      },
+      { 
+        path: 'payment/failure/:id', 
+        name: 'guest-payment-failure',
+        component: () => import('pages/epayment/GuestPaymentFailure.vue') 
+      }
+    ]
+  },
  
   {
     path: '/:catchAll(.*)*',
