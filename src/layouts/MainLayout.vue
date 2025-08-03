@@ -21,11 +21,11 @@
 
           <!-- Right side controls -->
           <div class="tw-flex tw-items-center tw-gap-2">
-          
+
             <!-- User Profile Dropdown -->
-            <q-btn-dropdown 
-              flat 
-              round 
+            <q-btn-dropdown
+              flat
+              round
               class="tw-text-gray-600"
               dropdown-icon="none"
             >
@@ -111,11 +111,11 @@
               Dashboard
             </q-item-section>
           </q-item>
-      
+
           <q-separator />
 
 
-    
+
 
           <q-expansion-item>
             <template v-slot:header="{ expanded }">
@@ -162,7 +162,7 @@
                 </q-item-section>
               </template>
             </q-expansion-item>
-           
+
             </q-expansion-item>
 
 
@@ -180,9 +180,9 @@
                 <q-item-section-label>Réclamation client</q-item-section-label>
               </q-item-section>
             </template>
-         
 
-            <q-expansion-item :header-inset-level="1" label="Dashboard" expand-icon="0" to="/base-de-donnees-technique/fiches_rpp" />
+
+            <q-expansion-item :header-inset-level="1" label="Réclamation client" expand-icon="0" to="/reclamation_client" />
           </q-expansion-item>
 
 
@@ -216,20 +216,20 @@
             </q-item-section>
           </q-item> -->
 
-      
+
         </q-list>
       </q-scroll-area>
     </q-drawer>
-    
+
     <!-- PAGE CONTAINER - OBLIGATOIRE POUR QUASAR -->
     <q-page-container>
       <router-view />
     </q-page-container>
-    
+
     <q-footer elevated class="tw-bg-white tw-text-gray-600 tw-text-xxs tw-text-center tw-py-2">
       {{ currentYear }} © Entreprise Portuaire d'Alger / D.P.I
     </q-footer>
-   
+
   </q-layout>
 
   <q-inner-loading :showing="visible" label-class="text-teal" label-style="font-size: 1.1em" color="purple" />

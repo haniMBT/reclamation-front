@@ -25,6 +25,13 @@ const routes = [
     ]
   },
   {
+    path: '/reclamation_client',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('src/pages/reclamation/Index.vue') }
+    ]
+  },
+  {
     path: '/profile',
     component: () => import('layouts/MainLayout.vue'),
     children: [
@@ -68,7 +75,7 @@ const routes = [
       { path: '', name: 'logHistory', component: () => import('pages/logHistory/Index.vue') },
     ]
   },
- 
+
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue')
