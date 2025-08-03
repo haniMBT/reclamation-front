@@ -182,7 +182,7 @@ const handleLogin = async () => {
       class="flex flex-col justify-center w-1/2 bg-purple-900 items-center rounded-bl-large bg-[url('loginBG.png')] bg-cover bg-no-repeat">
       <div class="grow-1"></div>
 
-      <img class="flex-none scale-50 h-1/2" src="/logo epal.png" alt="Logo EPAL" />
+      <img class="flex-none scale-50 h-1/2" src="/logo-epal.png" alt="Logo EPAL" />
       <div class="grow-3">
         <div class="flex flex-col items-center text-white border rounded-medium px-24 py-6">
           <label class="text-xs">En savoir plus sur EPAL</label>

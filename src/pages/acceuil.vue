@@ -6,7 +6,7 @@
         <div class="flex justify-between items-center">
           <!-- Logo EPAL -->
           <div class="flex items-center">
-            <q-img class="w-12 h-12 mr-3" src="/logo epal.png" />
+            <q-img class="w-12 h-12 mr-3" src="/logo-epal.png" />
             <div>
               <h1 class="text-xl font-bold text-gray-800">EPAL</h1>
               <p class="text-sm text-gray-600">Entreprise Portuaire d'Alger</p>
@@ -148,7 +148,7 @@
           <!-- Company Info -->
           <div>
             <div class="flex items-center mb-4">
-              <q-img class="w-10 h-10 mr-3" src="/logo epal.png" />
+              <q-img class="w-10 h-10 mr-3" src="/logo-epal.png" />
               <h3 class="text-xl font-bold">EPAL</h3>
             </div>
             <p class="text-gray-300 leading-relaxed">

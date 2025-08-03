@@ -18,7 +18,7 @@
           <!-- Logo et titre -->
           <div class="mb-8">
             <div class="flex items-center justify-center lg:justify-start mb-6">
-              <q-img class="w-16 h-16 mr-4" src="/logo epal.png" />
+              <q-img class="w-16 h-16 mr-4" src="/logo-epal.png" />
               <div>
                 <h1 class="text-3xl font-bold">EPAL</h1>
                 <p class="text-lg opacity-90">Entreprise Portuaire d'Alger</p>

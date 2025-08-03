@@ -364,7 +364,6 @@ export default defineComponent({
       // Ouvrir le PDF dans un nouvel onglet
         const url = `${BASE_URL}/epayment/factures/${facture.id}/pdf`
         window.open(url);
-
     }
     
     onMounted(() => {

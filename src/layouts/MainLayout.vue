@@ -16,7 +16,7 @@
         <div class="w-full flex justify-between items-center">
           <!-- Logo/Title -->
           <div class="flex items-center">
-            <q-img class="w-8 h-8 mr-2" src="/logo epal.png" />
+            <q-img class="w-8 h-8 mr-2" src="/logo-epal.png" />
           </div>
 
           <!-- Right side controls -->
