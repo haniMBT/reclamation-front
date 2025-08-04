@@ -203,22 +203,19 @@
   </q-page>
 </template>
 
-<script>
-import { defineComponent, ref, onMounted, computed } from 'vue'
+<script setup>
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useEpaymentStore } from '../../stores/epayment'
 import { date } from 'quasar'
 import moment from 'moment';
 import 'moment/locale/fr';
-export default defineComponent({
-  name: 'FacturesList',
-  
-  setup() {
-    const router = useRouter()
-    const $q = useQuasar()
-    const epaymentStore = useEpaymentStore()
-    const BASE_URL = process.env.BASE_URL
+
+const router = useRouter()
+const $q = useQuasar()
+const epaymentStore = useEpaymentStore()
+const BASE_URL = process.env.BASE_URL
     const loading = ref(false)
     const factures = ref([])
     const stats = ref({
@@ -365,31 +362,8 @@ export default defineComponent({
         const url = `${BASE_URL}/epayment/factures/${facture.id}/pdf`
         window.open(url);
     }
-    
-    onMounted(() => {
-      loadFactures()
-    })
-    
-    return {
-      loading,
-      factures,
-      stats,
-      filters,
-      pagination,
-      columns,
-      statusOptions,
-      formatCurrency,
-      getStatusColor,
-      getStatusLabel,
-      formatDate,
-      loadFactures,
-      onRequest,
-      applyFilters,
-      viewFacture,
-      payFacture,
-      printFacture
-    }
-  }
+onMounted(() => {
+  loadFactures()
 })
 </script>
 

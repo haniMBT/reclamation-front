@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { api } from '../boot/axios'
-
+const API_BASE_URL = process.env.API_BASE_URL
 export const useEpaymentStore = defineStore('epayment', {
   state: () => ({
     factures: [],
@@ -87,16 +87,37 @@ export const useEpaymentStore = defineStore('epayment', {
     /**
      * Initier un processus de paiement
      */
-    async processPayment(factureId, data) {
+    async processPayment(factureId, data, Email) {
       this.loading = true
       try {
-        const response = await api.post(`api/epayment/payment/process/${factureId}`, data)
+        // Créer un formulaire pour soumettre en POST vers la route web
+        const form = document.createElement('form')
+        form.method = 'POST'
+        form.action = `${API_BASE_URL}/payment/process/${factureId}/${Email}`
         
-        if (response.data.success) {
-          return response.data
-        } else {
-          throw new Error(response.data.message || 'Erreur lors du traitement du paiement')
+        // Ajouter le token CSRF (si disponible)
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        if (csrfToken) {
+          const csrfInput = document.createElement('input')
+          csrfInput.type = 'hidden'
+          csrfInput.name = '_token'
+          csrfInput.value = csrfToken
+          form.appendChild(csrfInput)
         }
+        
+        // Ajouter les données du formulaire
+        Object.keys(data).forEach(key => {
+          const input = document.createElement('input')
+          input.type = 'hidden'
+          input.name = key
+          input.value = data[key]
+          form.appendChild(input)
+        })
+        
+        document.body.appendChild(form)
+        form.submit()
+        
+        return { success: true }
       } catch (error) {
         console.error('Erreur processPayment:', error)
         throw error
@@ -109,20 +130,18 @@ export const useEpaymentStore = defineStore('epayment', {
      * Traiter le succès de paiement
      */
     async processPaymentSuccess(factureId, params) {
-      this.loading = true
       try {
-        const response = await api.get(`api/epayment/payment/success/${factureId}`, { params })
+        // Construire l'URL avec les paramètres
+        const urlParams = new URLSearchParams(params)
+        const url = `/payment/success/${factureId}?${urlParams.toString()}`
         
-        if (response.data.success) {
-          return response.data
-        } else {
-          throw new Error(response.data.message || 'Erreur lors de la validation du paiement')
-        }
+        // Rediriger vers la page de succès Blade
+        window.location.href = url
+        
+        return { success: true }
       } catch (error) {
         console.error('Erreur processPaymentSuccess:', error)
         throw error
-      } finally {
-        this.loading = false
       }
     },
 
@@ -130,15 +149,18 @@ export const useEpaymentStore = defineStore('epayment', {
      * Traiter l'échec de paiement
      */
     async processPaymentFailure(factureId, params) {
-      this.loading = true
       try {
-        const response = await api.get(`api/epayment/payment/failure/${factureId}`, { params })
-        return response.data
+        // Construire l'URL avec les paramètres
+        const urlParams = new URLSearchParams(params)
+        const url = `/payment/failure/${factureId}?${urlParams.toString()}`
+        
+        // Rediriger vers la page d'échec Blade
+        window.location.href = url
+        
+        return { success: true }
       } catch (error) {
         console.error('Erreur processPaymentFailure:', error)
         throw error
-      } finally {
-        this.loading = false
       }
     },
 
@@ -147,13 +169,10 @@ export const useEpaymentStore = defineStore('epayment', {
      */
     async getReceipt(recuId) {
       try {
-        const response = await api.get(`api/epayment/receipt/${recuId}`)
+        // Rediriger vers la page de reçu Blade
+        window.location.href = `/receipt/${recuId}`
         
-        if (response.data.success) {
-          return response.data.data
-        } else {
-          throw new Error(response.data.message || 'Reçu non trouvé')
-        }
+        return { success: true }
       } catch (error) {
         console.error('Erreur getReceipt:', error)
         throw error
@@ -165,19 +184,14 @@ export const useEpaymentStore = defineStore('epayment', {
      */
     async downloadReceipt(recuId) {
       try {
-        const response = await api.get(`api/epayment/receipt/${recuId}/download`, {
-          responseType: 'blob'
-        })
-        
-        // Créer un lien de téléchargement
-        const url = window.URL.createObjectURL(new Blob([response.data]))
+        // Créer un lien de téléchargement direct vers la route web
         const link = document.createElement('a')
-        link.href = url
+        link.href = `/receipt/${recuId}/download`
         link.setAttribute('download', `recu_paiement_${recuId}.pdf`)
+        link.target = '_blank'
         document.body.appendChild(link)
         link.click()
         link.remove()
-        window.URL.revokeObjectURL(url)
         
         return true
       } catch (error) {
@@ -227,82 +241,6 @@ export const useEpaymentStore = defineStore('epayment', {
         throw error
       } finally {
         this.loading = false
-      }
-    },
-
-    /**
-     * Initier un paiement (invité)
-     */
-    async processGuestPayment(factureId, data) {
-      this.loading = true
-      try {
-        const response = await api.post(`api/epayment/guest/payment/process/${factureId}`, data)
-        
-        if (response.data.success) {
-          return response.data
-        } else {
-          throw new Error(response.data.message || 'Erreur lors du traitement du paiement')
-        }
-      } catch (error) {
-        console.error('Erreur processGuestPayment:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    /**
-     * Traiter le succès de paiement (invité)
-     */
-    async processGuestPaymentSuccess(factureId, params) {
-      this.loading = true
-      try {
-        const response = await api.get(`api/epayment/guest/payment/success/${factureId}`, { params })
-        
-        if (response.data.success) {
-          return response.data
-        } else {
-          throw new Error(response.data.message || 'Erreur lors de la validation du paiement')
-        }
-      } catch (error) {
-        console.error('Erreur processGuestPaymentSuccess:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    /**
-     * Traiter l'échec de paiement (invité)
-     */
-    async processGuestPaymentFailure(factureId, params) {
-      this.loading = true
-      try {
-        const response = await api.get(`api/epayment/guest/payment/failure/${factureId}`, { params })
-        return response.data
-      } catch (error) {
-        console.error('Erreur processGuestPaymentFailure:', error)
-        throw error
-      } finally {
-        this.loading = false
-      }
-    },
-
-    /**
-     * Récupérer un reçu (invité)
-     */
-    async getGuestReceipt(id) {
-      try {
-        const response = await api.get(`api/epayment/guest/receipt/${id}`)
-        
-        if (response.data.success) {
-          return response.data.data
-        } else {
-          throw new Error(response.data.message || 'Reçu non trouvé')
-        }
-      } catch (error) {
-        console.error('Erreur getGuestReceipt:', error)
-        throw error
       }
     },
 

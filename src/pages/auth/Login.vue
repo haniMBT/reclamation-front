@@ -10,24 +10,24 @@
     <div class="absolute inset-0 bg-black/30"></div>
 
     <!-- Main Container -->
-    <div class="relative z-10 w-full max-w-5xl mx-auto px-6">
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+    <div class="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
         
         <!-- Left Side - Branding -->
         <div class="text-center lg:text-left text-white order-2 lg:order-1">
           <!-- Logo et titre -->
-          <div class="mb-8">
-            <div class="flex items-center justify-center lg:justify-start mb-6">
-              <q-img class="w-16 h-16 mr-4" src="/logo-epal.png" />
+          <div class="mb-6 sm:mb-8">
+            <div class="flex items-center justify-center lg:justify-start mb-4 sm:mb-6">
+              <q-img class="w-12 h-12 sm:w-16 sm:h-16 mr-3 sm:mr-4" src="/logo-epal.png" />
               <div>
-                <h1 class="text-3xl font-bold">EPAL</h1>
-                <p class="text-lg opacity-90">Entreprise Portuaire d'Alger</p>
+                <h1 class="text-2xl sm:text-3xl font-bold">EPAL</h1>
+                <p class="text-sm sm:text-lg opacity-90 hidden sm:block">Entreprise Portuaire d'Alger</p>
               </div>
             </div>
             
-            <h2 class="text-2xl lg:text-3xl font-bold mb-4 leading-tight">
+            <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold mb-3 sm:mb-4 leading-tight">
               Bienvenue sur votre
-              <span class="text-emerald-300">Plateforme Portuaire</span>
+              <span class="text-emerald-300 block sm:inline">Plateforme Portuaire</span>
             </h2>
             <p class="text-lg opacity-90 leading-relaxed">
               Connectez-vous pour accéder à vos services : E-paiement, Factures et Réclamations.

@@ -17,6 +17,8 @@
           <!-- Logo/Title -->
           <div class="flex items-center">
             <q-img class="w-8 h-8 mr-2" src="/logo-epal.png" />
+            <!-- Masquer le titre sur mobile très petit -->
+            <div class="hidden sm:block text-lg font-semibold text-gray-800">EPAL</div>
           </div>
 
           <!-- Right side controls -->
@@ -31,14 +33,15 @@
             >
               <template v-slot:label>
                 <div class="flex items-center">
-                  <q-avatar size="32px" class="mr-2">
+                  <q-avatar size="32px" class="mr-1 sm:mr-2">
                     <img 
                           v-if="userPhoto" 
                           :src="userPhoto" 
                           class="w-full h-full object-cover"
                         />
                   </q-avatar>
-                  <div class="text-left md:block">
+                  <!-- Masquer les infos texte sur petit mobile -->
+                  <div class="text-left">
                     <div class="text-sm font-semibold text-gray-800">{{ authStore.userProfile?.fullName || 'Utilisateur' }}</div>
                     <div class="text-xs">{{ authStore.userProfile?.email || 'user@epal.dz' }}</div>
                   </div>
@@ -87,18 +90,32 @@
 
 
 
-    <q-drawer v-model="drawer" show-if-above :mini="miniState" @mouseover="miniState = false" @mouseout="miniState = true" class="bg-white flex flex-col" :breakpoint="500" elevated :mini-width="50">
-      <q-item class="px-1 my-2 shadow">
+    <q-drawer 
+      v-model="drawer" 
+      show-if-above 
+      :mini="miniState && $q.screen.gt.sm" 
+      @mouseover="miniState = false" 
+      @mouseout="miniState = true" 
+      class="bg-white flex flex-col" 
+      :breakpoint="768" 
+      elevated 
+      :mini-width="60"
+      :width="300"
+    >
+      <q-item class="px-1 my-2 shadow" :class="{ 'text-center': miniState && $q.screen.gt.sm }">
         <q-item-section avatar>
           <q-icon size="xl">
             <q-img src="/logo-epal.png" />
           </q-icon>
         </q-item-section>
-        <q-item-section class="flex flex-col items-center font-black text-blue-800">
+        <q-item-section 
+          v-if="!miniState || !$q.screen.gt.sm"
+          class="flex flex-col items-center font-black text-blue-800"
+        >
           <q-separator class="w-4/5 bg-blue-800" />
-          <p class="text-xl">Entreprise Portuaire</p>
+          <p class="text-base lg:text-xl">Entreprise Portuaire</p>
           <q-separator class="w-1/2 bg-blue-800" />
-          <p> d'Alger | DPI</p>
+          <p class="text-sm lg:text-base"> d'Alger | DPI</p>
           <q-separator class="w-4/5 bg-blue-800" />
         </q-item-section>
       </q-item>

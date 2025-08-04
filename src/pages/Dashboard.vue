@@ -1,30 +1,30 @@
 <template>
   <q-page class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto p-6">
+    <div class="container mx-auto p-4 sm:p-6">
       <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl font-bold text-gray-800 mb-2">
+      <div class="mb-6 sm:mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
           Tableau de bord EPAL
         </h1>
-        <p class="text-gray-600">Vue d'ensemble de vos services portuaires</p>
+        <p class="text-sm sm:text-base text-gray-600">Vue d'ensemble de vos services portuaires</p>
       </div>
 
       <!-- Stats Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <!-- Total Transactions -->
-        <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-emerald-500">
+        <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 shadow-lg border-l-4 border-emerald-500">
           <div class="flex items-center justify-between">
             <div>
-              <p class="text-sm font-medium text-gray-600 uppercase">Total Transactions</p>
-              <p class="text-2xl font-bold text-gray-900">{{ stats.totalTransactions }}</p>
+              <p class="text-xs sm:text-sm font-medium text-gray-600 uppercase">Total Transactions</p>
+              <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ stats.totalTransactions }}</p>
             </div>
-            <div class="p-3 bg-emerald-100 rounded-full">
-              <q-icon name="trending_up" class="text-xl text-emerald-600" />
+            <div class="p-2 sm:p-3 bg-emerald-100 rounded-full">
+              <q-icon name="trending_up" class="text-lg sm:text-xl text-emerald-600" />
             </div>
           </div>
-          <div class="mt-4">
-            <span class="text-emerald-500 text-sm font-semibold">+12%</span>
-            <span class="text-gray-500 text-sm ml-2">ce mois</span>
+          <div class="mt-3 sm:mt-4">
+            <span class="text-emerald-500 text-xs sm:text-sm font-semibold">+12%</span>
+            <span class="text-gray-500 text-xs sm:text-sm ml-2">ce mois</span>
           </div>
         </div>
 

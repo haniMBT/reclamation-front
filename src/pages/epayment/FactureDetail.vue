@@ -218,22 +218,18 @@
   </q-page>
 </template>
 
-<script>
-import { defineComponent, ref, onMounted, computed } from 'vue'
+<script setup>
+import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useEpaymentStore } from '../../stores/epayment'
 
-export default defineComponent({
-  name: 'FactureDetail',
-  
-  setup() {
-    const route = useRoute()
-    const router = useRouter()
-    const $q = useQuasar()
-    const epaymentStore = useEpaymentStore()
-    
-    const loading = ref(false)
+const route = useRoute()
+const router = useRouter()
+const $q = useQuasar()
+const epaymentStore = useEpaymentStore()
+
+const loading = ref(false)
     const facture = ref(null)
     const details = ref([])
     const paymentInfo = ref(null)
@@ -393,30 +389,8 @@ export default defineComponent({
       )
     })
     
-    onMounted(() => {
-      loadFacture()
-    })
-    
-    return {
-      loading,
-      facture,
-      details,
-      paymentInfo,
-      totauxRows,
-      prestationsFilter,
-      filteredDetails,
-      detailPagination,
-      detailColumns,
-      totauxColumns,
-      formatCurrency,
-      formatDate,
-      getStatusColor,
-      getStatusLabel,
-      payFacture,
-      viewReceipt,
-      printFacture
-    }
-  }
+onMounted(() => {
+  loadFacture()
 })
 </script>
 

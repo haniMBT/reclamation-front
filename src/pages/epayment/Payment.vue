@@ -159,6 +159,7 @@ import {
 import { useRoute, useRouter } from "vue-router";
 import { useQuasar } from "quasar";
 import { useEpaymentStore } from "../../stores/epayment";
+import { useAuthStore } from "stores/auth";
 
 export default defineComponent({
   name: "Payment",
@@ -168,7 +169,8 @@ export default defineComponent({
     const router = useRouter();
     const $q = useQuasar();
     const epaymentStore = useEpaymentStore();
-    const BASE_URL = process.env.BASE_URL;
+    const authStore = useAuthStore();
+    const API_BASE_URL = process.env.API_BASE_URL;
     const loading = ref(false);
     const processing = ref(false);
     const facture = ref(null);
@@ -185,8 +187,7 @@ export default defineComponent({
 
     // URL du backend pour les conditions d'utilisation
     const conditionsUrl = computed(() => {
-      const baseUrl =
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+      const baseUrl = process.env.API_BASE_URL
       return `${baseUrl}/conditions`;
     });
 
@@ -204,7 +205,7 @@ export default defineComponent({
 
     const printConditions = (facture) => {
       // Ouvrir le PDF dans un nouvel onglet
-      const url = `${BASE_URL}/epayment/conditions/pdf`;
+      const url = `${API_BASE_URL}/epayment/conditions/pdf`;
       window.open(url);
     };
 
@@ -219,7 +220,6 @@ export default defineComponent({
         const response = await epaymentStore.getFacture(factureId);
         facture.value = response.facture;
         factureAPayee.value = facture.value.facrfe + facture.value.facnum;
-        console.log("factureAPayee", factureAPayee.value);
 
         // Vérifier si la facture est déjà payée
         if (response.facture.status === 1) {
@@ -270,7 +270,7 @@ export default defineComponent({
         const grecaptcha = await loadRecaptcha();
         if (grecaptcha && document.getElementById("recaptcha-container")) {
           recaptchaWidget.value = grecaptcha.render("recaptcha-container", {
-            sitekey: "6LcZTJkrAAAAAKWlsB2EDpzHZ5lj7aQT3a862Ihl", // Clé de test, à remplacer
+            sitekey: "6LcZTJkrAAAAAKWlsB2EDpzHZ5lj7aQT3a862Ihl",
             callback: onRecaptchaCallback,
             "expired-callback": onRecaptchaExpired,
           });
@@ -316,7 +316,7 @@ export default defineComponent({
         const response = await epaymentStore.processPayment(facture.value.id, {
           terms: form.value.acceptTerms,
           "g-recaptcha-response": form.value.captchaResponse,
-        });
+        }, authStore.user.Email);
 
         if (response.success && response.data.payment_url) {
           // Rediriger vers la page de paiement sécurisée
@@ -333,11 +333,11 @@ export default defineComponent({
         }
         form.value.captchaResponse = "";
 
-        $q.notify({
-          type: "negative",
-          message: "Erreur lors du traitement du paiement",
-          caption: error.message,
-        });
+        //$q.notify({
+        //  type: "negative",
+        //  message: "Erreur lors du traitement du paiement",
+        //  caption: error.message,
+        //});
       } finally {
         processing.value = false;
       }
