@@ -26,7 +26,7 @@ const routes = [
   },
   {
     path: '/reclamation_client',
-    component: () => import('layouts/MainLayout.vue'),
+    // component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('src/pages/reclamation/Index.vue') }
     ]
