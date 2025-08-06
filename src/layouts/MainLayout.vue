@@ -156,6 +156,7 @@
           <!--    Assistance technique   -->
 
 
+          <!--    Module Proforma   -->
           <q-expansion-item>
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
@@ -168,15 +169,9 @@
                 Facture Proforma
               </q-item-section>
             </template>
-            <q-expansion-item :header-inset-level="1" expand-icon="0" to="/assistance-technique/demande_assistanceP">
-              <template v-slot:header="{ expanded }">
-                <q-item-section>
-                  <q-item-section-label>Facture proforma</q-item-section-label>
-                </q-item-section>
-              </template>
-            </q-expansion-item>
-           
-            </q-expansion-item>
+            <q-expansion-item :header-inset-level="1" label="Calculer Proforma" expand-icon="0" to="/proforma" />
+            <q-expansion-item :header-inset-level="1" label="Historique" expand-icon="0" to="/proforma/history" />
+          </q-expansion-item>
 
 
           <!--    Base de données technique   -->

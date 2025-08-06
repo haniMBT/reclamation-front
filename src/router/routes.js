@@ -102,6 +102,24 @@ const routes = [
     ]
   },
 
+  // Module Proforma
+  {
+    path: '/proforma',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { 
+        path: '', 
+        name: 'proforma-index',
+        component: () => import('pages/proforma/ProformaIndex.vue') 
+      },
+      { 
+        path: 'history', 
+        name: 'proforma-history',
+        component: () => import('pages/proforma/ProformaHistory.vue') 
+      }
+    ]
+  },
+
   // Pages publiques pour invités (module e-paiement)
   {
     path: '/guest',
