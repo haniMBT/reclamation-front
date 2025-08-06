@@ -23,11 +23,11 @@
 
           <!-- Right side controls -->
           <div class="flex items-center gap-2">
-          
+
             <!-- User Profile Dropdown -->
-            <q-btn-dropdown 
-              flat 
-              round 
+            <q-btn-dropdown
+              flat
+              round
               class="text-gray-600"
               dropdown-icon="none"
             >
@@ -81,14 +81,8 @@
             </q-btn-dropdown>
           </div>
         </div>
-
-
       </q-toolbar>
     </q-header>
-
-
-
-
 
     <q-drawer 
       v-model="drawer" 
@@ -132,11 +126,7 @@
               Dashboard
             </q-item-section>
           </q-item>
-      
           <q-separator />
-
-
-    
 
           <q-expansion-item expand-icon="0" to="/epayment/factures">
             <template v-slot:header="{ expanded }">
@@ -152,9 +142,6 @@
 
 
           </q-expansion-item>
-
-          <!--    Assistance technique   -->
-
 
           <!--    Module Proforma   -->
           <q-expansion-item>
@@ -173,10 +160,7 @@
             <q-expansion-item :header-inset-level="1" label="Historique" expand-icon="0" to="/proforma/history" />
           </q-expansion-item>
 
-
-          <!--    Base de données technique   -->
-
-          <q-expansion-item>
+          <q-expansion-item expand-icon="0" to="/reclamation_client">
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
                 <q-icon size="lg">
@@ -188,11 +172,7 @@
                 <q-item-section-label>Réclamation client</q-item-section-label>
               </q-item-section>
             </template>
-         
-
-            <q-expansion-item :header-inset-level="1" label="Dashboard" expand-icon="0" to="/base-de-donnees-technique/fiches_rpp" />
           </q-expansion-item>
-
 
 
           <!--    Gestion des utilisateurs   -->
@@ -224,20 +204,20 @@
             </q-item-section>
           </q-item> -->
 
-      
+
         </q-list>
       </q-scroll-area>
     </q-drawer>
-    
+
     <!-- PAGE CONTAINER - OBLIGATOIRE POUR QUASAR -->
     <q-page-container>
       <router-view />
     </q-page-container>
-    
+
     <q-footer elevated class="bg-white text-gray-600 text-xxs text-center py-2">
       {{ currentYear }} © Entreprise Portuaire d'Alger / D.P.I
     </q-footer>
-   
+
   </q-layout>
 
   <q-inner-loading :showing="visible" label-class="text-teal" label-style="font-size: 1.1em" color="purple" />
@@ -288,7 +268,7 @@ onBeforeMount(async () => {
   // Load saved theme preference
   const isDarkMode = localStorage.getItem('epal_dark_mode') === 'true';
   $q.dark.set(isDarkMode);
-  
+
   // Initialiser l'AuthStore depuis localStorage
   authStore.initializeFromStorage();
 });
