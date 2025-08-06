@@ -26,6 +26,7 @@ module.exports = configure(function (ctx) {
       'i18n',
       'axios',
       'pinia',
+      'auth-init',
       'apexcharts',
       'fusioncharts',
     ],

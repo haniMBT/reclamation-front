@@ -21,31 +21,31 @@ onMounted(() => {
 
 <template>
 
-  <div class="tw-flex
-              tw-border border-solid
-              tw-rounded-lg
-              tw-focus-within:ring-1
-              tw-bg-white
-              tw-focus:rounded-lg focus:outline-none">
+  <div class="flex
+              border border-solid
+              rounded-lg
+              focus-within:ring-1
+              bg-white
+              focus:rounded-lg focus:outline-none">
     <input
       class="
-                tw-w-full
-                tw-px-3
-                tw-py-2
-                tw-text-sm
-                tw-text-blue-login-410
-                tw-placeholder-blue-login-410
-                tw-font-normal
-                tw-focus:ring-0
-                tw-outline-none
-                tw-ring-none
-                tw-focus:ring-none
-                tw-border-none
-                tw-transition
-                tw-ease-in-out
-                tw-bg-white
-                tw-rounded-lg
-                tw-m-0
+                w-full
+                px-3
+                py-2
+                text-sm
+                text-blue-login-410
+                placeholder-blue-login-410
+                font-normal
+                focus:ring-0
+                outline-none
+                ring-none
+                focus:ring-none
+                border-none
+                transition
+                ease-in-out
+                bg-white
+                rounded-lg
+                m-0
                "
       :value="modelValue"
       @input="$emit('update:modelValue', $event.target.value)"

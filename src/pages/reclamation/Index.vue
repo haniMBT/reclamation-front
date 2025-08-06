@@ -1,39 +1,39 @@
 <template>
-  <div class="tw-bg-gray-50">
-    <div class="tw-container tw-mx-auto tw-px-4 tw-py-8">
+  <div class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
       <!-- Header Section -->
-      <div class="tw-bg-white tw-rounded-lg tw-shadow-sm tw-p-6 tw-mb-6">
-        <div class="tw-flex tw-items-center tw-mb-4">
-          <q-icon name="feedback" size="2rem" class="tw-text-blue-600 tw-mr-3" />
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center mb-4">
+          <q-icon name="feedback" size="2rem" class="text-blue-600 mr-3" />
           <div>
-            <h1 class="tw-text-2xl tw-font-bold tw-text-gray-800 tw-mb-1">Réclamation Client</h1>
-            <p class="tw-text-gray-600 tw-text-sm">Envoyez votre réclamation en remplissant le formulaire ci-dessous</p>
+            <h1 class="text-2xl font-bold text-gray-800 mb-1">Réclamation Client</h1>
+            <p class="text-gray-600 text-sm">Envoyez votre réclamation en remplissant le formulaire ci-dessous</p>
           </div>
         </div>
       </div>
 
       <!-- Main Form -->
-      <div class="tw-bg-white tw-rounded-lg tw-shadow-sm tw-p-6">
+      <div class="bg-white rounded-lg shadow-sm p-6">
         <q-form @submit="submitComplaint" class="q-gutter-md">
           <!-- Objet de la réclamation -->
-          <div class="tw-mb-6">
+          <div class="mb-6">
             <q-input
               v-model="complaint.subject"
               label="Objet de la réclamation"
               outlined
               dense
-              class="tw-w-full"
+              class="w-full"
               :rules="[val => !!val || 'L\'objet est requis']"
             >
               <template v-slot:prepend>
-                <q-icon name="subject" class="tw-text-blue-600" />
+                <q-icon name="subject" class="text-blue-600" />
               </template>
             </q-input>
           </div>
 
           <!-- Contenu de la réclamation -->
-          <div class="tw-mb-6">
-            <label class="tw-block tw-text-sm tw-font-medium tw-text-gray-700 tw-mb-2">
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               Contenu de la réclamation *
             </label>
             <q-editor
@@ -46,21 +46,21 @@
                 ['undo', 'redo'],
                 ['fullscreen']
               ]"
-              class="tw-border tw-rounded-md"
+              class="border rounded-md"
             />
-            <div v-if="contentError" class="tw-text-red-600 tw-text-xs tw-mt-1">
+            <div v-if="contentError" class="text-red-600 text-xs mt-1">
               Le contenu de la réclamation est requis
             </div>
           </div>
 
           <!-- Fichiers joints -->
-          <div class="tw-mb-6">
-            <label class="tw-block tw-text-sm tw-font-medium tw-text-gray-700 tw-mb-2">
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
               Fichiers joints (optionnel)
             </label>
 
             <!-- Zone d'ajout de fichiers -->
-            <div class="tw-flex tw-gap-3 tw-mb-3">
+            <div class="flex gap-3 mb-3">
               <q-file
                 v-model="newFiles"
                 multiple
@@ -68,12 +68,12 @@
                 dense
                 accept="image/*,application/pdf,.doc,.docx,.txt"
                 max-file-size="10485760"
-                class="tw-flex-1"
+                class="flex-1"
                 @rejected="onRejected"
                 @update:model-value="onNewFilesSelected"
               >
                 <template v-slot:prepend>
-                  <q-icon name="attach_file" class="tw-text-blue-600" />
+                  <q-icon name="attach_file" class="text-blue-600" />
                 </template>
                 <template v-slot:hint>
                   Formats acceptés: Images, PDF, Word. Taille max: 10Mo par fichier
@@ -86,32 +86,32 @@
                 outline
                 :disable="!newFiles || newFiles.length === 0"
                 @click="addFiles"
-                class="tw-px-4"
+                class="px-4"
               >
-                <q-icon name="add" class="tw-mr-1" />
+                <q-icon name="add" class="mr-1" />
               </q-btn>
             </div>
 
             <!-- Liste des fichiers sélectionnés -->
-            <div v-if="allFiles.length > 0" class="tw-mt-3">
-              <div class="tw-text-sm tw-font-medium tw-text-gray-700 tw-mb-2">
+            <div v-if="allFiles.length > 0" class="mt-3">
+              <div class="text-sm font-medium text-gray-700 mb-2">
                 Fichiers sélectionnés ({{ allFiles.length }}) :
               </div>
-              <div class="tw-space-y-2">
+              <div class="space-y-2">
                 <div
                   v-for="(file, index) in allFiles"
                   :key="index"
-                  class="tw-flex tw-items-center tw-justify-between tw-bg-gray-50 tw-p-3 tw-rounded-md tw-border"
+                  class="flex items-center justify-between bg-gray-50 p-3 rounded-md border"
                 >
-                  <div class="tw-flex tw-items-center">
+                  <div class="flex items-center">
                     <q-icon
                       :name="getFileIcon(file.type)"
                       size="1.5rem"
-                      class="tw-text-blue-600 tw-mr-3"
+                      class="text-blue-600 mr-3"
                     />
                     <div>
-                      <div class="tw-text-sm tw-font-medium tw-text-gray-800">{{ file.name }}</div>
-                      <div class="tw-text-xs tw-text-gray-500">{{ formatFileSize(file.size) }}</div>
+                      <div class="text-sm font-medium text-gray-800">{{ file.name }}</div>
+                      <div class="text-xs text-gray-500">{{ formatFileSize(file.size) }}</div>
                     </div>
                   </div>
                   <q-btn
@@ -121,7 +121,7 @@
                     round
                     color="negative"
                     @click="removeFile(index)"
-                    class="tw-ml-2"
+                    class="ml-2"
                   >
                     <q-tooltip>Supprimer le fichier</q-tooltip>
                   </q-btn>
@@ -131,13 +131,13 @@
           </div>
 
           <!-- Boutons d'action -->
-          <div class="tw-flex tw-justify-between tw-items-center tw-pt-6 tw-border-t tw-border-gray-200">
+          <div class="flex justify-between items-center pt-6 border-t border-gray-200">
             <q-btn
               label="Annuler"
               color="grey-6"
               flat
               @click="resetForm"
-              class="tw-px-6"
+              class="px-6"
             />
             <q-btn
               label="Envoyer la réclamation"
@@ -145,24 +145,24 @@
               type="submit"
               :loading="isSubmitting"
               :disable="!isFormValid"
-              class="tw-px-8"
+              class="px-8"
             >
               <template v-slot:loading>
                 <q-spinner-facebook />
               </template>
-              <q-icon name="send" class="tw-ml-2" />
+              <q-icon name="send" class="ml-2" />
             </q-btn>
           </div>
         </q-form>
       </div>
 
       <!-- Information complémentaire -->
-      <div class="tw-bg-blue-50 tw-border tw-border-blue-200 tw-rounded-lg tw-p-4 tw-mt-6">
-        <div class="tw-flex tw-items-start">
-          <q-icon name="info" class="tw-text-blue-600 tw-mr-3 tw-mt-0.5" />
-          <div class="tw-text-sm tw-text-blue-800">
-            <p class="tw-font-medium tw-mb-1">Informations importantes :</p>
-            <ul class="tw-list-disc tw-list-inside tw-space-y-1 tw-text-blue-700">
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
+        <div class="flex items-start">
+          <q-icon name="info" class="text-blue-600 mr-3 mt-0.5" />
+          <div class="text-sm text-blue-800">
+            <p class="font-medium mb-1">Informations importantes :</p>
+            <ul class="list-disc list-inside space-y-1 text-blue-700">
               <li>Votre réclamation sera traitée dans les plus brefs délais</li>
               <!-- <li>Vous recevrez une confirmation par email</li>
               <li>Un suivi vous sera communiqué sous 48h ouvrables</li> -->

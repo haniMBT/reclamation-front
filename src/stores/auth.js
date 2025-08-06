@@ -5,10 +5,10 @@ import { LocalStorage, SessionStorage } from 'quasar'
 export const useAuthStore = defineStore('auth', {
 
   state: () => ({
-    isLoggedIn: LocalStorage.getItem('isLoggedIn') ?? null,
+    isLoggedIn: LocalStorage.getItem('isLoggedIn') ?? false,
     access_token: LocalStorage.getItem('access_token') ?? null,
     user: LocalStorage.getItem('user') ?? {},
-     loginErrors: false,
+    loginErrors: false,
     changePassword: LocalStorage.getItem('changePassword'),
     profile: LocalStorage.getItem('profile'),
     // Nouvelles données utilisateur
@@ -24,20 +24,42 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     // Getters pour les données utilisateur
     getUserFullName: (state) => {
-      console.log('azeazeaz', state.user);
+      console.log('Données utilisateur:', state.user);
       
-      if (state.user.Prenom && state.user.Nom) {
+      // Si les données sont dans userProfile, les utiliser
+      if (state.userProfile?.fullName && state.userProfile?.fullName.trim() !== '') {
+        return state.userProfile.fullName;
+      }
+      
+      // Sinon, construire depuis les données user
+      if (state.user?.Prenom && state.user?.Nom) {
         return `${state.user.Prenom} ${state.user.Nom}`;
       }
-      return state.user?.Name + ' ' + state.user?.Prenom || 'Utilisateur';
+      
+      // Fallback pour d'autres formats possibles
+      if (state.user?.prenom && state.user?.nom) {
+        return `${state.user.prenom} ${state.user.nom}`;
+      }
+      
+      return 'Utilisateur';
     },
     
     getUserPhoto: (state) => {
-      return state.user.photo || null;
+      const photo = state.userProfile?.photo || state.user?.photo;
+      if (photo) {
+        // Si la photo contient déjà une URL complète, la retourner telle quelle
+        if (photo.startsWith('http')) {
+          return photo;
+        }
+        // Sinon, construire l'URL complète vers le backend
+        const baseUrl = process.env.API_BASE_URL || 'http://localhost:8000';
+        return `${baseUrl}/storage/photos/${photo}`;
+      }
+      return null;
     },
     
     getUserEmail: (state) => {
-      return state.user.Email;
+      return state.userProfile?.email || state.user?.Email || state.user?.email || '';
     },
   },
 
@@ -69,6 +91,7 @@ export const useAuthStore = defineStore('auth', {
               
               LocalStorage.set('isLoggedIn', true)
               LocalStorage.set('user', res.data.user)
+              LocalStorage.set('userProfile', this.userProfile)
             })
         })
         .catch(error => {
@@ -129,14 +152,25 @@ export const useAuthStore = defineStore('auth', {
           },
         });
         
-        // Mettre à jour les données locales
+        // Mettre à jour les données locales - IMPORTANT: synchroniser user ET userProfile
+        this.user = {
+          ...this.user,  // Conserver les données existantes
+          Nom: response.data.user.nom,
+          Prenom: response.data.user.prenom,
+          Email: response.data.user.email || this.user.Email,  // Préserver l'email si absent
+          photo: response.data.user.photo
+        };
+        
         this.userProfile = {
           nom: response.data.user.nom,
           prenom: response.data.user.prenom,
-          email: response.data.user.email,
+          email: response.data.user.email || this.user.Email,  // Préserver l'email si absent
           photo: response.data.user.photo,
           fullName: `${response.data.user.prenom} ${response.data.user.nom}`.trim()
         };
+        
+        // Sauvegarder les deux structures
+        LocalStorage.set('user', this.user);
         LocalStorage.set('userProfile', this.userProfile);
         
         return { success: true, data: response.data };
@@ -149,7 +183,7 @@ export const useAuthStore = defineStore('auth', {
     },
 
     // GESTION PROFIL - Changer mot de passe (méthode classique)
-    async changePassword(data) {
+    async changePasswordd(data) {
       try {
         const response = await api.post("/api/profile/change-password", data);
         return { success: true, data: response.data };
@@ -187,28 +221,61 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
-    // get privileges
+    // Récupérer les informations utilisateur complètes
     async getUser() {
-      if (this.isLoggedIn)
-      await api.get("/api/user")
-      .then((res) => {
-        this.user = res.data.user
-        LocalStorage.set('user', res.data.user)
-      });
+      if (!this.isLoggedIn || !this.access_token) return;
+      
+      try {
+        const response = await api.get("/api/user");
+        
+        // Synchroniser les deux structures de données
+        this.user = response.data.user;
+        
+        this.userProfile = {
+          nom: response.data.user.Nom || '',
+          prenom: response.data.user.Prenom || '',
+          email: response.data.user.Email || '',
+          photo: response.data.user.photo || null,
+          fullName: `${response.data.user.Prenom || ''} ${response.data.user.Nom || ''}`.trim()
+        };
+        
+        // Sauvegarder dans localStorage
+        LocalStorage.set('user', this.user);
+        LocalStorage.set('userProfile', this.userProfile);
+        
+        return { success: true, data: response.data };
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données utilisateur:', error);
+        return { success: false, error: error.response?.data?.message || 'Erreur de récupération' };
+      }
     },
 
-    // get privileges
-    async getPrivileges() {
-      if (this.isLoggedIn)
-        await api
-          .post('/api/privileges', {
-            volet: this.volet
-          })
-          .then((res) => {
-
-          })
+    // Initialiser l'AuthStore depuis localStorage
+    initializeFromStorage() {
+      this.isLoggedIn = LocalStorage.getItem('isLoggedIn') ?? false
+      this.access_token = LocalStorage.getItem('access_token') ?? null
+      this.user = LocalStorage.getItem('user') ?? {}
+      this.userProfile = LocalStorage.getItem('userProfile') ?? {
+        nom: '',
+        prenom: '',
+        email: '',
+        photo: null,
+        fullName: ''
+      }
+      this.changePassword = LocalStorage.getItem('changePassword')
+      this.profile = LocalStorage.getItem('profile')
+      
+      // Si l'utilisateur est connecté mais que userProfile est vide, le reconstruire
+      if (this.isLoggedIn && this.user && Object.keys(this.user).length > 0 && !this.userProfile.fullName) {
+        this.userProfile = {
+          nom: this.user.Nom || '',
+          prenom: this.user.Prenom || '',
+          email: this.user.Email || '',
+          photo: this.user.photo || null,
+          fullName: `${this.user.Prenom || ''} ${this.user.Nom || ''}`.trim()
+        }
+        LocalStorage.set('userProfile', this.userProfile)
+      }
     },
-
-
   }
 })

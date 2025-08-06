@@ -18,7 +18,7 @@ export default {
   'Base de données technique': 'Base de données technique',
   'Gestion des utilisateurs': 'Gestion des utilisateurs',
   Menu: 'Menu',
-  Home: 'Accueil',
+  Home: 'acceuil',
   About: 'A propos',
   Affaires: 'Affaires',
   'Visites préléminaires': 'Visites préléminaires'

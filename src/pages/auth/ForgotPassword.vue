@@ -1,52 +1,52 @@
 <template>
-  <div class="tw-min-h-screen tw-relative tw-flex tw-items-center tw-justify-center tw-overflow-hidden">
+  <div class="min-h-screen relative flex items-center justify-center overflow-hidden">
     <!-- Background Image -->
     <div 
-      class="tw-absolute tw-inset-0 tw-bg-cover tw-bg-center tw-bg-no-repeat"
+      class="absolute inset-0 bg-cover bg-center bg-no-repeat"
       style="background-image: url('/slider_bg02.jpg')"
     ></div>
     
     <!-- Overlay -->
-    <div class="tw-absolute tw-inset-0 tw-bg-black/30"></div>
+    <div class="absolute inset-0 bg-black/30"></div>
 
     <!-- Main Container -->
-    <div class="tw-relative tw-z-10 tw-w-full tw-max-w-md tw-mx-auto tw-px-6">
+    <div class="relative z-10 w-full max-w-md mx-auto px-6">
       
       <!-- Logo Section -->
-      <div class="tw-text-center tw-mb-8">
-        <div class="tw-flex tw-items-center tw-justify-center tw-mb-4">
-          <q-img class="tw-w-16 tw-h-16" src="/logo epal.png" />
+      <div class="text-center mb-8">
+        <div class="flex items-center justify-center mb-4">
+          <q-img class="w-16 h-16" src="/logo epal.png" />
         </div>
-        <h1 class="tw-text-2xl tw-font-bold tw-text-white tw-mb-2">EPAL</h1>
-        <p class="tw-text-white/80">Récupération de mot de passe</p>
+        <h1 class="text-2xl font-bold text-white mb-2">EPAL</h1>
+        <p class="text-white/80">Récupération de mot de passe</p>
       </div>
 
       <!-- Form Container -->
-      <div class="tw-bg-white/95 tw-backdrop-blur-sm tw-rounded-3xl tw-shadow-2xl tw-p-8 tw-border tw-border-white/20">
+      <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8 border border-white/20">
         
         <!-- Step 1: Email Input -->
         <div v-if="step === 1">
-          <div class="tw-text-center tw-mb-6">
-            <h2 class="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-2">Mot de passe oublié</h2>
-            <p class="tw-text-gray-600 tw-text-sm">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Mot de passe oublié</h2>
+            <p class="text-gray-600 text-sm">
               Saisissez votre adresse email pour recevoir un code de récupération
             </p>
           </div>
 
-          <form @submit.prevent="sendCode" class="tw-space-y-4">
+          <form @submit.prevent="sendCode" class="space-y-4">
             <div>
-              <label class="tw-block tw-text-sm tw-font-medium tw-text-gray-700 tw-mb-2">
-                Adresse email <span class="tw-text-red-500">*</span>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Adresse email <span class="text-red-500">*</span>
               </label>
-              <div class="tw-relative">
-                <div class="tw-absolute tw-inset-y-0 tw-left-0 tw-pl-3 tw-flex tw-items-center tw-pointer-events-none">
-                  <q-icon name="email" class="tw-text-gray-400" />
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <q-icon name="email" class="text-gray-400" />
                 </div>
                 <input
                   v-model="form.email"
                   type="email"
                   placeholder="votre.email@exemple.com"
-                  class="tw-w-full tw-pl-10 tw-pr-4 tw-py-3 tw-border tw-border-gray-300 tw-rounded-xl tw-bg-white tw-text-gray-900 focus:tw-ring-2 focus:tw-ring-emerald-500 focus:tw-border-emerald-500 tw-transition-all tw-duration-200"
+                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200"
                   required
                   :disabled="loading"
                 />
@@ -54,18 +54,18 @@
             </div>
 
             <!-- Error Message -->
-            <div v-if="errorMessage" class="tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-lg tw-p-3">
-              <p class="tw-text-red-600 tw-text-sm">{{ errorMessage }}</p>
+            <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p class="text-red-600 text-sm">{{ errorMessage }}</p>
             </div>
 
             <!-- Submit Button -->
             <button
               type="submit"
               :disabled="loading || !form.email"
-              class="tw-w-full tw-py-3 tw-px-4 tw-bg-gradient-to-r tw-from-emerald-600 tw-to-teal-600 hover:tw-from-emerald-700 hover:tw-to-teal-700 tw-text-white tw-font-semibold tw-rounded-xl tw-shadow-lg tw-transition-all tw-duration-200 tw-transform hover:tw-scale-[1.02] tw-flex tw-items-center tw-justify-center disabled:tw-opacity-50 disabled:tw-cursor-not-allowed"
+              class="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <q-spinner-oval v-if="loading" size="20px" class="tw-mr-3" />
-              <q-icon v-else name="send" class="tw-mr-2" />
+              <q-spinner-oval v-if="loading" size="20px" class="mr-3" />
+              <q-icon v-else name="send" class="mr-2" />
               {{ loading ? "Envoi en cours..." : "Envoyer le code" }}
             </button>
           </form>
@@ -73,29 +73,29 @@
 
         <!-- Step 2: Code Verification + New Password -->
         <div v-if="step === 2">
-          <div class="tw-text-center tw-mb-6">
-            <h2 class="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-2">Code de vérification</h2>
-            <p class="tw-text-gray-600 tw-text-sm">
+          <div class="text-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Code de vérification</h2>
+            <p class="text-gray-600 text-sm">
               Un code a été envoyé à <strong>{{ form.email }}</strong>
             </p>
           </div>
 
-          <form @submit.prevent="resetPassword" class="tw-space-y-4">
+          <form @submit.prevent="resetPassword" class="space-y-4">
             <!-- Code Input -->
             <div>
-              <label class="tw-block tw-text-sm tw-font-medium tw-text-gray-700 tw-mb-2">
-                Code de vérification <span class="tw-text-red-500">*</span>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Code de vérification <span class="text-red-500">*</span>
               </label>
-              <div class="tw-relative">
-                <div class="tw-absolute tw-inset-y-0 tw-left-0 tw-pl-3 tw-flex tw-items-center tw-pointer-events-none">
-                  <q-icon name="verified_user" class="tw-text-gray-400" />
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <q-icon name="verified_user" class="text-gray-400" />
                 </div>
                 <input
                   v-model="form.code"
                   type="text"
                   placeholder="123456"
                   maxlength="6"
-                  class="tw-w-full tw-pl-10 tw-pr-4 tw-py-3 tw-border tw-border-gray-300 tw-rounded-xl tw-bg-white tw-text-gray-900 focus:tw-ring-2 focus:tw-ring-emerald-500 focus:tw-border-emerald-500 tw-transition-all tw-duration-200 tw-text-center tw-font-mono tw-text-lg tw-tracking-widest"
+                  class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 text-center font-mono text-lg tracking-widest"
                   required
                   :disabled="loading"
                 />
@@ -104,18 +104,18 @@
 
             <!-- New Password -->
             <div>
-              <label class="tw-block tw-text-sm tw-font-medium tw-text-gray-700 tw-mb-2">
-                Nouveau mot de passe <span class="tw-text-red-500">*</span>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Nouveau mot de passe <span class="text-red-500">*</span>
               </label>
-              <div class="tw-relative">
-                <div class="tw-absolute tw-inset-y-0 tw-left-0 tw-pl-3 tw-flex tw-items-center tw-pointer-events-none">
-                  <q-icon name="lock" class="tw-text-gray-400" />
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <q-icon name="lock" class="text-gray-400" />
                 </div>
                 <input
                   v-model="form.password"
                   :type="showPassword ? 'text' : 'password'"
                   placeholder="Nouveau mot de passe"
-                  class="tw-w-full tw-pl-10 tw-pr-12 tw-py-3 tw-border tw-border-gray-300 tw-rounded-xl tw-bg-white tw-text-gray-900 focus:tw-ring-2 focus:tw-ring-emerald-500 focus:tw-border-emerald-500 tw-transition-all tw-duration-200"
+                  class="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200"
                   required
                   minlength="8"
                   :disabled="loading"
@@ -123,11 +123,11 @@
                 <button 
                   type="button" 
                   @click="showPassword = !showPassword"
-                  class="tw-absolute tw-inset-y-0 tw-right-0 tw-pr-3 tw-flex tw-items-center"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   <q-icon 
                     :name="showPassword ? 'visibility_off' : 'visibility'" 
-                    class="tw-text-gray-400 hover:tw-text-gray-600 tw-transition-colors tw-cursor-pointer" 
+                    class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" 
                   />
                 </button>
               </div>
@@ -135,18 +135,18 @@
 
             <!-- Confirm Password -->
             <div>
-              <label class="tw-block tw-text-sm tw-font-medium tw-text-gray-700 tw-mb-2">
-                Confirmer le mot de passe <span class="tw-text-red-500">*</span>
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Confirmer le mot de passe <span class="text-red-500">*</span>
               </label>
-              <div class="tw-relative">
-                <div class="tw-absolute tw-inset-y-0 tw-left-0 tw-pl-3 tw-flex tw-items-center tw-pointer-events-none">
-                  <q-icon name="lock" class="tw-text-gray-400" />
+              <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <q-icon name="lock" class="text-gray-400" />
                 </div>
                 <input
                   v-model="form.password_confirmation"
                   :type="showConfirmPassword ? 'text' : 'password'"
                   placeholder="Confirmer le mot de passe"
-                  class="tw-w-full tw-pl-10 tw-pr-12 tw-py-3 tw-border tw-border-gray-300 tw-rounded-xl tw-bg-white tw-text-gray-900 focus:tw-ring-2 focus:tw-ring-emerald-500 focus:tw-border-emerald-500 tw-transition-all tw-duration-200"
+                  class="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-xl bg-white text-gray-900 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200"
                   required
                   minlength="8"
                   :disabled="loading"
@@ -154,29 +154,29 @@
                 <button 
                   type="button" 
                   @click="showConfirmPassword = !showConfirmPassword"
-                  class="tw-absolute tw-inset-y-0 tw-right-0 tw-pr-3 tw-flex tw-items-center"
+                  class="absolute inset-y-0 right-0 pr-3 flex items-center"
                 >
                   <q-icon 
                     :name="showConfirmPassword ? 'visibility_off' : 'visibility'" 
-                    class="tw-text-gray-400 hover:tw-text-gray-600 tw-transition-colors tw-cursor-pointer" 
+                    class="text-gray-400 hover:text-gray-600 transition-colors cursor-pointer" 
                   />
                 </button>
               </div>
             </div>
 
             <!-- Error Message -->
-            <div v-if="errorMessage" class="tw-bg-red-50 tw-border tw-border-red-200 tw-rounded-lg tw-p-3">
-              <p class="tw-text-red-600 tw-text-sm">{{ errorMessage }}</p>
+            <div v-if="errorMessage" class="bg-red-50 border border-red-200 rounded-lg p-3">
+              <p class="text-red-600 text-sm">{{ errorMessage }}</p>
             </div>
 
             <!-- Submit Button -->
             <button
               type="submit"
               :disabled="loading || !form.code || !form.password || !form.password_confirmation"
-              class="tw-w-full tw-py-3 tw-px-4 tw-bg-gradient-to-r tw-from-emerald-600 tw-to-teal-600 hover:tw-from-emerald-700 hover:tw-to-teal-700 tw-text-white tw-font-semibold tw-rounded-xl tw-shadow-lg tw-transition-all tw-duration-200 tw-transform hover:tw-scale-[1.02] tw-flex tw-items-center tw-justify-center disabled:tw-opacity-50 disabled:tw-cursor-not-allowed"
+              class="w-full py-3 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold rounded-xl shadow-lg transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <q-spinner-oval v-if="loading" size="20px" class="tw-mr-3" />
-              <q-icon v-else name="check" class="tw-mr-2" />
+              <q-spinner-oval v-if="loading" size="20px" class="mr-3" />
+              <q-icon v-else name="check" class="mr-2" />
               {{ loading ? "Réinitialisation..." : "Réinitialiser le mot de passe" }}
             </button>
 
@@ -184,7 +184,7 @@
             <button
               type="button"
               @click="goBackToEmail"
-              class="tw-w-full tw-py-2 tw-text-gray-600 hover:tw-text-gray-800 tw-transition-colors tw-text-sm"
+              class="w-full py-2 text-gray-600 hover:text-gray-800 transition-colors text-sm"
             >
               ← Modifier l'adresse email
             </button>
@@ -192,13 +192,13 @@
         </div>
 
         <!-- Step 3: Success -->
-        <div v-if="step === 3" class="tw-text-center">
-          <div class="tw-mb-6">
-            <div class="tw-w-16 tw-h-16 tw-bg-emerald-100 tw-rounded-full tw-flex tw-items-center tw-justify-center tw-mx-auto tw-mb-4">
-              <q-icon name="check_circle" class="tw-text-3xl tw-text-emerald-600" />
+        <div v-if="step === 3" class="text-center">
+          <div class="mb-6">
+            <div class="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <q-icon name="check_circle" class="text-3xl text-emerald-600" />
             </div>
-            <h2 class="tw-text-xl tw-font-bold tw-text-gray-800 tw-mb-2">Mot de passe réinitialisé !</h2>
-            <p class="tw-text-gray-600 tw-text-sm">
+            <h2 class="text-xl font-bold text-gray-800 mb-2">Mot de passe réinitialisé !</h2>
+            <p class="text-gray-600 text-sm">
               Votre mot de passe a été mis à jour avec succès.
             </p>
           </div>
@@ -208,17 +208,17 @@
             color="emerald-6"
             icon="login"
             label="Se connecter"
-            class="tw-w-full tw-py-3"
+            class="w-full py-3"
             size="lg"
             rounded
           />
         </div>
 
         <!-- Back to Login Link -->
-        <div v-if="step !== 3" class="tw-text-center tw-mt-6 tw-pt-4 tw-border-t tw-border-gray-200">
+        <div v-if="step !== 3" class="text-center mt-6 pt-4 border-t border-gray-200">
           <router-link 
             to="/login" 
-            class="tw-text-emerald-600 hover:tw-text-emerald-700 tw-transition-colors tw-text-sm"
+            class="text-emerald-600 hover:text-emerald-700 transition-colors text-sm"
           >
             ← Retour à la connexion
           </router-link>
@@ -227,8 +227,8 @@
     </div>
 
     <!-- Decorative Elements -->
-    <div class="tw-absolute tw-top-10 tw-right-10 tw-w-20 tw-h-20 tw-bg-emerald-400/10 tw-rounded-full tw-blur-xl"></div>
-    <div class="tw-absolute tw-bottom-20 tw-left-10 tw-w-24 tw-h-24 tw-bg-teal-400/10 tw-rounded-full tw-blur-xl"></div>
+    <div class="absolute top-10 right-10 w-20 h-20 bg-emerald-400/10 rounded-full blur-xl"></div>
+    <div class="absolute bottom-20 left-10 w-24 h-24 bg-teal-400/10 rounded-full blur-xl"></div>
   </div>
 </template>
 
@@ -338,7 +338,7 @@ input, button {
   }
 }
 
-.tw-bg-white\/95 {
+.bg-white\/95 {
   animation: slideInUp 0.6s ease-out;
 }
 

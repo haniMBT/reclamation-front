@@ -1,24 +1,24 @@
 <template>
   <q-page
     v-if="authStore.isLoggedIn"
-    class="tw-flex tw-justify-center tw-bg-amber-50"
+    class="flex justify-center bg-amber-50"
   >
     <div
-      class="tw-flex tw-flex-col tw-w-full tw-flex-grow-1 tw-mx-8 tw-my-4"
+      class="flex flex-col w-full flex-grow-1 mx-8 my-4"
     >
       <h1
-        class="tw-text-header-text tw-text-2xl tw-font-[500] tw-mx-4 tw-px-4"
+        class="text-header-text text-2xl font-[500] mx-4 px-4"
       >
         Journal d'activités
       </h1>
       <div
-        class="tw-flex tw-flex-col tw-bg-white tw-flex-grow tw-rounded-xl tw-m-4 tw-p-4"
+        class="flex flex-col bg-white flex-grow rounded-xl m-4 p-4"
       >
         <div
-          class="tw-w-full tw-flex tw-justify-between tw-items-end"
+          class="w-full flex justify-between items-end"
         >
           <div
-            class="tw-flex tw-flex-col tw-gap-2"
+            class="flex flex-col gap-2"
           >
             <q-input
               outlined
@@ -32,15 +32,15 @@
             </q-input>
           </div>
           <div
-            class="tw-flex tw-flex-col tw-justify-end"
+            class="flex flex-col justify-end"
           >
             <label
-              class="tw-text-gray-500 tw-text-center"
+              class="text-gray-500 text-center"
             >
               Filtrer par date (Début ~ Fin)
             </label>
             <div
-              class="tw-w-full tw-flex tw-mt-2 tw-flex tw-justify-center tw-gap-2"
+              class="w-full flex mt-2 flex justify-center gap-2"
             >
               <q-input
                 label="Début"
@@ -48,7 +48,7 @@
                 dense
                 v-model="dateFilter.start"
                 mask="date"
-                class="tw-my-0 tw-py-0"
+                class="my-0 py-0"
               >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
@@ -56,7 +56,7 @@
                       <q-date v-model="dateFilter.start" ></q-date>
                     </q-popup-proxy>
                   </q-icon>
-                  <q-icon v-if="dateFilter.start" name="close" @click="clearDateFilter('start')" class="hover:tw-cursor-pointer hover:tw-bg-gray-200 tw-rounded-full" />
+                  <q-icon v-if="dateFilter.start" name="close" @click="clearDateFilter('start')" class="hover:cursor-pointer hover:bg-gray-200 rounded-full" />
                 </template>
               </q-input>
               <q-input
@@ -65,7 +65,7 @@
                 dense
                 v-model="dateFilter.end"
                 mask="date"
-                class="tw-my-0 tw-py-0"
+                class="my-0 py-0"
               >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
@@ -73,7 +73,7 @@
                       <q-date v-model="dateFilter.end" ></q-date>
                     </q-popup-proxy>
                   </q-icon>
-                  <q-icon v-if="dateFilter.end" name="close" @click="clearDateFilter('start')" class="hover:tw-cursor-pointer hover:tw-bg-gray-200 tw-rounded-full" />
+                  <q-icon v-if="dateFilter.end" name="close" @click="clearDateFilter('start')" class="hover:cursor-pointer hover:bg-gray-200 rounded-full" />
                 </template>
               </q-input>
             </div>
@@ -81,7 +81,7 @@
         </div>
         <q-table
           v-if="forceRender"
-          class="tw-my-4"
+          class="my-4"
           :rows="rows"
           :columns="columns"
           row-key="id"
@@ -89,7 +89,7 @@
           :loading="loading"
         >
           <template v-slot:pagination>
-            <div class="tw-flex tw-items-center tw-gap-2 tw-mx-4">
+            <div class="flex items-center gap-2 mx-4">
               <label>Nombre d'affaires par page</label>
               <q-select
                 v-model="pagination.per_page"
