@@ -1,28 +1,28 @@
 <template>
-  <div>
+  <q-page>
+    <img src="entete.png" alt="">
     <h1>Facture proforma</h1>
-
     <p>
       Facture proforma établie au nom de (Madame / Monsieur)
       <span style="font-weight: bold;">{{ user?.name }}</span>
-      le {{ formatDateTime(calcForm?.created_at) }}
+      le {{ formatDateTime(proformaStore?.calculationResult?.historique?.created_at) }}
     </p>
 
     <div id="info">
       <div>
-        <p><span>BL: </span>{{ calcForm?.bl }}</p>
-        <p><span>N° Conteneur: </span>{{ calcForm?.conteneur }}</p>
-        <p><span>Numéro d'escale: </span>{{ calcForm?.escale }}</p>
-        <p><span>Navire: </span>{{ calcForm?.navire }}</p>
+        <p><span>BL: </span>{{ proformaStore?.searchResult?.bl }}</p>
+        <p><span>N° Conteneur: </span>{{ proformaStore?.searchResult?.conteneur }}</p>
+        <p><span>Numéro d'escale: </span>{{ proformaStore?.searchResult?.escale }}</p>
+        <p><span>Navire: </span>{{ proformaStore?.searchResult?.navire }}</p>
       </div>
       <div>
-        <p><span>Date de livraison: </span>{{ formatDate(calcForm?.date) }}</p>
+        <p><span>Date de livraison: </span>{{ formatDate(proformaStore?.searchResult?.date) }}</p>
         <p><span>Nombre: </span>{{ nbrCont }}</p>
-        <p><span>Date de livraison prévisionnelle: </span>{{ formatDate(calcForm?.dateFin) }}</p>
+        <p><span>Date de livraison prévisionnelle: </span>{{ formatDate(proformaStore?.calculationResult?.dateFin) }}</p>
         <p>
-          <span>Visite: </span>{{ calcForm?.visite ? 'Oui' : 'Non' }}
+          <span>Visite: </span>{{ calculationData?.visite ? 'Oui' : 'Non' }}
           <span style="margin-right: 32px;"></span>
-          <span>Scanner: </span>{{ calcForm?.scan ? 'Oui' : 'Non' }}
+          <span>Scanner: </span>{{ proformaStore?.calculationResult?.historique?.scan ? 'Oui' : 'Non' }}
         </p>
       </div>
     </div>
@@ -70,16 +70,18 @@
         ou toute autre prestation demandée.
       </div>
     </div>
-  </div>
+  </q-page>
 </template>
 
 <script setup>
-import { computed } from 'vue'
-
+import { computed, onMounted, ref } from 'vue'
+import { useProformaStore } from 'stores/proforma'
+const proformaStore = useProformaStore()
+const nbrCont = ref('');
 // Props reçus du parent ou d’un store
 const props = defineProps({
   user: { type: Object, required: true },
-  calcForm: { type: Object, required: true },
+  calculationData: { type: Object, required: true },
   facture: { type: Object, required: true }
 })
 
@@ -88,9 +90,11 @@ const formatter = new Intl.NumberFormat('fr-DZ', {
   currency: 'DZD'
 })
 
-const nbrCont = computed(() => 
-  `${props.calcForm?.nbc20PV || 0} (20 pieds) / ${props.calcForm?.nbc40PV || 0} (40 pieds)`
-)
+onMounted(() => {
+  const nbc20P = proformaStore.calculationResult?.nbc20P || 0;
+  const nbc40P = proformaStore.calculationResult?.nbc40P || 0;
+  nbrCont.value = `${nbc20P} (20 pieds) / ${nbc40P} (40 pieds)`;
+});
 
 function formatDate(dateStr = "") {
   if (!dateStr) return ""
