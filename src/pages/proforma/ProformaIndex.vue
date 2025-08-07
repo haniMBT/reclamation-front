@@ -1,7 +1,7 @@
 <template>
   <q-page class="q-pa-md bg-gray-50 min-h-screen">
      <div style="visibility: hidden; position: absolute; z-index: -1;" id="imprimer">
-        <Imprimer :calcForm="calcForm" :facture="searchResult?.facture?.original"></Imprimer>
+        <Imprimer :calculationData="calculationData" :facture="proformaStore?.calculationResult?.facture"></Imprimer>
     </div>
     <!-- Header avec style EPAL -->
     <div class="proforma-header bg-gradient-to-r from-white via-blue-50 to-blue-600 q-pa-lg rounded-xl shadow-lg mb-6">
@@ -497,13 +497,28 @@ onMounted(() => {
 }
 
 @media print {
-  .q-page {
-    @apply p-0 bg-white;
-  }
-  
-  .proforma-header,
-  .q-card:not(.print-content) {
-    display: none !important;
-  }
+    body * {
+        visibility: hidden;
+    }
+
+    #imprimer {
+        position: absolute;
+        top: 0;
+        z-index: 1 !important;
+    }
+
+    #imprimer * {
+        visibility: visible;
+        border: none;
+        z-index: 1 !important;
+
+    }
 }
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    background: #fff;
+}
+
 </style>
