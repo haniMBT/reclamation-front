@@ -58,7 +58,7 @@
 import { onMounted } from 'vue'
 import { useProformaStore } from 'stores/proforma'
 import { useMeta } from 'quasar'
-
+import { date } from 'quasar'
 useMeta({
   title: 'Historique Proforma - EPAL'
 })
@@ -96,7 +96,8 @@ const historyColumns = [
     label: 'Date Fin',
     align: 'center',
     field: 'date_fin',
-    sortable: true
+    sortable: true,
+    format: val => date.formatDate(val, 'DD-MM-YYYY')
   },
   {
     name: 'ttc',
@@ -112,7 +113,8 @@ const historyColumns = [
     label: 'Date Calcul',
     align: 'center',
     field: 'created_at',
-    sortable: true
+    sortable: true,
+    format: val => date.formatDate(val, 'DD-MM-YYYY HH:mm:ss')
   }
 ]
 

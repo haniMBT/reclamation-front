@@ -7,7 +7,6 @@
       <span style="font-weight: bold;">{{ user?.name }}</span>
       le {{ formatDateTime(proformaStore?.calculationResult?.historique?.created_at) }}
     </p>
-    {{ proformaStore }}
     <div id="info">
       <div>
         <p><span>BL: </span>{{ proformaStore?.searchResult?.bl }}</p>
@@ -18,11 +17,11 @@
       <div>
         <p><span>Date de livraison: </span>{{ formatDate(proformaStore?.searchResult?.date) }}</p>
         <p><span>Nombre: </span>{{ nbrCont }}</p>
-        <p><span>Date de livraison prévisionnelle: </span>{{ formatDate(proformaStore?.calculationResult?.dateFin) }}</p>
+        <p><span>Date livraison prévisionnelle: </span>{{ formatDate(datePrevisionnelle) }}</p>
         <p>
-          <span>Visite: </span>{{ calculationData?.visite ? 'Oui' : 'Non' }}
+          <span>Visite: </span>{{ visite ? 'Oui' : 'Non' }}
           <span style="margin-right: 32px;"></span>
-          <span>Scanner: </span>{{ proformaStore?.calculationResult?.historique?.scan ? 'Oui' : 'Non' }}
+          <span>Scanner: </span>{{ scanner ? 'Oui' : 'Non' }}
         </p>
       </div>
     </div>
@@ -74,10 +73,9 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useProformaStore } from 'stores/proforma'
 const proformaStore = useProformaStore()
-const nbrCont = ref('');
 // Props reçus du parent ou d’un store
 const props = defineProps({
   user: { type: Object, required: true },
@@ -90,11 +88,39 @@ const formatter = new Intl.NumberFormat('fr-DZ', {
   currency: 'DZD'
 })
 
-onMounted(() => {
-  const nbc20P = proformaStore.calculationResult?.nbc20P || 0;
-  const nbc40P = proformaStore.calculationResult?.nbc40P || 0;
-  nbrCont.value = `${nbc20P} (20 pieds) / ${nbc40P} (40 pieds)`;
-});
+const nbrCont = computed(() => {
+  const n20 = proformaStore.calculationResult?.nbc20PV
+    ?? proformaStore.calculationResult?.c20p
+    ?? props.calculationData?.nbc20PV
+    ?? props.calculationData?.c20p
+    ?? 0
+  const n40 = proformaStore.calculationResult?.nbc40PV
+    ?? proformaStore.calculationResult?.c40p
+    ?? props.calculationData?.nbc40PV
+    ?? props.calculationData?.c40p
+    ?? 0
+  return `${n20} (20 pieds) / ${n40} (40 pieds)`
+})
+
+const visite = computed(() => {
+  return proformaStore.calculationResult?.visite
+    ?? props.calculationData?.visite
+    ?? false
+})
+
+const scanner = computed(() => {
+  return proformaStore.calculationResult?.scan
+    ?? proformaStore.calculationResult?.historique?.scan
+    ?? props.calculationData?.scan
+    ?? false
+})
+
+const datePrevisionnelle = computed(() => {
+  return proformaStore.calculationResult?.dateFin
+    ?? proformaStore.calculationResult?.historique?.date_fin
+    ?? props.calculationData?.dateFin
+    ?? ''
+})
 
 function formatDate(dateStr = "") {
   if (!dateStr) return ""
