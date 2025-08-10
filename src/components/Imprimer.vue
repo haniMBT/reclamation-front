@@ -7,7 +7,7 @@
       <span style="font-weight: bold;">{{ user?.name }}</span>
       le {{ formatDateTime(proformaStore?.calculationResult?.historique?.created_at) }}
     </p>
-
+    {{ proformaStore }}
     <div id="info">
       <div>
         <p><span>BL: </span>{{ proformaStore?.searchResult?.bl }}</p>

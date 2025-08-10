@@ -430,7 +430,6 @@ const calculate = async () => {
     }
     
     await proformaStore.calculateProforma(calculationData)
-    
     $q.notify({
       type: 'positive',
       message: 'Calcul effectué avec succès',
