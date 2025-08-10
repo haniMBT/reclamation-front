@@ -1,7 +1,11 @@
 <template>
   <q-page class="q-pa-md bg-gray-50 min-h-screen">
-     <div style="visibility: hidden; position: absolute; z-index: -1;" id="imprimer">
-        <Imprimer :calculationData="calculationData" :facture="proformaStore?.calculationResult?.facture"></Imprimer>
+    <div style="visibility: hidden; position: absolute; z-index: -1;" id="imprimer">
+        <Imprimer
+          :user="{ name: authStore.getUserFullName }"
+          :calculationData="calculationData"
+          :facture="proformaStore?.calculationResult?.facture"
+        />
     </div>
     <!-- Header avec style EPAL -->
     <div class="proforma-header bg-gradient-to-r from-white via-blue-50 to-blue-600 q-pa-lg rounded-xl shadow-lg mb-6">
@@ -386,6 +390,11 @@ const tableColumns = [
 ]
 
 // Computed
+const calculationData = computed(() => ({
+  ...calculationForm,
+  ...(proformaStore.searchResult || {}),
+  ...(proformaStore.calculationResult || {}),
+}))
 const isCalculationFormValid = computed(() => {
   return calculationForm.dateFin && 
          calculationForm.nbc20PV >= 0 && 
@@ -430,7 +439,6 @@ const calculate = async () => {
     }
     
     await proformaStore.calculateProforma(calculationData)
-    
     $q.notify({
       type: 'positive',
       message: 'Calcul effectué avec succès',
