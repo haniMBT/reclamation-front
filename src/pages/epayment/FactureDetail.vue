@@ -256,7 +256,7 @@ const paymentInfo = ref(null);
 const totauxRows = ref([]);
 const prestationsFilter = ref("");
 const BASE_URL = process.env.BASE_URL;
-
+const API_BASE_URL = process.env.API_BASE_URL;
 const detailPagination = ref({
   sortBy: "prscod",
   descending: false,
@@ -385,7 +385,7 @@ const payFacture = () => {
 };
 
 const viewReceipt = () => {
-  router.push(`/epayment/receipt/${paymentInfo.value.recuId}`);
+  window.location.href = `${API_BASE_URL}/receiptByFacture/${facture.value.id}`;
 };
 
 const printFacture = () => {
