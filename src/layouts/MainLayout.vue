@@ -229,6 +229,12 @@
               expand-icon="0"
               to="/profile"
             />
+            <q-expansion-item
+              :header-inset-level="1"
+              label="Volet d'application"
+              expand-icon="0"
+              to="/volets"
+            />
           </q-expansion-item>
           <!--    Log History   -->
           <!-- <q-item v-if="authStore?.privileges?.role == 'Admin'" to="/log-history" clickable v-ripple>

@@ -50,8 +50,18 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: '', component: () => import('src/pages/privilege/Index.vue') },
-      { path: ':code', component: () => import('src/pages/privilege/show.vue') }
+      { path: ':code', component: () => import('src/pages/privilege/Show.vue') }
     ]
+  },
+   {
+    path: "/volets",
+    component: () => import("layouts/MainLayout.vue"),
+    children: [
+      {
+        path: "",
+        component: () => import("pages/volets/Index.vue"),
+      },
+    ],
   },
   {
     path: '/utilisateur',
@@ -81,30 +91,30 @@ const routes = [
     path: '/epayment',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { 
-        path: 'factures', 
+      {
+        path: 'factures',
         name: 'epayment-factures',
-        component: () => import('pages/epayment/FacturesList.vue') 
+        component: () => import('pages/epayment/FacturesList.vue')
       },
-      { 
-        path: 'factures/:id', 
+      {
+        path: 'factures/:id',
         name: 'epayment-facture-detail',
-        component: () => import('pages/epayment/FactureDetail.vue') 
+        component: () => import('pages/epayment/FactureDetail.vue')
       },
-      { 
-        path: 'payment/:id', 
+      {
+        path: 'payment/:id',
         name: 'epayment-payment',
-        component: () => import('pages/epayment/Payment.vue') 
+        component: () => import('pages/epayment/Payment.vue')
       },
-      { 
-        path: 'payment/success/:id', 
+      {
+        path: 'payment/success/:id',
         name: 'epayment-payment-success',
-        component: () => import('pages/epayment/PaymentSuccess.vue') 
+        component: () => import('pages/epayment/PaymentSuccess.vue')
       },
-      { 
-        path: 'payment/failure/:id', 
+      {
+        path: 'payment/failure/:id',
         name: 'epayment-payment-failure',
-        component: () => import('pages/epayment/PaymentFailure.vue') 
+        component: () => import('pages/epayment/PaymentFailure.vue')
       }
     ]
   },
@@ -114,15 +124,15 @@ const routes = [
     path: '/proforma',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { 
-        path: '', 
+      {
+        path: '',
         name: 'proforma-index',
-        component: () => import('pages/proforma/ProformaIndex.vue') 
+        component: () => import('pages/proforma/ProformaIndex.vue')
       },
-      { 
-        path: 'history', 
+      {
+        path: 'history',
         name: 'proforma-history',
-        component: () => import('pages/proforma/ProformaHistory.vue') 
+        component: () => import('pages/proforma/ProformaHistory.vue')
       }
     ]
   },
@@ -132,34 +142,34 @@ const routes = [
     path: '/guest',
     component: () => import('layouts/GuestLayout.vue'), // Il faudra créer ce layout
     children: [
-      { 
-        path: 'search', 
+      {
+        path: 'search',
         name: 'guest-search',
-        component: () => import('pages/epayment/GuestSearch.vue') 
+        component: () => import('pages/epayment/GuestSearch.vue')
       },
-      { 
-        path: 'facture/:id', 
+      {
+        path: 'facture/:id',
         name: 'guest-facture',
-        component: () => import('pages/epayment/GuestFactureDetail.vue') 
+        component: () => import('pages/epayment/GuestFactureDetail.vue')
       },
-      { 
-        path: 'payment/:id', 
+      {
+        path: 'payment/:id',
         name: 'guest-payment',
-        component: () => import('pages/epayment/GuestPayment.vue') 
+        component: () => import('pages/epayment/GuestPayment.vue')
       },
-      { 
-        path: 'payment/success/:id', 
+      {
+        path: 'payment/success/:id',
         name: 'guest-payment-success',
-        component: () => import('pages/epayment/GuestPaymentSuccess.vue') 
+        component: () => import('pages/epayment/GuestPaymentSuccess.vue')
       },
-      { 
-        path: 'payment/failure/:id', 
+      {
+        path: 'payment/failure/:id',
         name: 'guest-payment-failure',
-        component: () => import('pages/epayment/GuestPaymentFailure.vue') 
+        component: () => import('pages/epayment/GuestPaymentFailure.vue')
       }
     ]
   },
- 
+
   {
     path: '/:catchAll(.*)*',
     component: () => import('pages/ErrorNotFound.vue')
