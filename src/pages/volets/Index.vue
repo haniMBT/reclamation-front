@@ -13,7 +13,7 @@
         <template v-slot:top>
           <div class="w-full flex justify-center">
             <q-btn color="primary" icon="add" no-caps size="md" dense @click="showAddModalVolet = true"
-              class="w-fit h-fit" v-if="authStore.privileges.insertion">
+              class="w-fit h-fit" v-if="authStore.privileges.insertion=1">
               <q-tooltip class="text-sm" :offset="[5, 5]"> Ajouter un volet </q-tooltip>
             </q-btn>
             <p class="text-md self-center flex flex-1 justify-center">Les volets</p>
@@ -24,10 +24,7 @@
         <template v-slot:body-cell-action="props">
           <q-td :props="props">
             <div class="flex justify-center gap-1">
-              <!-- <q-btn flat dense icon="edit" color="warning" @click="updateVolet(props.row.id)">
-              <q-tooltip class="text-sm" :offset="[5, 5]"> Modifier le volet </q-tooltip>
-              </q-btn> -->
-              <q-btn flat dense icon="delete" color="red" @click="deleteVolet(props.row.id)" v-if="authStore.privileges.suppression">
+              <q-btn flat dense icon="delete" color="red" @click="deleteVolet(props.row.id)" v-if="authStore.privileges.suppression=1">
                 <q-tooltip class="text-sm" :offset="[5, 5]"> Supprimer le volet </q-tooltip>
               </q-btn>
             </div>
@@ -61,7 +58,7 @@
 import { onBeforeMount, ref, reactive, watch } from "vue";
 import ModalV2 from 'src/components/ModalV2.vue';
 import { api } from "src/boot/axios";
-import { showNotification } from "src/js/helpers";
+// import { showNotification } from "src/js/helpers";
 import { useQuasar } from "quasar";
 import { useAuthStore } from "src/stores/auth";
 import { useRouter } from "vue-router";
@@ -96,37 +93,40 @@ const columns = [
 ];
 
 const fetchVolets = async () => {
-  await api.get('/api/volets',
-    {
+  try {
+    const res = await api.get('/api/volets', {
       params: {
         page: pagination.page,
         per_page: pagination.per_page,
         lastPage: pagination.lastPage,
         search: search.value
       }
-    })
-    .then(res => {
-      volets.value = res.data.data.volets;
-      Object.assign(pagination, res.data.data.pagination);
-    })
-    .catch(err => {
-      console.error('error :', err);
     });
-}
+
+      console.log('volets :', res.data.volets);
+      volets.value = res.data.volets;
+      Object.assign(pagination, res.data.pagination);
+
+  } catch (err) {
+    console.error('error :', err);
+  }
+};
+
+
 
 onBeforeMount(() => {
-  authStore.setProperty('volet', 'utilisateurs');
-  if(authStore.privileges.consultation == false) {
-    router.push('/unathorized');
-  }
-  fetchVolets()
+  // authStore.setProperty('volet', 'utilisateurs');
+  // if(authStore.privileges.consultation == false) {
+  //   router.push('/unathorized');
+  // }
+   fetchVolets()
 });
 
 const addNewVolet = async () => {
   await api.post('/api/volets', volet)
     .then(res => {
       showAddModalVolet.value = false;
-      showNotification($q, 'positive', 'check', res.data.message, 'center', '500');
+      // showNotification($q, 'positive', 'check', res.data.message, 'center', '500');
       Object.assign(volet, initialVolet);
       fetchVolets()
     })
@@ -146,7 +146,7 @@ const deleteVolet = (id) => {
   }).onOk(async () => {
     await api.delete(`/api/volets/${id}`)
       .then(res => {
-        showNotification($q, 'positive', 'check', res.data.message, 'center', '500');
+        // showNotification($q, 'positive', 'check', res.data.message, 'center', '500');
         fetchVolets()
       })
       .catch(err => {

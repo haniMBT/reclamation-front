@@ -225,12 +225,6 @@
             />
             <q-expansion-item
               :header-inset-level="1"
-              label="Mon profil"
-              expand-icon="0"
-              to="/profile"
-            />
-            <q-expansion-item
-              :header-inset-level="1"
               label="Volet d'application"
               expand-icon="0"
               to="/volets"
