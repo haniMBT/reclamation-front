@@ -52,10 +52,10 @@
                   </q-avatar>
                   <!-- Masquer les infos texte sur petit mobile -->
                   <div class="text-left">
-                    <div class="text-sm font-semibold text-gray-800">
+                    <div class="text-sm font-semibold text-gray-800 capitalize">
                       {{ authStore.userProfile?.fullName || "Utilisateur" }}
                     </div>
-                    <div class="text-xs">
+                    <div class="text-xs lowercase">
                       {{ authStore.userProfile?.email || "user@epal.dz" }}
                     </div>
                   </div>
