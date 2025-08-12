@@ -50,19 +50,6 @@
             </div>
           </div>
           <div class="flex gap-4 justify-between mx-40">
-            <!-- <div class="w-full mb-2">
-              <label
-                for="countries"
-                class="block mb-2 text-sm font-medium text-gray-900 dark:text-white text-center"
-                >Fonction
-              </label>
-              <input
-                type="text"
-                v-model="profil_privilege.fonction"
-                class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 text-center"
-                readonly
-              />
-            </div> -->
             <div class="w-full mb-2">
               <label
                 for="countries"
@@ -331,7 +318,6 @@
           </q-tr>
         </template>
           <template v-slot:body="props">
-            <!--  -->
               <!-- v-if="!loadingPrivileges" -->
             <q-tr
               :props="props"
@@ -378,7 +364,6 @@
                         : (form[props.row.id].consultation = 1)
                     "
                   />
-                  <!-- v-model="form[props.row.id].consultation" -->
                   <svg viewBox="0 0 35.6 35.6">
                     <circle
                       class="background"
@@ -413,7 +398,6 @@
                         : (form[props.row.id].modification = 1)
                     "
                   />
-                  <!-- v-model="form[props.row.id].modification" -->
                   <svg viewBox="0 0 35.6 35.6">
                     <circle
                       class="background"
@@ -446,7 +430,6 @@
                         : (form[props.row.id].insertion = 1)
                     "
                   />
-                  <!-- v-model="form[props.row.id].insertion" -->
                   <svg viewBox="0 0 35.6 35.6">
                     <circle
                       class="background"
@@ -481,7 +464,6 @@
                         : (form[props.row.id].suppression = 1)
                     "
                   />
-                  <!-- v-model="form[props.row.id].suppression" -->
                   <svg viewBox="0 0 35.6 35.6">
                     <circle
                       class="background"
@@ -550,10 +532,6 @@ limitations.value.push({
   code: "G",
   value: "G – Visibilité au niveau global",
 });
-// limitations.value.push({
-//   code: "R",
-//   value: "R - Visibilité article échelle Régionale",
-// });
 limitations.value.push({
    code: "L", value: "L – Visibilité au niveau direction"
   });
@@ -585,7 +563,6 @@ const fetchData = async (Search) => {
     const response = await api.get(
       `/api/gu/securite/recherche/${Search}/${Code.value}`
     );
-    // console.log(response.data.privileges, 3);
     form.value = {};
     response.data.privileges.forEach((item) => {
       form.value = {
@@ -604,13 +581,11 @@ const fetchData = async (Search) => {
     });
     privileges.value = response.data.privileges;
 
-    console.log(form.value, 157);
 
     showPrivilegestable.value = false;
     await nextTick();
     showPrivilegestable.value = true;
   } catch (error) {
-    // console.error(error);
   }
 };
 
@@ -693,9 +668,6 @@ onMounted(async () => {
     if (profil_privilege.value.limitation === "G") {
       profil_privilege.value.limitation =
         "G – Visibilité au niveau global";
-    // } else if (profil_privilege.value.limitation === "R") {
-    //   profil_privilege.value.limitation =
-    //     "R - Visibilité article échelle Régionale";
     } else if (profil_privilege.value.limitation === "L") {
       profil_privilege.value.limitation = "L – Visibilité au niveau direction";
     } else if (profil_privilege.value.limitation === "P") {

@@ -76,38 +76,6 @@
                   <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
                 </div>
               </div>
-              <!-- <div class="mb-2">
-                <div class="w-full mb-2">
-                  <label for="countries"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fonction <span
-                      style="color: red">*</span></label>
-
-                <q-select
-                v-model="form.Fonction"
-                use-input
-                input-debounce="0"
-                label="Fonction"
-                option-value="CodeFnt"
-                option-label="LibelleFct"
-                :options="options"
-                @filter="filterFn"
-                outlined
-                clearable
-              >
-
-
-                <template v-slot:no-option>
-                  <q-item>
-                    <q-item-section class="text-grey">
-                      No results
-                    </q-item-section>
-                  </q-item>
-                </template>
-              </q-select>
-
-                  <ErrorValidation v-if="myerrors?.Fonction" :myerrors="myerrors?.Fonction" />
-                </div>
-              </div> -->
               <div class="mb-2">
                 <label for="password"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password <span
@@ -154,40 +122,11 @@
 
                   <DropDownButtonWithIcon title="Direction" :items="drs" :selected="form.direction"
                     @select-item="(val) => (form.direction = val)" />
-                  <!-- -->
-
                   <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
                 </div>
 
               </div>
-              <!-- <div class="w-full mb-2">
-                <label for="countries"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Fonction <span
-                    style="color: red">*</span></label>
 
-                  <q-select
-                    v-model="form.Fonction"
-                    use-input
-                    input-debounce="0"
-                    label="Fonction"
-                    option-value="CodeFnt"
-                    option-label="LibelleFct"
-                    :options="options"
-                    @filter="filterFn"
-                    outlined
-                    clearable
-                  >
-                <template v-slot:no-option>
-                  <q-item>
-                    <q-item-section class="text-grey">
-                      No results
-                    </q-item-section>
-                  </q-item>
-                </template>
-              </q-select>
-                <ErrorValidation v-if="myerrors?.Fonction" :myerrors="myerrors?.Fonction" />
-
-              </div> -->
               <div class="mb-2">
                 <label @click="showNewpasswordEdit = !showNewpasswordEdit" for="password"
                   class="block mb-2 text-sm font-medium text-gray-900 dark:text-white m-4">
@@ -244,12 +183,6 @@
               <q-td key="Nom" :props="props">
                 {{ props.row.direction }}
               </q-td>
-              <!-- <q-td key="Nom" :props="props">
-                {{ props.row.nom_ag }}
-              </q-td>
-              <q-td key="Nom" :props="props">
-                {{ props.row.LibelleFct }}
-              </q-td> -->
               <q-td key="Nom" :props="props">
                 {{ props.row.privilege }}
  <!--
@@ -290,7 +223,6 @@ let utilisateurs = ref([]);
 let profils = ref([]);
 let fonctions = ref([]);
 let drs = ref([]);
-let structures = ref([]);
 
 let actif = ref(null);
 let addUser = ref(false);
@@ -338,17 +270,13 @@ const fetchData = async (search) => {
     console.log(utilisateurs.value,'utilisateurs');
     profils.value = response.data.profils;
     drs.value = response.data.drs?.map(item => item.DIRECTION);
-    console.log(drs.value,'drs');
-    // fonctions.value = response.data.fonctions;
     showuserstable.value = false;
     await nextTick();
     showuserstable.value = true;
-    // console.log(authStore.selectedDirection,'authStore.selectedDirection');
     if (authStore.user.Matricule == Matricule.value && UpdateUser == true) {
       await authStore.getUser();
       await authStore.getPrivileges();
       await authStore.getDirections();
-      // await authStore.getStructures();
     }
   } catch (error) {
     // console.error(error);
@@ -375,11 +303,9 @@ async function openEditModel(data) {
   form.Prenom = data.Prenom;
   form.email = data.Email;
   form.privilege = data.privilege;
-//  form.Fonction = fonctions.value.find(item => item.CodeFnt == data.Fonction);
   form.password = "";
   form.direction = data.direction;
   UpdateUser.value = true;
-  // console.log(form, 5);
 }
 
 function closeEditModel() {
@@ -389,9 +315,7 @@ function closeEditModel() {
   form.Prenom = "";
   form.email = "";
   form.privilege = "";
-  // form.Fonction = "";
   showNewpasswordEdit.value = false;
-  // console.log(form, 5);
   UpdateUser.value = false;
   myerrors.value = false;
 }
@@ -430,24 +354,6 @@ function closeDeleteUser() {
   form.Nom = "";
   form.Prenom = "";
 }
-
-
-// watch(
-//   () => form.direction,
-//   async (newVal, oldVal) => {
-//     await api
-//       .post("/api/structures", {
-//         volet: authStore.volet,
-//         dr_id: form.direction,
-//       })
-//       .then((res) => {
-//         structures.value = res.data.structures;
-//       });
-//   }
-//   // {
-//   //   immediate: true
-//   // }
-// );
 
 watch([() => authStore.dr_id],
 async () => {
@@ -506,22 +412,6 @@ let utlisateursCols = reactive([
     sortable: true,
     style: "white-space: pre-wrap;",
   },
-  // {
-  //   name: "Structure",
-  //   label: "Structure",
-  //   align: "left",
-  //   field: (row) => row.nom_ag ?? "//",
-  //   format: (val) => `${val}`,
-  //   sortable: true,
-  // },
-  // {
-  //   name: "LibelleFct",
-  //   label: "Fonction",
-  //   align: "left",
-  //   field: (row) => row.LibelleFct ?? "//",
-  //   format: (val) => `${val}`,
-  //   sortable: true,
-  // },
   {
     name: "privilege",
     label: "Profil",
@@ -574,11 +464,7 @@ const sendData = async () => {
     direction: form.direction,
     Structure: form.Structure,
     password: form.password,
-    // Fonction: form.Fonction?.CodeFnt,
   };
-
-  // console.log(data);
-
   await api
     .post("/api/gu/utilisateur", data)
     .then(async (response) => {
@@ -592,10 +478,8 @@ const sendData = async () => {
     })
     .catch((errors) => {
       console.log(errors);
-      // console.log(errors.response.status);
       if (errors.response && errors.response.status === 422) {
-        //errors.value = Object.values(errors.response.data.errors).flat();
-        // console.log(errors.response.data.errors);
+
         myerrors.value = errors.response.data.errors;
       }
       // Handle any errors that occur during the request
@@ -608,7 +492,6 @@ const updateData = async () => {
     privilege: form.privilege,
     direction: form.direction,
     password: form.password,
-    // Fonction: form.Fonction?.CodeFnt,
   };
 
   // Make a POST request to the Laravel API endpoint
@@ -625,10 +508,8 @@ const updateData = async () => {
     })
     .catch((errors) => {
       console.log(errors);
-      // console.log(errors.response.status);
       if (errors.response && errors.response.status === 422) {
-        //errors.value = Object.values(errors.response.data.errors).flat();
-        // console.log(errors.response.data.errors);
+
         myerrors.value = errors.response.data.errors;
       }
       // Handle any errors that occur during the request

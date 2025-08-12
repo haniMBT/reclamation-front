@@ -58,7 +58,6 @@
 import { onBeforeMount, ref, reactive, watch } from "vue";
 import ModalV2 from 'src/components/ModalV2.vue';
 import { api } from "src/boot/axios";
-// import { showNotification } from "src/js/helpers";
 import { useQuasar } from "quasar";
 import { useAuthStore } from "src/stores/auth";
 import { useRouter } from "vue-router";
