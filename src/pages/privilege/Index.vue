@@ -273,10 +273,10 @@ let searchProfils = ref(null);
 
 const limitations = ref([]);
 
-limitations.value.push({ code: 'G', value: 'G - Visibilité article échelle Entreprise' });
+limitations.value.push({ code: 'G', value: 'L – Visibilité au niveau direction' });
 // limitations.value.push({ code: 'R', value: 'R - Visibilité article échelle Régionale' });
-limitations.value.push({ code: 'L', value: 'L - Visibilité article échelle' });
-limitations.value.push({ code: 'P', value: 'P - Visibilité article échelle Individuelle' });
+limitations.value.push({ code: 'L', value: 'L – Visibilité au niveau direction' });
+limitations.value.push({ code: 'P', value: 'P - Visibilité au niveau individuel' });
 
 const Roles = ref([]);
 Roles.value.push({ code: 'Rédacteur', value: 'Rédacteur' });

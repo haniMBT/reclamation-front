@@ -50,7 +50,7 @@
             </div>
           </div>
           <div class="flex gap-4 justify-between mx-40">
-            <div class="w-full mb-2">
+            <!-- <div class="w-full mb-2">
               <label
                 for="countries"
                 class="block mb-2 text-sm font-medium text-gray-900 dark:text-white text-center"
@@ -62,7 +62,7 @@
                 class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500 text-center"
                 readonly
               />
-            </div>
+            </div> -->
             <div class="w-full mb-2">
               <label
                 for="countries"
@@ -90,7 +90,7 @@
               <div>Liste des profils</div>
             </q-btn>
             <q-btn
-              v-if="authStore.privileges.modification==1"
+              v-if="authStore.privileges.modification=1"
               icon="edit"
               color="purple"
               no-caps
@@ -141,10 +141,10 @@
               <q-th class="text-center" key="profil_code" :props="props">
                Profile code
               </q-th>
-              <q-th class="text-center" key="module_app" :props="props">
+              <q-th class="text-center" key="module" :props="props">
                Module
               </q-th>
-              <q-th class="text-center" key="volet_app" :props="props">
+              <q-th class="text-center" key="volet" :props="props">
                Application volet
               </q-th>
               <q-th class="text-center" key="description" :props="props">
@@ -340,11 +340,11 @@
               <q-td key="profil_code" :props="props">
                 {{ props.row.profil_code }}
               </q-td>
-              <q-td key="module_app" :props="props">
-                {{ props.row.module_app }}
+              <q-td key="module" :props="props">
+                {{ props.row.module }}
               </q-td>
-              <q-td key="volet_app" :props="props">
-                {{ props.row.volet_app }}
+              <q-td key="volet" :props="props">
+                {{ props.row.volet }}
               </q-td>
               <q-td key="description" :props="props">
                 {{ props.row.description }}
@@ -547,19 +547,19 @@ let searchPrivileges = ref(null);
 const limitations = ref([]);
 
 limitations.value.push({
-  code: "N",
-  value: "N - Visibilité article échelle Entreprise",
+  code: "G",
+  value: "G – Visibilité au niveau global",
 });
+// limitations.value.push({
+//   code: "R",
+//   value: "R - Visibilité article échelle Régionale",
+// });
 limitations.value.push({
-  code: "R",
-  value: "R - Visibilité article échelle Régionale",
-});
-limitations.value.push({
-   code: "L", value: "L - Visibilité article échelle"
+   code: "L", value: "L – Visibilité au niveau direction"
   });
 limitations.value.push({
   code: "P",
-  value: "P - Visibilité article échelle Individuelle",
+  value: "P - Visibilité au niveau individuel",
 });
 
 const Roles = ref([]);
@@ -567,11 +567,6 @@ Roles.value.push({ code: "Rédacteur", value: "Rédacteur" });
 Roles.value.push({ code: "Vérificateur", value: "Vérificateur" });
 Roles.value.push({ code: "Consultation", value: "Consultation" });
 Roles.value.push({ code: "Validateur", value: "Validateur" });
-Roles.value.push({ code: "Validateur_N1", value: "Validateur_N1" });
-Roles.value.push({ code: "Validateur_N2", value: "Validateur_N2" });
-Roles.value.push({ code: "Labo_itinérant", value: "Labo_itinérant" });
-Roles.value.push({ code: "Labo_fixe_resp", value: "Labo_fixe_resp" });
-Roles.value.push({ code: "Labo_fixe_agent", value: "Labo_fixe_agent" });
 Roles.value.push({ code: "Admin", value: "Admin" });
 
 const clearSearchProfils = async () => {
@@ -608,6 +603,9 @@ const fetchData = async (Search) => {
       };
     });
     privileges.value = response.data.privileges;
+
+    console.log(form.value, 157);
+
     showPrivilegestable.value = false;
     await nextTick();
     showPrivilegestable.value = true;
@@ -667,7 +665,7 @@ async (newVal, oldVal) => {
 let form = ref({});
 
 onBeforeMount(async () => {
-  authStore.setProperty("volet", "Securites");
+  // authStore.setProperty("volet", "Securites");
 });
 onMounted(async () => {
   try {
@@ -688,20 +686,21 @@ onMounted(async () => {
         },
       };
     });
+    console.log(156, response.data.privileges);
     console.log(157, form.value);
     privileges.value = response.data.privileges;
     profil_privilege.value = response.data.profil_privilege;
-    if (profil_privilege.value.limitation === "N") {
+    if (profil_privilege.value.limitation === "G") {
       profil_privilege.value.limitation =
-        "N - Visibilité article échelle Entreprise";
-    } else if (profil_privilege.value.limitation === "R") {
-      profil_privilege.value.limitation =
-        "R - Visibilité article échelle Régionale";
+        "G – Visibilité au niveau global";
+    // } else if (profil_privilege.value.limitation === "R") {
+    //   profil_privilege.value.limitation =
+    //     "R - Visibilité article échelle Régionale";
     } else if (profil_privilege.value.limitation === "L") {
-      profil_privilege.value.limitation = "L - Visibilité article échelle";
+      profil_privilege.value.limitation = "L – Visibilité au niveau direction";
     } else if (profil_privilege.value.limitation === "P") {
       profil_privilege.value.limitation =
-        "P - Visibilité article échelle Individuelle";
+        "P - Visibilité au niveau individuel";
     }
   } catch (error) {
     // console.error(error);
@@ -726,18 +725,18 @@ let privilegesCols = reactive([
     sortable: true,
   },
   {
-    name: "module_app",
+    name: "module",
     label: "Module",
     align: "left",
-    field: (row) => row.module_app ?? "//",
+    field: (row) => row.module ?? "//",
     format: (val) => `${val}`,
     sortable: true,
   },
   {
-    name: "volet_app",
+    name: "volet",
     label: "Applicatoin volet",
     align: "left",
-    field: (row) => row.volet_app ?? "//",
+    field: (row) => row.volet ?? "//",
     format: (val) => `${val}`,
     sortable: true,
   },
