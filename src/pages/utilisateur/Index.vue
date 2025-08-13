@@ -1,209 +1,485 @@
 <template>
-  <q-page class="flex justify-center bg-amber-50">
-    <div class="flex flex-col w-full flex-grow-1 mx-8 my-4">
-      <h1 class="text-header-text text-2xl font-[500] mx-4 px-4">
-        Utilisateurs
-      </h1>
-      <div class="flex flex-col bg-white flex-grow rounded-xl m-4 p-4">
-        <div class="w-full flex justify-between items-end">
-          <div class="flex flex-col gap-2">
-              <q-btn icon="add" color="purple" no-caps @click="openAddUser" v-if="authStore.privileges.insertion=1">
-                Nouvel utilisateur
-              </q-btn>
-            <q-input outlined v-model="searchUsers" label="Recherche Utilisateur" dense>
-              <template v-slot:append>
-                <q-icon name="close" @click="clearSearchUsers" class="cursor-pointer" />
+  <div class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Header Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center mb-4">
+          <q-icon name="group" size="2rem" class="text-blue-600 mr-3" />
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-1">Gestion des Utilisateurs</h1>
+            <p class="text-gray-600 text-sm">Administration des utilisateurs et attribution des privilèges</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <q-btn
+              icon="person_add"
+              color="blue-6"
+              no-caps
+              @click="openAddUser"
+              v-if="authStore.privileges.insertion=1"
+              class="px-6"
+            >
+              Nouvel utilisateur
+            </q-btn>
+            <q-input
+              outlined
+              dense
+              v-model="searchUsers"
+              label="Rechercher un utilisateur"
+              class="min-w-[300px]"
+            >
+              <template #prepend>
+                <q-icon name="search" class="text-blue-600" />
+              </template>
+              <template #append>
+                <q-icon
+                  name="close"
+                  @click="clearSearchUsers"
+                  class="cursor-pointer text-gray-500 hover:text-gray-700"
+                />
               </template>
             </q-input>
-            <!-- v-model="searchUsers" -->
           </div>
-          <div class="q-pa-md">
-    <div class="q-gutter-sm">
-      <!-- <q-radio v-model="actif" val="1" label="Actif" color="green" />
-      <q-radio v-model="actif" val="0" label="Innactif" color="grey" />
-      <q-radio v-model="actif" :val="null" label="Tous" color="blue" /> -->
-    </div>
-  </div>
+
+          <!-- Radio buttons section -->
+          <div class="flex items-center gap-4">
+            <div class="text-sm font-medium text-gray-700">Statut :</div>
+            <div class="flex gap-3">
+              <!-- <q-radio v-model="actif" val="1" label="Actif" color="green" />
+              <q-radio v-model="actif" val="0" label="Inactif" color="grey" />
+              <q-radio v-model="actif" :val="null" label="Tous" color="blue" /> -->
+            </div>
+          </div>
         </div>
-        <Modal primaryIcon="" :show="addUser" title="Ajouter un utilisateur" @close="closeAddUser"
-          primaryBtnText="Enregistrer" secondaryBtnText="" @click-primary-btn="sendData" @click-secondary-btn="">
-          <form class="h-96 overflow-auto">
-            <div class="grid gap-2 mb-2 md:grid-cols-2">
-              <div class="mb-2">
-                <label for="first_name"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Matricule <span
-                    style="color: red">*</span></label>
-                <input type="text" v-model="form.Matricule"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="Matricule " required />
-                <ErrorValidation v-if="myerrors?.Matricule" :myerrors="myerrors?.Matricule" />
-              </div>
-              <div class="mb-2">
-                <label for="first_name"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Nom <span
-                    style="color: red">*</span></label>
-                <input type="text" v-model="form.Nom"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="Nom " required />
-                <ErrorValidation v-if="myerrors?.Nom" :myerrors="myerrors?.Nom" />
-              </div>
-              <div class="mb-2">
-                <label for="first_name"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Prénom <span
-                    style="color: red">*</span></label>
-                <input type="text" v-model="form.Prenom"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="Prenom " required />
-                <ErrorValidation v-if="myerrors?.Prenom" :myerrors="myerrors?.Prenom" />
-              </div>
-              <div class="mb-2">
-                <label for="first_name"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email
-                </label>
-                <input type="text" v-model="form.email"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="exemple@exemple.exemple " required />
-                <ErrorValidation v-if="myerrors?.email" :myerrors="myerrors?.email" />
-              </div>
-              <div class="flex gap-4 justify-between">
-                <div class="w-full mb-2">
-                  <label for="countries"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Direction <span
-                      style="color: red">*</span></label>
+      </div>
 
-                  <DropDownButtonWithIcon title="Direction" :items="drs" :selected="form.direction"
-                    @select-item="(val) => (form.direction = val)" />
-                  <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
-                </div>
-              </div>
-              <div class="mb-2">
-                <label for="password"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Password <span
-                    style="color: red">*</span></label>
-
-                <input type="password" v-model="form.password"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="•••••••••" required />
-                <ErrorValidation v-if="myerrors?.password" :myerrors="myerrors?.password" />
-              </div>
-            </div>
-          </form>
-        </Modal>
-        <Modal primaryIcon="" :show="UpdateUser" :title="'Attribution du privilège à' +
-              (form?.Nom ? ' ' + form.Nom.toLowerCase() : '') +
-              (form?.Prenom ? ' ' + form.Prenom.toLowerCase() : '') +
-              (Matricule ? ' (' + Matricule + ')' : '')" @close="closeEditModel"
-          primaryBtnText="Enregistrer" secondaryBtnText="" @click-primary-btn="updateData" @click-secondary-btn="">
-          <form class="overflow-auto">
-            <div class="grid gap-2 mb-2 md:grid-cols-2">
-              <div class="mb-2">
-                <label for="first_name"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Email
-                </label>
-                <input type="text" v-model="form.email"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="exemple@exemple.exemple " required />
-                <ErrorValidation v-if="myerrors?.email" :myerrors="myerrors?.email" />
-              </div>
-              <div class="w-full mb-2">
-                <label for="countries"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">
-                  Profil <span style="color: red">*</span></label>
-                <DropDownButtonWithIcon title="Profil" keyName="code" valName="libelle" :selected="form.privilege"
-                  :items="profils" @select-item="(val) => (form.privilege = val)" />
-                <!--  -->
-                <ErrorValidation v-if="myerrors?.privilege" :myerrors="myerrors?.privilege" />
-              </div>
-              <div class="flex gap-4 justify-between mb-2">
-                <div class="w-full mb-2">
-                  <label for="countries"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Direction <span
-                      style="color: red">*</span></label>
-
-                  <DropDownButtonWithIcon title="Direction" :items="drs" :selected="form.direction"
-                    @select-item="(val) => (form.direction = val)" />
-                  <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
-                </div>
-
-              </div>
-
-              <div class="mb-2">
-                <label @click="showNewpasswordEdit = !showNewpasswordEdit" for="password"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white m-4">
-                  <input type="checkbox" v-model="showNewpasswordEdit" />
-                  Nouveau mot de passe
-                </label>
-
-                <input :disabled="!showNewpasswordEdit" type="password" v-model="form.password"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="•••••••••" required />
-                <ErrorValidation v-if="myerrors?.password" :myerrors="myerrors?.password" />
-              </div>
-            </div>
-          </form>
-        </Modal>
-        <Modal primaryIcon="" :show="deleteUser" :title="'Supprimer l\'utilisateur :' +
-            (form?.Nom ? ' ' + form.Nom.toLowerCase() : '') +
-            (form?.Prenom ? ' ' + form.Prenom.toLowerCase() : '') +
-            (Matricule ? ' (' + Matricule + ')' : '')"
-          @close="closeDeleteUser" primaryBtnText="supprimer" secondaryBtnText="" @click-primary-btn="deleteData"
-          @click-secondary-btn="">
-          <q-text class="text-h6">Êtes-vous sûr de vouloir supprimer ?
-          </q-text>
-        </Modal>
-        <q-table v-if="showuserstable" class="my-4" :rows="utilisateurs" :columns="utlisateursCols" :pagination="initialPagination">
+      <!-- Table Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <q-table
+          v-if="showuserstable"
+          flat
+          :rows="utilisateurs"
+          :columns="utlisateursCols"
+          :pagination="initialPagination"
+          class="my-4"
+        >
           <template v-slot:body="props">
             <q-tr v-if="!loadingAffaires" :props="props" :class="{ 'bg-gray-50': props.rowIndex % 2 == 0 }">
               <q-td key="Actions" :props="props">
-                <!-- v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.suppression==1" -->
-                <q-icon  class="p-1 cursor-pointer"
-                  name="delete" size="sm" color="negative" @click="openDeleteUser(props.row)" />
-                <q-icon class="p-1 cursor-pointer" name="edit" size="sm" color="warning" v-if="authStore.privileges.modification=1"
-                  @click="openEditModel(props.row)" />
+                <div class="flex items-center gap-2">
+                  <!-- v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.suppression==1" -->
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="delete"
+                    size="sm"
+                    color="negative"
+                    @click="openDeleteUser(props.row)"
+                    class="hover:bg-red-50"
+                  >
+                    <q-tooltip>Supprimer l'utilisateur</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="edit"
+                    size="sm"
+                    color="warning"
+                    v-if="authStore.privileges.modification=1"
+                    @click="openEditModel(props.row)"
+                    class="hover:bg-orange-50"
+                  >
+                    <q-tooltip>Modifier l'utilisateur</q-tooltip>
+                  </q-btn>
                   <!--
-                <q-icon class="p-1 cursor-pointer" name="toggle_off" size="sm" color="green"
-                v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.modification==1 && (props.row.Actif=='1'|| props.row.Actif==null) "
-                  @click="UserActivation(props.row)" />
-                <q-icon class="p-1 cursor-pointer" name="toggle_on" size="sm" color="grey"
-                v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.modification==1 && props.row.Actif=='0' "
-                  @click="UserActivation(props.row)" /> -->
+                  <q-icon class="p-1 cursor-pointer" name="toggle_off" size="sm" color="green"
+                  v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.modification==1 && (props.row.Actif=='1'|| props.row.Actif==null) "
+                    @click="UserActivation(props.row)" />
+                  <q-icon class="p-1 cursor-pointer" name="toggle_on" size="sm" color="grey"
+                  v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.modification==1 && props.row.Actif=='0' "
+                    @click="UserActivation(props.row)" /> -->
+                </div>
+              </q-td>
+              <q-td key="Matricule" :props="props">
+                <span class="font-medium text-gray-900">{{ props.row.Matricule }}</span>
               </q-td>
               <q-td key="Nom" :props="props">
-                {{ props.row.Matricule }}
+                <span class="text-gray-800">{{ props.row.Nom }}</span>
               </q-td>
-              <q-td key="Nom" :props="props">
-                {{ props.row.Nom }}
+              <q-td key="Prenom" :props="props">
+                <span class="text-gray-800">{{ props.row.Prenom }}</span>
               </q-td>
-              <q-td key="Nom" :props="props">
-                {{ props.row.Prenom }}
+              <q-td key="Email" :props="props">
+                <span class="text-gray-800">{{ props.row.Email }}</span>
               </q-td>
-              <q-td key="Nom" :props="props">
-                {{ props.row.Email }}
+              <q-td key="direction" :props="props">
+                <span class="text-gray-800">{{ props.row.direction }}</span>
               </q-td>
-              <q-td key="Nom" :props="props">
-                {{ props.row.direction }}
-              </q-td>
-              <q-td key="Nom" :props="props">
-                {{ props.row.privilege }}
- <!--
-               <q-icon
-                   class="p-1 cursor-pointer" name="visibility" size="sm" @click="ShowPrivilege(props.row)" color="blue"
-                   v-if="props.row.privilege &&
-                  props.row.privilege != authStore.user.privilege && authStore.privileges.consultation==1 "/>
-                  -->
+              <q-td key="privilege" :props="props">
+                <span class="text-gray-800">{{ props.row.privilege }}</span>
+                <!--
+                <q-icon
+                    class="p-1 cursor-pointer" name="visibility" size="sm" @click="ShowPrivilege(props.row)" color="blue"
+                    v-if="props.row.privilege &&
+                   props.row.privilege != authStore.user.privilege && authStore.privileges.consultation==1 "/>
+                -->
                 <!--
                 <q-icon  class="p-1 cursor-pointer" name="delete" size="sm" color="negative"
                 v-if="props.row.privilege &&
                   props.row.privilege != authStore.user.privilege && authStore.privileges.suppression==1"
                   @click="revokeProfile(props.row)" />
-                  -->
+                -->
               </q-td>
             </q-tr>
           </template>
         </q-table>
       </div>
+
+      <!-- Dialogs -->
+      <!-- Add User Dialog -->
+      <q-dialog v-model="addUser" persistent>
+        <q-card class="w-full max-w-4xl">
+          <q-card-section class="flex items-center bg-blue-50">
+            <q-icon name="person_add" class="text-blue-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-blue-900">Ajouter un utilisateur</div>
+              <div class="text-sm text-blue-700">Remplissez les informations de l'utilisateur</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg" style="max-height: 70vh;">
+            <div class="overflow-auto">
+              <form class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Matricule <span class="text-red-500">*</span>
+                    </label>
+                    <q-input
+                      v-model="form.Matricule"
+                      outlined
+                      dense
+                      placeholder="Entrez le matricule"
+                      :rules="[val => !!val || 'Le matricule est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="badge" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.Matricule" :myerrors="myerrors?.Matricule" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Nom <span class="text-red-500">*</span>
+                    </label>
+                    <q-input
+                      v-model="form.Nom"
+                      outlined
+                      dense
+                      placeholder="Entrez le nom"
+                      :rules="[val => !!val || 'Le nom est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="person" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.Nom" :myerrors="myerrors?.Nom" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Prénom <span class="text-red-500">*</span>
+                    </label>
+                    <q-input
+                      v-model="form.Prenom"
+                      outlined
+                      dense
+                      placeholder="Entrez le prénom"
+                      :rules="[val => !!val || 'Le prénom est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="person_outline" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.Prenom" :myerrors="myerrors?.Prenom" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <q-input
+                      v-model="form.email"
+                      outlined
+                      dense
+                      placeholder="exemple@exemple.exemple"
+                      type="email"
+                      :rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Email invalide']"
+                    >
+                      <template #prepend>
+                        <q-icon name="email" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.email" :myerrors="myerrors?.email" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Direction <span class="text-red-500">*</span>
+                    </label>
+                    <q-select
+                      v-model="form.direction"
+                      :options="drs"
+                      outlined
+                      dense
+                      placeholder="Sélectionnez la direction"
+                      :rules="[val => !!val || 'La direction est requise']"
+                    >
+                      <template #prepend>
+                        <q-icon name="business" class="text-blue-600" />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Mot de passe <span class="text-red-500">*</span>
+                    </label>
+                    <q-input
+                      v-model="form.password"
+                      outlined
+                      dense
+                      placeholder="•••••••••"
+                      type="password"
+                      :rules="[val => !!val || 'Le mot de passe est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="lock" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.password" :myerrors="myerrors?.password" />
+                  </div>
+                </div>
+              </form>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-lg">
+            <q-btn
+              flat
+              color="grey-7"
+              label="Annuler"
+              @click="closeAddUser"
+              class="px-6"
+            />
+            <q-btn
+              color="blue-6"
+              label="Enregistrer"
+              @click="sendData"
+              :loading="false"
+              class="px-8"
+            >
+              <q-icon name="save" class="mr-2" />
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Edit User Dialog -->
+      <q-dialog v-model="UpdateUser" persistent>
+        <q-card class="w-full max-w-4xl">
+          <q-card-section class="flex items-center bg-orange-50">
+            <q-icon name="manage_accounts" class="text-orange-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-orange-900">
+                {{ 'Attribution du privilège à' + (form?.Nom ? ' ' + form.Nom.toLowerCase() : '') + (form?.Prenom ? ' ' + form.Prenom.toLowerCase() : '') + (Matricule ? ' (' + Matricule + ')' : '') }}
+              </div>
+              <div class="text-sm text-orange-700">Modifier les informations et privilèges de l'utilisateur</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg" style="max-height: 70vh;">
+            <div class="overflow-auto">
+              <form class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Email
+                    </label>
+                    <q-input
+                      v-model="form.email"
+                      outlined
+                      dense
+                      placeholder="exemple@exemple.exemple"
+                      type="email"
+                      :rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Email invalide']"
+                    >
+                      <template #prepend>
+                        <q-icon name="email" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.email" :myerrors="myerrors?.email" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Profil <span class="text-red-500">*</span>
+                    </label>
+                    <q-select
+                      v-model="form.privilege"
+                      :options="profils"
+                      option-label="libelle"
+                      option-value="code"
+                      outlined
+                      dense
+                      placeholder="Sélectionnez le profil"
+                      :rules="[val => !!val || 'Le profil est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="admin_panel_settings" class="text-blue-600" />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.privilege" :myerrors="myerrors?.privilege" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Direction <span class="text-red-500">*</span>
+                    </label>
+                    <q-select
+                      v-model="form.direction"
+                      :options="drs"
+                      outlined
+                      dense
+                      placeholder="Sélectionnez la direction"
+                      :rules="[val => !!val || 'La direction est requise']"
+                    >
+                      <template #prepend>
+                        <q-icon name="business" class="text-blue-600" />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
+                  </div>
+
+                  <div>
+                    <div class="flex items-center mb-2">
+                      <q-checkbox
+                        v-model="showNewpasswordEdit"
+                        color="blue-6"
+                        class="mr-2"
+                      />
+                      <label class="text-sm font-medium text-gray-700">
+                        Nouveau mot de passe
+                      </label>
+                    </div>
+                    <q-input
+                      v-model="form.password"
+                      outlined
+                      dense
+                      placeholder="•••••••••"
+                      type="password"
+                      :disable="!showNewpasswordEdit"
+                      :rules="[val => !showNewpasswordEdit || !!val || 'Le mot de passe est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="lock" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.password" :myerrors="myerrors?.password" />
+                  </div>
+                </div>
+              </form>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-lg">
+            <q-btn
+              flat
+              color="grey-7"
+              label="Annuler"
+              @click="closeEditModel"
+              class="px-6"
+            />
+            <q-btn
+              color="orange-6"
+              label="Enregistrer"
+              @click="updateData"
+              :loading="false"
+              class="px-8"
+            >
+              <q-icon name="save" class="mr-2" />
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Delete User Dialog -->
+      <q-dialog v-model="deleteUser" persistent>
+        <q-card class="w-full max-w-md">
+          <q-card-section class="flex items-center bg-red-50">
+            <q-icon name="delete_forever" class="text-red-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-red-900">
+                {{ 'Supprimer l\'utilisateur :' + (form?.Nom ? ' ' + form.Nom.toLowerCase() : '') + (form?.Prenom ? ' ' + form.Prenom.toLowerCase() : '') + (Matricule ? ' (' + Matricule + ')' : '') }}
+              </div>
+              <div class="text-sm text-red-700">Cette action est irréversible</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg">
+            <div class="text-center">
+              <q-icon name="warning" class="text-red-500 mb-4" size="4rem" />
+              <div class="text-lg font-medium text-gray-900 mb-2">
+                Êtes-vous sûr de vouloir supprimer cet utilisateur ?
+              </div>
+              <div class="text-sm text-gray-600">
+                Toutes les données associées seront définitivement supprimées.
+              </div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="center" class="q-pa-lg">
+            <q-btn
+              flat
+              color="grey-7"
+              label="Annuler"
+              @click="closeDeleteUser"
+              class="px-6"
+            />
+            <q-btn
+              color="red-6"
+              label="Supprimer définitivement"
+              @click="deleteData"
+              class="px-6"
+            >
+              <q-icon name="delete_forever" class="mr-2" />
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </div>
-  </q-page>
+  </div>
 </template>
 
 <script setup>
@@ -211,7 +487,6 @@ import { nextTick, onBeforeMount, reactive, ref, watch, onMounted } from "vue";
 import { useAuthStore } from "stores/auth";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
-import Modal from "components/Modal.vue";
 import DropDownButtonWithIcon from "components/DropDownButtonWithIcon.vue";
 import ErrorValidation from "components/ErrorValidation.vue";
 import {useRouter} from "vue-router";
@@ -259,7 +534,6 @@ async function ShowPrivilege(data) {
 
 const fetchData = async (search) => {
   try {
-
     const data = {
       actif: actif.value,
       search: search,
@@ -267,9 +541,9 @@ const fetchData = async (search) => {
     };
     const response = await api.post(`/api/gu/utilisateur/recherche`,data); // Replace with your backend API endpoint
     utilisateurs.value = response.data.utilisateurs;
-    console.log(utilisateurs.value,'utilisateurs');
-    profils.value = response.data.profils;
+    profils.value = response.data.profils.map(item => item.code);
     drs.value = response.data.drs?.map(item => item.DIRECTION);
+    console.log(profils.value,'drs');
     showuserstable.value = false;
     await nextTick();
     showuserstable.value = true;
@@ -462,9 +736,10 @@ const sendData = async () => {
     Prenom: form.Prenom,
     email: form.email,
     direction: form.direction,
-    Structure: form.Structure,
     password: form.password,
   };
+  console.log('data :', data);
+
   await api
     .post("/api/gu/utilisateur", data)
     .then(async (response) => {
@@ -493,6 +768,7 @@ const updateData = async () => {
     direction: form.direction,
     password: form.password,
   };
+console.log('data :', data);
 
   // Make a POST request to the Laravel API endpoint
   await api

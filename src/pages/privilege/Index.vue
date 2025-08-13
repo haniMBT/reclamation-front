@@ -1,250 +1,309 @@
 <template>
-  <q-page class="flex justify-center bg-amber-50">
-    <div class="flex flex-col w-full flex-grow-1 mx-8 my-4">
-      <h1 class="text-header-text text-2xl font-[500] mx-4 px-4">
-        Sécurité
-      </h1>
-      <div
-        class="flex flex-col bg-white flex-grow rounded-xl m-4 p-4"
-      >
-        <div class="w-full flex justify-between items-end">
-          <div class="flex flex-col gap-2">
-            <q-btn icon="add" color="purple" no-caps @click="openAddModel" v-if="authStore.privileges.insertion=true">
+  <div class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Header Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center mb-4">
+          <q-icon name="admin_panel_settings" size="2rem" class="text-blue-600 mr-3" />
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-1">Gestion des Profils</h1>
+            <p class="text-gray-600 text-sm">Administration des profils et attribution des privilèges</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Toolbar Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex flex-col sm:flex-row gap-3">
+            <q-btn
+              icon="person_add"
+              color="blue-6"
+              no-caps
+              @click="openAddModel"
+              v-if="authStore.privileges.insertion=true"
+              class="px-6"
+            >
+              <!-- <q-icon name="person_add" class="mr-2" /> -->
               Ajouter un profil
             </q-btn>
             <q-input
               outlined
-              v-model="searchProfils"
-              label="Recherche"
               dense
+              v-model="searchProfils"
+              label="Rechercher un profil"
+              class="min-w-[300px]"
             >
-              <template v-slot:append>
+              <template #prepend>
+                <q-icon name="search" class="text-blue-600" />
+              </template>
+              <template #append>
                 <q-icon
                   name="close"
                   @click="clearSearchProfils"
-                  class="cursor-pointer"
+                  class="cursor-pointer text-gray-500 hover:text-gray-700"
                 />
               </template>
             </q-input>
-            <!-- v-model="searchProfils" -->
           </div>
         </div>
-        <Modal primaryIcon=""
-          :show="addProfil"
-          title="Ajouter un profil"
-          @close="closeAddProfil"
-          primaryBtnText="Enregistrer le nouveau profil"
-          secondaryBtnText=""
-          @click-primary-btn="sendData"
-          @click-secondary-btn=""
-        >
-          <form class="h-96 overflow-auto">
-            <div class="grid gap-2 mb-2 md:grid-cols-2">
-              <div class="mb-2">
-                <label
-                  for="first_name"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Code <span style="color: red">*</span></label>
-                <input
-                  type="text"
-                  v-model="form.code"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="exemple:N"
-                  required
-                />
-                <ErrorValidation
-                  v-if="myerrors?.code"
-                  :myerrors="myerrors?.code"
-                />
-              </div>
-              <div class="mb-2">
-                <label
-                  for="first_name"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Libelle <span style="color: red">*</span></label
-                >
-                <input
-                  type="text"
-                  v-model="form.libelle"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="libelle "
-                  required
-                />
-                <ErrorValidation
-                  v-if="myerrors?.libelle"
-                  :myerrors="myerrors?.libelle"
-                />
-              </div>
-              </div>
-                  <div class="grid gap-2 mb-2 md:grid">
+      </div>
 
-              <div class="mb-2">
-                <label
-                  for="first_name"
-                  class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                  >Description</label
-                >
-                <input
-                  type="text"
-                  v-model="form.description"
-                  class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                  placeholder="description "
-                  required
-                />
-                <ErrorValidation
-                  v-if="myerrors?.description"
-                  :myerrors="myerrors?.description"
-                />
-              </div>
-              </div>
-              <div class="mb-2">
-                <div class="w-full mb-2">
-                  <label
-                    for="countries"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >Visibilité <span style="color: red">*</span></label
-                  >
-                  <DropDownButtonWithIcon
-                    title="Visibilité"
-                    keyName="code"
-                    valName="value"
-                    :items="limitations"
-                    :selected="form.limitation"
-                    @select-item="(val) => (form.limitation = val)"
-                  />
-                  <ErrorValidation
-                    v-if="myerrors?.limitation"
-                    :myerrors="myerrors?.limitation"
-                  />
-                </div>
-              </div>
-              <!-- <div class="mb-2">
-                <div class="w-full mb-2">
-                  <label
-                    for="countries"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >fonction </label
-                  >
-                    <q-select
-                      v-model="form.fonction"
-                      use-input
-                      input-debounce="0"
-                      label="Fonction"
-                      option-value="LibelleFct"
-                      option-label="LibelleFct"
-                      :options="options"
-                      @filter="filterFn"
-                      outlined
-                      clearable
-                    >
-                    <template v-slot:no-option>
-                      <q-item>
-                        <q-item-section class="text-grey">
-                          No results
-                        </q-item-section>
-                      </q-item>
-                    </template>
-                  </q-select>
-
-                  <ErrorValidation
-                    v-if="myerrors?.fonction"
-                    :myerrors="myerrors?.fonction"
-                  />
-                </div>
-              </div> -->
-              <div class="mb-2">
-                <div class="w-full mb-2">
-                  <label
-                    for="countries"
-                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >Role <span style="color: red">*</span></label
-                  >
-                  <DropDownButtonWithIcon
-                    title="Role"
-                    keyName="code"
-                    valName="value"
-                    :items="Roles"
-                    :selected="form.role"
-                    @select-item="(val) => (form.role = val)"
-                  />
-                  <ErrorValidation
-                    v-if="myerrors?.role"
-                    :myerrors="myerrors?.role"
-                  />
-                </div>
-              </div>
-          </form>
-        </Modal>
-        <Modal primaryIcon=""
-          :show="deleteProfil"
-          :title="'Supprimer le profil :' + ' '+Code"
-          @close="closeDeleteProfil"
-          primaryBtnText="supprimer"
-          secondaryBtnText=""
-          @click-primary-btn="deleteData"
-          @click-secondary-btn=""
-        >
-          <q-text class="text-h6"
-            >Êtes-vous sûr de vouloir confirmer la suppression ?
-          </q-text>
-        </Modal>
+      <!-- Table Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
         <q-table
           v-if="showProfilstable"
-          class="my-4"
+          flat
           :rows="profils"
           :columns="profilsCols"
           :pagination="initialPagination"
+          class="my-4"
         >
           <template v-slot:body="props">
-            <!--  -->
-            <q-tr
-              v-if="!loadingAffaires"
-              :props="props"
-              :class="{ 'bg-gray-50': props.rowIndex % 2 == 0 }"
-            >
+            <q-tr v-if="!loadingAffaires" :props="props" :class="{ 'bg-gray-50': props.rowIndex % 2 == 0 }">
               <q-td key="Actions" :props="props">
+                <div class="flex items-center gap-2">
                   <!-- v-if="authStore.user.privilege != props.row.code && authStore.privileges.suppression==1" -->
-                <q-icon
-                  class="p-1 cursor-pointer"
-                  name="delete"
-                  size="sm"
-                  color="negative"
-                  @click="openDeleteModel(props.row)"
-                />
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="delete"
+                    size="sm"
+                    color="negative"
+                    @click="openDeleteModel(props.row)"
+                    class="hover:bg-red-50"
+                  >
+                    <q-tooltip>Supprimer le profil</q-tooltip>
+                  </q-btn>
                   <!-- v-if="authStore.privileges.consultation==1" -->
-                <q-icon
-                  class="p-1 cursor-pointer"
-                  name="key"
-                  size="sm"
-                  color="warning"
-                  @click="ShowPrivilege(props.row)"
-                />
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="vpn_key"
+                    size="sm"
+                    color="warning"
+                    @click="ShowPrivilege(props.row)"
+                    class="hover:bg-orange-50"
+                  >
+                    <q-tooltip>Gérer les privilèges</q-tooltip>
+                  </q-btn>
+                </div>
               </q-td>
 
               <q-td key="code" :props="props">
-                {{ props.row.code }}
+                <span class="font-medium text-gray-900">{{ props.row.code }}</span>
               </q-td>
               <q-td key="libelle" :props="props">
-                {{ props.row.libelle }}
+                <span class="text-gray-800">{{ props.row.libelle }}</span>
               </q-td>
               <q-td key="description" :props="props">
-                {{ props.row.description }}
+                <span class="text-gray-800">{{ props.row.description }}</span>
               </q-td>
               <q-td key="role" :props="props">
-                {{ props.row.role }}
+                <span class="text-gray-800">{{ props.row.role }}</span>
               </q-td>
               <q-td key="limitation" :props="props">
-                {{ props.row.limitation }}
+                <span class="text-gray-800">{{ props.row.limitation }}</span>
               </q-td>
-              <!-- <q-td key="fonction" :props="props">
-                {{ props.row.fonction }}
-              </q-td> -->
             </q-tr>
           </template>
         </q-table>
       </div>
+
+      <!-- Dialogs -->
+      <!-- Add Profile Dialog -->
+      <q-dialog v-model="addProfil" persistent>
+        <q-card class="w-full max-w-4xl">
+          <q-card-section class="flex items-center bg-blue-50">
+            <q-icon name="person_add" class="text-blue-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-blue-900">Ajouter un profil</div>
+              <div class="text-sm text-blue-700">Créez un nouveau profil avec ses attributs</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg" style="max-height: 70vh;">
+            <div class="overflow-auto">
+              <form class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Code <span class="text-red-500">*</span>
+                    </label>
+                    <q-input
+                      v-model="form.code"
+                      outlined
+                      dense
+                      placeholder="exemple:N"
+                      :rules="[val => !!val || 'Le code est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="code" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.code" :myerrors="myerrors?.code" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Libellé <span class="text-red-500">*</span>
+                    </label>
+                    <q-input
+                      v-model="form.libelle"
+                      outlined
+                      dense
+                      placeholder="Entrez le libellé"
+                      :rules="[val => !!val || 'Le libellé est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="label" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.libelle" :myerrors="myerrors?.libelle" />
+                  </div>
+
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <q-input
+                      v-model="form.description"
+                      outlined
+                      dense
+                      placeholder="Entrez la description"
+                      type="textarea"
+                      autogrow
+                    >
+                      <template #prepend>
+                        <q-icon name="description" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.description" :myerrors="myerrors?.description" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Visibilité <span class="text-red-500">*</span>
+                    </label>
+                    <q-select
+                      v-model="form.limitation"
+                      :options="limitations"
+                      option-label="value"
+                      option-value="code"
+                      outlined
+                      dense
+                      placeholder="Sélectionnez la visibilité"
+                      :rules="[val => !!val || 'La visibilité est requise']"
+                    >
+                      <template #prepend>
+                        <q-icon name="visibility" class="text-blue-600" />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.limitation" :myerrors="myerrors?.limitation" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Rôle <span class="text-red-500">*</span>
+                    </label>
+                    <q-select
+                      v-model="form.role"
+                      :options="Roles"
+                      option-label="value"
+                      option-value="code"
+                      outlined
+                      dense
+                      placeholder="Sélectionnez le rôle"
+                      :rules="[val => !!val || 'Le rôle est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="admin_panel_settings" class="text-blue-600" />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.role" :myerrors="myerrors?.role" />
+                  </div>
+                </div>
+              </form>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-lg">
+            <q-btn
+              flat
+              color="grey-7"
+              label="Annuler"
+              @click="closeAddProfil"
+              class="px-6"
+            />
+            <q-btn
+              color="blue-6"
+              label="Enregistrer le nouveau profil"
+              @click="sendData"
+              :loading="false"
+              class="px-8"
+            >
+              <q-icon name="save" class="mr-2" />
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Delete Profile Dialog -->
+      <q-dialog v-model="deleteProfil" persistent>
+        <q-card class="w-full max-w-md">
+          <q-card-section class="flex items-center bg-red-50">
+            <q-icon name="delete_forever" class="text-red-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-red-900">
+                {{ 'Supprimer le profil :' + ' ' + Code }}
+              </div>
+              <div class="text-sm text-red-700">Cette action est irréversible</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg">
+            <div class="text-center">
+              <q-icon name="warning" class="text-red-500 mb-4" size="4rem" />
+              <div class="text-lg font-medium text-gray-900 mb-2">
+                Êtes-vous sûr de vouloir confirmer la suppression ?
+              </div>
+              <div class="text-sm text-gray-600">
+                Toutes les données associées seront définitivement supprimées.
+              </div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="center" class="q-pa-lg">
+            <q-btn
+              flat
+              color="grey-7"
+              label="Annuler"
+              @click="closeDeleteProfil"
+              class="px-6"
+            />
+            <q-btn
+              color="red-6"
+              label="Supprimer définitivement"
+              @click="deleteData"
+              class="px-6"
+            >
+              <q-icon name="delete_forever" class="mr-2" />
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </div>
-  </q-page>
+  </div>
 </template>
 
     <script setup>
@@ -252,7 +311,6 @@ import { nextTick, onBeforeMount, reactive, ref, watch, onMounted } from "vue";
 import { useAuthStore } from "stores/auth";
 import { api } from "boot/axios";
 import { useQuasar } from "quasar";
-import Modal from "components/Modal.vue";
 import DropDownButtonWithIcon from "components/DropDownButtonWithIcon.vue";
 import ErrorValidation from "components/ErrorValidation.vue";
 import {useRouter} from "vue-router";
@@ -273,7 +331,7 @@ let searchProfils = ref(null);
 
 const limitations = ref([]);
 
-limitations.value.push({ code: 'G', value: 'L – Visibilité au niveau direction' });
+limitations.value.push({ code: 'G', value: 'G – Visibilité au niveau global' });
 // limitations.value.push({ code: 'R', value: 'R - Visibilité article échelle Régionale' });
 limitations.value.push({ code: 'L', value: 'L – Visibilité au niveau direction' });
 limitations.value.push({ code: 'P', value: 'P - Visibilité au niveau individuel' });
@@ -474,12 +532,12 @@ const sendData = async () => {
     code: form.code,
     libelle: form.libelle,
     description: form.description,
-    role: form.role,
+    role: form.role.code,
     // fonction: form.fonction.LibelleFct,
-    limitation: form.limitation,
+    limitation: form.limitation.code,
   };
 
-  // console.log(data);
+  console.log(data);
 
   // Make a POST request to the Laravel API endpoint
   await api
