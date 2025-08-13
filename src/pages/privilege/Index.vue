@@ -21,7 +21,7 @@
               color="blue-6"
               no-caps
               @click="openAddModel"
-              v-if="authStore.privileges.insertion=true"
+              v-if="privilege && privilege.insertion==1"
               class="px-6"
             >
               <!-- <q-icon name="person_add" class="mr-2" /> -->
@@ -63,7 +63,6 @@
             <q-tr v-if="!loadingAffaires" :props="props" :class="{ 'bg-gray-50': props.rowIndex % 2 == 0 }">
               <q-td key="Actions" :props="props">
                 <div class="flex items-center gap-2">
-                  <!-- v-if="authStore.user.privilege != props.row.code && authStore.privileges.suppression==1" -->
                   <q-btn
                     flat
                     round
@@ -73,10 +72,10 @@
                     color="negative"
                     @click="openDeleteModel(props.row)"
                     class="hover:bg-red-50"
+                    v-if="authStore.user.privilege != props.row.code && privilege && privilege.suppression==1"
                   >
                     <q-tooltip>Supprimer le profil</q-tooltip>
                   </q-btn>
-                  <!-- v-if="authStore.privileges.consultation==1" -->
                   <q-btn
                     flat
                     round
@@ -86,6 +85,7 @@
                     color="warning"
                     @click="ShowPrivilege(props.row)"
                     class="hover:bg-orange-50"
+                    v-if="privilege && privilege.consultation==1"
                   >
                     <q-tooltip>Gérer les privilèges</q-tooltip>
                   </q-btn>
@@ -318,6 +318,7 @@ import {useRouter} from "vue-router";
 const authStore = useAuthStore();
 const router = useRouter()
 
+let privilege = ref(null);
 let profils = ref([]);
 // let fonctions = ref([]);
 let drs = ref([]);
@@ -380,6 +381,7 @@ const fetchData = async (Search) => {
     const response = await api.get(`/api/gu/securite/recherche/${Search}`); // Replace with your backend API endpoint
     console.log(response.data.profils, 3);
     profils.value=response.data.profils;
+    privilege.value=response.data.privilege;
     showProfilstable.value = false;
     await nextTick();
     showProfilstable.value = true;
@@ -546,6 +548,7 @@ const sendData = async () => {
         console.log(searchProfils.value);
       await fetchData(searchProfils.value);
       message.value = response.data.message;
+      privilege.value = response.data.privilege;
       $q.notify({
         type: "positive",
         message: message.value,

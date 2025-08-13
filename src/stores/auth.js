@@ -359,5 +359,11 @@ export const useAuthStore = defineStore('auth', {
         LocalStorage.set('userProfile', this.userProfile)
       }
     },
+      setProperty(name, val) {
+      this[name] = val;
+      (val && val != 'null')
+        ? LocalStorage.set(name, val)
+        : LocalStorage.remove(name)
+    },
   }
 })

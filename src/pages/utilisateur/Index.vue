@@ -21,7 +21,7 @@
               color="blue-6"
               no-caps
               @click="openAddUser"
-              v-if="authStore.privileges.insertion=1"
+              v-if="privilege && privilege.insertion==1"
               class="px-6"
             >
               Nouvel utilisateur
@@ -47,14 +47,14 @@
           </div>
 
           <!-- Radio buttons section -->
-          <div class="flex items-center gap-4">
+          <!-- <div class="flex items-center gap-4">
             <div class="text-sm font-medium text-gray-700">Statut :</div>
             <div class="flex gap-3">
-              <!-- <q-radio v-model="actif" val="1" label="Actif" color="green" />
+              <q-radio v-model="actif" val="1" label="Actif" color="green" />
               <q-radio v-model="actif" val="0" label="Inactif" color="grey" />
-              <q-radio v-model="actif" :val="null" label="Tous" color="blue" /> -->
+              <q-radio v-model="actif" :val="null" label="Tous" color="blue" />
             </div>
-          </div>
+          </div> -->
         </div>
       </div>
 
@@ -72,7 +72,7 @@
             <q-tr v-if="!loadingAffaires" :props="props" :class="{ 'bg-gray-50': props.rowIndex % 2 == 0 }">
               <q-td key="Actions" :props="props">
                 <div class="flex items-center gap-2">
-                  <!-- v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.suppression==1" -->
+                  <!--  -->
                   <q-btn
                     flat
                     round
@@ -82,6 +82,7 @@
                     color="negative"
                     @click="openDeleteUser(props.row)"
                     class="hover:bg-red-50"
+                    v-if="authStore.user.Matricule != props.row.Matricule && privilege && privilege.suppression==1"
                   >
                     <q-tooltip>Supprimer l'utilisateur</q-tooltip>
                   </q-btn>
@@ -92,18 +93,18 @@
                     icon="edit"
                     size="sm"
                     color="warning"
-                    v-if="authStore.privileges.modification=1"
+                    v-if="privilege && privilege.modification==1"
                     @click="openEditModel(props.row)"
                     class="hover:bg-orange-50"
                   >
                     <q-tooltip>Modifier l'utilisateur</q-tooltip>
                   </q-btn>
-                  <!--
+<!--
                   <q-icon class="p-1 cursor-pointer" name="toggle_off" size="sm" color="green"
-                  v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.modification==1 && (props.row.Actif=='1'|| props.row.Actif==null) "
+                  v-if="authStore.user.Matricule != props.row.Matricule && privilege && privilege.modification==1 && (props.row.Actif=='1'|| props.row.Actif==null) "
                     @click="UserActivation(props.row)" />
                   <q-icon class="p-1 cursor-pointer" name="toggle_on" size="sm" color="grey"
-                  v-if="authStore.user.Matricule != props.row.Matricule && authStore.privileges.modification==1 && props.row.Actif=='0' "
+                  v-if="authStore.user.Matricule != props.row.Matricule && privilege && privilege.modification==1 && props.row.Actif=='0' "
                     @click="UserActivation(props.row)" /> -->
                 </div>
               </q-td>
@@ -124,18 +125,20 @@
               </q-td>
               <q-td key="privilege" :props="props">
                 <span class="text-gray-800">{{ props.row.privilege }}</span>
-                <!--
+ <!-- v-if="props.row.privilege &&
+                   props.row.privilege != authStore.user.privilege && privilege && privilege.consultation==1" -->
                 <q-icon
                     class="p-1 cursor-pointer" name="visibility" size="sm" @click="ShowPrivilege(props.row)" color="blue"
-                    v-if="props.row.privilege &&
-                   props.row.privilege != authStore.user.privilege && authStore.privileges.consultation==1 "/>
-                -->
-                <!--
+                   v-if="props.row.privilege &&
+                   props.row.privilege != authStore.user.privilege && privilege && privilege.consultation==1"
+                   />
+
+
                 <q-icon  class="p-1 cursor-pointer" name="delete" size="sm" color="negative"
                 v-if="props.row.privilege &&
-                  props.row.privilege != authStore.user.privilege && authStore.privileges.suppression==1"
+                  props.row.privilege != authStore.user.privilege && privilege && privilege.suppression==1"
                   @click="revokeProfile(props.row)" />
-                -->
+
               </q-td>
             </q-tr>
           </template>
@@ -499,6 +502,7 @@ let profils = ref([]);
 let fonctions = ref([]);
 let drs = ref([]);
 
+let privilege = ref(null);
 let actif = ref(null);
 let addUser = ref(false);
 let deleteUser = ref(false);
@@ -539,8 +543,10 @@ const fetchData = async (search) => {
       search: search,
       dr_id: authStore.dr_id,
     };
+
     const response = await api.post(`/api/gu/utilisateur/recherche`,data); // Replace with your backend API endpoint
     utilisateurs.value = response.data.utilisateurs;
+    privilege.value = response.data.privilege;
     profils.value = response.data.profils.map(item => item.code);
     drs.value = response.data.drs?.map(item => item.DIRECTION);
     console.log(profils.value,'drs');
@@ -635,8 +641,9 @@ async () => {
 })
 
 onBeforeMount(async () => {
-  // authStore.setProperty("volet", "utilisateurs");
+  authStore.setProperty("volet", "utilisateurs");
   drs.value = authStore.directions;
+  console.log(authStore, 'authStore.privileges');
   await fetchData(null);
 });
 onMounted(async () => {
@@ -808,26 +815,26 @@ const deleteData = async () => {
       console.log(errors);
     });
 };
-async function UserActivation(data) {
-  Matricule.value = data.Matricule;
-  form.Nom = data.Nom;
-  form.Prenom = data.Prenom;
+// async function UserActivation(data) {
+//   Matricule.value = data.Matricule;
+//   form.Nom = data.Nom;
+//   form.Prenom = data.Prenom;
 
-  await api
-    .get(`/api/gu/utilisateur/activation/${Matricule.value}`)
-    .then(async (response) => {
-      await fetchData(searchUsers.value);
-      message.value = response.data.message;
-      $q.notify({
-        type: "positive",
-        message: message.value,
-      });
-      closeDeleteUser()
-    })
-    .catch((errors) => {
-      console.log(errors);
-    });
-};
+//   await api
+//     .get(`/api/gu/utilisateur/activation/${Matricule.value}`)
+//     .then(async (response) => {
+//       await fetchData(searchUsers.value);
+//       message.value = response.data.message;
+//       $q.notify({
+//         type: "positive",
+//         message: message.value,
+//       });
+//       closeDeleteUser()
+//     })
+//     .catch((errors) => {
+//       console.log(errors);
+//     });
+// };
 
 const revokeProfile = async (data) => {
   Matricule.value = data.Matricule;

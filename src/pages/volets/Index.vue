@@ -23,7 +23,7 @@
               size="md"
               dense
               @click="showAddModalVolet = true"
-              v-if="authStore.privileges.insertion=1"
+              v-if="privilege && privilege.insertion==1"
               class="px-6"
             >
               Ajouter un volet
@@ -85,7 +85,7 @@
                   icon="delete"
                   color="red"
                   @click="deleteVolet(props.row.id)"
-                  v-if="authStore.privileges.suppression=1"
+                  v-if="privilege && privilege.suppression==1"
                   class="hover:bg-red-50"
                 >
                   <q-tooltip class="text-sm" :offset="[5, 5]">Supprimer le volet</q-tooltip>
@@ -203,7 +203,8 @@ import { useAuthStore } from "src/stores/auth";
 import { useRouter } from "vue-router";
 const router = useRouter();
 
-const volets = ref([])
+const privilege = ref(null);
+const volets = ref([]);
 const pagination = reactive({
   per_page: 10,
   page: 1,
@@ -243,6 +244,7 @@ const fetchVolets = async () => {
     });
 
       console.log('volets :', res.data.volets);
+      privilege.value = res.data.privilege;
       volets.value = res.data.volets;
       Object.assign(pagination, res.data.pagination);
 

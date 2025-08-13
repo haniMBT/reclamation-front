@@ -323,6 +323,22 @@ onMounted(async () => {
     visible.value = false;
   }, 500);
 });
+
+
+// watch(
+//   () => authStore.volet,
+//   async (newVal, oldVal) => {
+//     if (newVal && newVal != "null" && newVal != oldVal) {
+//       await authStore.getPrivileges();
+//       await authStore.getDirections();
+//     }
+//   },
+//   {
+//     immediate: true,
+//     deep: true,
+//   }
+// );
+
 </script>
 
 <style>
