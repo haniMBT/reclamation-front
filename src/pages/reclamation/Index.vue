@@ -3,12 +3,24 @@
     <div class="container mx-auto px-4 py-8">
       <!-- Header Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="flex items-center mb-4">
-          <q-icon name="feedback" size="2rem" class="text-blue-600 mr-3" />
-          <div>
-            <h1 class="text-2xl font-bold text-gray-800 mb-1">Réclamation Client</h1>
-            <p class="text-gray-600 text-sm">Envoyez votre réclamation en remplissant le formulaire ci-dessous</p>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center">
+            <q-icon name="feedback" size="2rem" class="text-blue-600 mr-3" />
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 mb-1">Réclamation Client</h1>
+              <p class="text-gray-600 text-sm">Envoyez votre réclamation en remplissant le formulaire ci-dessous</p>
+            </div>
           </div>
+
+          <!-- Bouton pour voir toutes les réclamations -->
+          <q-btn
+            label="Voir toutes les réclamations"
+            color="blue-6"
+            outline
+            icon="list"
+            @click="viewAllReclamations"
+            class="px-4"
+          />
         </div>
       </div>
 
@@ -156,6 +168,103 @@
         </q-form>
       </div>
 
+      <!-- Liste des réclamations existantes -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+          <q-icon name="list" color="blue-600" size="1.5rem" class="mr-2" />
+          Mes réclamations récentes
+        </h2>
+
+        <div v-if="reclamations.length === 0" class="text-center py-8">
+          <q-icon name="inbox" size="3rem" class="text-gray-400 mb-3" />
+          <p class="text-gray-500">Aucune réclamation pour le moment</p>
+        </div>
+
+        <div v-else class="space-y-3">
+          <div
+            v-for="reclamation in reclamations"
+            :key="reclamation.id"
+            class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex-1">
+                <h3 class="font-medium text-gray-800 mb-1">{{ reclamation.objet }}</h3>
+                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                  <span class="flex items-center">
+                    <q-icon name="schedule" size="1rem" class="mr-1" />
+                    {{ formatDate(reclamation.date_creation) }}
+                  </span>
+                  <q-chip
+                    :color="getStatusColor(reclamation.statut)"
+                    text-color="white"
+                    :label="reclamation.statut_formatte"
+                    size="sm"
+                  />
+                </div>
+              </div>
+
+              <q-btn
+                label="Voir détails"
+                color="blue-6"
+                outline
+                size="sm"
+                @click="viewReclamation(reclamation.id)"
+                class="ml-4"
+              >
+                <q-icon name="visibility" class="mr-1" />
+              </q-btn>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="pagination.total > 0" class="mt-6 pt-6 border-t border-gray-200">
+          <div class="flex items-center justify-between">
+            <!-- Informations de pagination -->
+            <div class="text-sm text-gray-600">
+              Affichage de {{ pagination.from }} à {{ pagination.to }}
+              sur {{ pagination.total }} réclamation(s)
+            </div>
+
+            <!-- Contrôles de pagination -->
+            <div class="flex items-center space-x-2">
+              <!-- Bouton page précédente -->
+              <q-btn
+                icon="chevron_left"
+                color="blue-6"
+                flat
+                round
+                size="sm"
+                :disable="pagination.current_page === 1"
+                @click="goToPreviousPage"
+                class="mr-2"
+              >
+                <q-tooltip>Page précédente</q-tooltip>
+              </q-btn>
+
+              <!-- Indicateur de page actuelle -->
+              <span class="text-sm text-gray-600 px-3 py-1 bg-gray-100 rounded-md">
+                Page {{ pagination.current_page }} sur {{ pagination.last_page }}
+              </span>
+
+              <!-- Bouton page suivante -->
+              <q-btn
+                icon="chevron_right"
+                color="blue-6"
+                flat
+                round
+                size="sm"
+                :disable="pagination.current_page === pagination.last_page"
+                @click="goToNextPage"
+                class="ml-2"
+              >
+                <q-tooltip>Page suivante</q-tooltip>
+              </q-btn>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Information complémentaire -->
       <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
         <div class="flex items-start">
@@ -175,7 +284,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
@@ -193,6 +302,18 @@ const complaint = ref({
 // Nouveaux états pour la gestion progressive des fichiers
 const newFiles = ref(null)
 const allFiles = ref([])
+
+// État pour les réclamations existantes avec pagination
+const reclamations = ref([])
+const loadingReclamations = ref(false)
+const pagination = ref({
+  current_page: 1,
+  per_page: 10,
+  total: 0,
+  last_page: 1,
+  from: 0,
+  to: 0
+})
 
 const isSubmitting = ref(false)
 const contentError = ref(false)
@@ -218,6 +339,28 @@ const formatFileSize = (bytes) => {
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return 'Non spécifié'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const getStatusColor = (statut) => {
+  const colors = {
+    'nouvelle': 'blue',
+    'en_cours': 'orange',
+    'traitee': 'green',
+    'fermee': 'grey'
+  }
+  return colors[statut] || 'grey'
 }
 
 // Gestion progressive des fichiers
@@ -275,6 +418,65 @@ const resetForm = () => {
   contentError.value = false
 }
 
+// Charger les réclamations existantes avec pagination
+const loadReclamations = async (page = 1) => {
+  loadingReclamations.value = true
+  try {
+    const params = new URLSearchParams({
+      page: page,
+      per_page: pagination.value.per_page
+    })
+
+    const response = await api.get(`/api/reclamations?${params.toString()}`)
+    if (response.data.success) {
+      reclamations.value = response.data.data.data
+      // Mettre à jour les informations de pagination
+      pagination.value = {
+        current_page: response.data.data.current_page,
+        per_page: response.data.data.per_page,
+        total: response.data.data.total,
+        last_page: response.data.data.last_page,
+        from: response.data.data.from,
+        to: response.data.data.to
+      }
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des réclamations:', error)
+  } finally {
+    loadingReclamations.value = false
+  }
+}
+
+// Naviguer vers la page de détails d'une réclamation
+const viewReclamation = (id) => {
+  router.push(`/reclamation_client/${id}`)
+}
+
+// Naviguer vers la page de toutes les réclamations
+const viewAllReclamations = () => {
+  router.push('/reclamations/all')
+}
+
+// Gestion de la pagination
+const goToPage = (page) => {
+  if (page >= 1 && page <= pagination.value.last_page) {
+    pagination.value.current_page = page
+    loadReclamations(page)
+  }
+}
+
+const goToNextPage = () => {
+  if (pagination.value.current_page < pagination.value.last_page) {
+    goToPage(pagination.value.current_page + 1)
+  }
+}
+
+const goToPreviousPage = () => {
+  if (pagination.value.current_page > 1) {
+    goToPage(pagination.value.current_page - 1)
+  }
+}
+
 const submitComplaint = async () => {
   // Validation du contenu
   if (!complaint.value.content.trim() || complaint.value.content === '<p><br></p>') {
@@ -327,6 +529,9 @@ const submitComplaint = async () => {
 
       resetForm()
 
+      // Recharger la liste des réclamations
+      await loadReclamations()
+
       // Optionnel: rediriger vers une page de confirmation
       // router.push('/dashboard')
     } else {
@@ -362,6 +567,12 @@ const submitComplaint = async () => {
     isSubmitting.value = false
   }
 }
+
+// Lifecycle
+onMounted(() => {
+  // Charger la liste des réclamations existantes
+  loadReclamations()
+})
 </script>
 
 <style scoped>

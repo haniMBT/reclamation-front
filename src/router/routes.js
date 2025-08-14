@@ -28,7 +28,15 @@ const routes = [
     path: '/reclamation_client',
      component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('src/pages/reclamation/Index.vue') }
+      { path: '', component: () => import('src/pages/reclamation/Index.vue') },
+      { path: ':id', component: () => import('src/pages/reclamation/show.vue') }
+    ]
+  },
+  {
+    path: '/reclamations/all',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('src/pages/reclamation/index2.vue') }
     ]
   },
   {
