@@ -220,7 +220,7 @@
           <h3 class="text-lg font-bold text-gray-800 mb-4">Actions</h3>
 
           <div class="flex flex-wrap gap-3">
-            <!-- <q-btn
+            <q-btn
               label="Modifier la réclamation"
               color="blue-6"
               outline
@@ -228,7 +228,7 @@
               @click="editReclamation"
               :disable="!canEdit"
               class="px-6"
-            /> -->
+            />
 
             <!-- <q-btn
               label="Fermer la réclamation"
@@ -260,10 +260,13 @@ import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter, useRoute } from 'vue-router'
 import { api } from 'boot/axios'
-
+import { useReclamationStore } from "stores/reclamation";
 const $q = useQuasar()
 const router = useRouter()
 const route = useRoute()
+
+const RecalmationStore = useReclamationStore();
+
 
 // État réactif
 const reclamation = ref(null)
@@ -334,12 +337,12 @@ const goBack = () => {
 }
 
 const editReclamation = () => {
-  // TODO: Implémenter la modification
-  $q.notify({
-    type: 'info',
-    message: 'Fonctionnalité de modification à implémenter',
-    position: 'top'
-  })
+
+  RecalmationStore.setProperty('id', reclamation.value.id)
+  RecalmationStore.setProperty('objet', reclamation.value.objet)
+  RecalmationStore.setProperty('contenu', reclamation.value.contenu)
+
+  router.push(`/reclamations/edit`)
 }
 
 const closeReclamation = () => {
@@ -453,3 +456,4 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 </style>
+

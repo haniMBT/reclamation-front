@@ -40,6 +40,13 @@ const routes = [
     ]
   },
   {
+    path: '/reclamations/edit',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('src/pages/reclamation/Edit.vue') }
+    ]
+  },
+  {
     path: '/profile',
     component: () => import('layouts/MainLayout.vue'),
     children: [
