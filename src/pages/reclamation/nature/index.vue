@@ -1,88 +1,172 @@
 <template>
-  <q-page class="q-pa-md">
-    <div class="row q-mb-md">
-      <div class="col">
-        <h4 class="q-my-none">Gestion des Natures et Sous-natures</h4>
+  <div class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Header Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center">
+            <q-icon name="category" size="2rem" class="text-blue-600 mr-3" />
+            <div>
+              <h1 class="text-2xl font-bold text-gray-800 mb-1">Gestion des Natures</h1>
+              <p class="text-gray-600 text-sm">Gérez les natures et sous-natures des réclamations</p>
+            </div>
+          </div>
+
+          <!-- Bouton pour ajouter une nature -->
+          <q-btn
+            label="Ajouter une Nature"
+            color="blue-6"
+            icon="add"
+            @click="openDialog()"
+            class="px-4"
+          />
+        </div>
+
+        <!-- Barre de recherche -->
+        <div class="mt-4">
+          <q-input
+            v-model="searchQuery"
+            placeholder="Rechercher dans les natures et sous-natures..."
+            outlined
+            dense
+            clearable
+            class="max-w-md"
+          >
+            <template v-slot:prepend>
+              <q-icon name="search" class="text-blue-600" />
+            </template>
+          </q-input>
+        </div>
       </div>
-      <div class="col-auto q-gutter-sm">
-        <q-input
-          v-model="searchQuery"
-          placeholder="Rechercher..."
-          outlined
-          dense
-          clearable
-          style="min-width: 250px"
-        >
-          <template v-slot:prepend>
-            <q-icon name="search" />
-          </template>
-        </q-input>
-        <q-btn
-          color="primary"
-          icon="add"
-          label="Ajouter une Nature"
-          @click="openDialog()"
-        />
+
+      <!-- Liste des natures -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+          <q-icon name="list" color="blue-600" size="1.5rem" class="mr-2" />
+          Liste des Natures
+        </h2>
+
+        <div v-if="loading" class="text-center py-8">
+          <q-spinner-facebook size="2rem" color="blue-600" />
+          <p class="text-gray-500 mt-2">Chargement...</p>
+        </div>
+
+        <div v-else-if="natures.length === 0" class="text-center py-8">
+          <q-icon name="category" size="3rem" class="text-gray-400 mb-3" />
+          <p class="text-gray-500">Aucune nature trouvée</p>
+        </div>
+
+        <div v-else class="space-y-3">
+          <div
+            v-for="nature in natures"
+            :key="nature.NATID"
+            class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex-1">
+                <div class="flex items-center mb-2">
+                  <h3 class="font-medium text-gray-800 mr-3">{{ nature.NATLIB }}</h3>
+                  <q-chip
+                    color="blue-6"
+                    text-color="white"
+                    :label="`ID: ${nature.NATID}`"
+                    size="sm"
+                  />
+                </div>
+
+                <!-- Sous-natures -->
+                <div v-if="nature.sous_natures && nature.sous_natures.length > 0" class="mt-2">
+                  <div class="text-sm text-gray-600 mb-1">Sous-natures :</div>
+                  <div class="flex flex-wrap gap-1">
+                    <q-chip
+                      v-for="sousNature in nature.sous_natures"
+                      :key="sousNature.SOUSID"
+                      color="secondary"
+                      text-color="white"
+                      :label="sousNature.SOUSLIB"
+                      size="sm"
+                    />
+                  </div>
+                </div>
+                <div v-else class="text-sm text-gray-500 mt-2">
+                  Aucune sous-nature
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-2 ml-4">
+                <q-btn
+                  label="Modifier"
+                  color="blue-6"
+                  outline
+                  size="sm"
+                  @click="openDialog(nature)"
+                >
+                  <q-icon name="edit" class="mr-1" />
+                </q-btn>
+                <q-btn
+                  label="Supprimer"
+                  color="negative"
+                  outline
+                  size="sm"
+                  @click="confirmDelete(nature)"
+                >
+                  <q-icon name="delete" class="mr-1" />
+                </q-btn>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="pagination.rowsNumber > 0" class="mt-6 pt-6 border-t border-gray-200">
+          <div class="flex items-center justify-between">
+            <!-- Informations de pagination -->
+            <div class="text-sm text-gray-600">
+              Affichage de {{ ((pagination.page - 1) * pagination.rowsPerPage) + 1 }} à
+              {{ Math.min(pagination.page * pagination.rowsPerPage, pagination.rowsNumber) }}
+              sur {{ pagination.rowsNumber }} nature(s)
+            </div>
+
+            <!-- Contrôles de pagination -->
+            <div class="flex items-center space-x-2">
+              <!-- Bouton page précédente -->
+              <q-btn
+                icon="chevron_left"
+                color="blue-6"
+                flat
+                round
+                size="sm"
+                :disable="pagination.page === 1"
+                @click="goToPreviousPage"
+                class="mr-2"
+              >
+                <q-tooltip>Page précédente</q-tooltip>
+              </q-btn>
+
+              <!-- Indicateur de page actuelle -->
+              <span class="text-sm text-gray-600 px-3 py-1 bg-gray-100 rounded-md">
+                Page {{ pagination.page }} sur {{ Math.ceil(pagination.rowsNumber / pagination.rowsPerPage) }}
+              </span>
+
+              <!-- Bouton page suivante -->
+              <q-btn
+                icon="chevron_right"
+                color="blue-6"
+                flat
+                round
+                size="sm"
+                :disable="pagination.page >= Math.ceil(pagination.rowsNumber / pagination.rowsPerPage)"
+                @click="goToNextPage"
+                class="ml-2"
+              >
+                <q-tooltip>Page suivante</q-tooltip>
+              </q-btn>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-
-    <q-table
-      :rows="natures"
-      :columns="columns"
-      row-key="NATID"
-      :loading="loading"
-      :pagination="pagination"
-      @request="onRequest"
-      binary-state-sort
-    >
-      <template v-slot:body="props">
-        <q-tr :props="props">
-          <q-td key="NATID" :props="props">
-            {{ props.row.NATID }}
-          </q-td>
-          <q-td key="NATLIB" :props="props">
-            {{ props.row.NATLIB }}
-          </q-td>
-          <q-td key="sous_natures" :props="props">
-            <div v-if="props.row.sous_natures && props.row.sous_natures.length > 0">
-              <q-chip
-                v-for="sousNature in props.row.sous_natures"
-                :key="sousNature.SOUSID"
-                color="secondary"
-                text-color="white"
-                size="sm"
-                class="q-ma-xs"
-              >
-                {{ sousNature.SOUSLIB }}
-              </q-chip>
-            </div>
-            <span v-else class="text-grey-6">Aucune sous-nature</span>
-          </q-td>
-          <q-td key="actions" :props="props">
-            <q-btn
-              flat
-              round
-              color="primary"
-              icon="edit"
-              size="sm"
-              @click="openDialog(props.row)"
-            >
-              <q-tooltip>Modifier</q-tooltip>
-            </q-btn>
-            <q-btn
-              flat
-              round
-              color="negative"
-              icon="delete"
-              size="sm"
-              @click="confirmDelete(props.row)"
-            >
-              <q-tooltip>Supprimer</q-tooltip>
-            </q-btn>
-          </q-td>
-        </q-tr>
-      </template>
-    </q-table>
+  </div>
 
     <!-- Dialog pour ajouter/modifier une nature -->
     <q-dialog v-model="dialog" persistent>
@@ -109,7 +193,7 @@
 
             <div class="q-mt-md">
               <div class="text-subtitle2 q-mb-sm">Sous-natures</div>
-              
+
               <div v-for="(sousNature, index) in form.sous_natures" :key="index" class="row q-mb-sm">
                 <div class="col">
                   <q-input
@@ -178,7 +262,6 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
-  </q-page>
 </template>
 
 <script setup>
@@ -217,44 +300,15 @@ const form = ref({
   sous_natures: []
 })
 
-// Colonnes du tableau
-const columns = [
-  {
-    name: 'NATID',
-    required: true,
-    label: 'ID',
-    align: 'left',
-    field: 'NATID',
-    sortable: true
-  },
-  {
-    name: 'NATLIB',
-    required: true,
-    label: 'Nom',
-    align: 'left',
-    field: 'NATLIB',
-    sortable: true
-  },
-
-  {
-    name: 'sous_natures',
-    label: 'Sous-natures',
-    align: 'left',
-    field: 'sous_natures'
-  },
-  {
-    name: 'actions',
-    label: 'Actions',
-    align: 'center'
-  }
-]
+// Colonnes du tableau (conservées pour compatibilité)
+const columns = []
 
 // Méthodes
 const fetchNatures = async (props = {}) => {
   loading.value = true
   try {
     const { page = 1, rowsPerPage = 10 } = props.pagination || pagination.value
-    
+
     const response = await api.get('/api/nature', {
        params: {
          page,
@@ -280,8 +334,21 @@ const fetchNatures = async (props = {}) => {
   }
 }
 
-const onRequest = (props) => {
-  fetchNatures(props)
+// Fonction onRequest supprimée - remplacée par la pagination manuelle
+
+const goToPreviousPage = () => {
+  if (pagination.value.page > 1) {
+    pagination.value.page--
+    fetchNatures()
+  }
+}
+
+const goToNextPage = () => {
+  const maxPage = Math.ceil(pagination.value.rowsNumber / pagination.value.rowsPerPage)
+  if (pagination.value.page < maxPage) {
+    pagination.value.page++
+    fetchNatures()
+  }
 }
 
 const openDialog = (nature = null) => {
@@ -389,7 +456,7 @@ const deleteNature = async () => {
   deleting.value = true
   try {
     const response = await api.delete(`/api/nature/${natureToDelete.value.NATID}`)
-    
+
     if (response.data.success) {
       $q.notify({
         type: 'positive',
