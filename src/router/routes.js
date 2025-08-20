@@ -25,24 +25,12 @@ const routes = [
     ]
   },
   {
-    path: '/reclamation_client',
-     component: () => import('layouts/MainLayout.vue'),
-    children: [
-      { path: '', component: () => import('src/pages/reclamation/Index.vue') },
-      { path: ':id', component: () => import('src/pages/reclamation/show.vue') }
-    ]
-  },
-  {
-    path: '/reclamations/all',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [
-      { path: '', component: () => import('src/pages/reclamation/index2.vue') }
-    ]
-  },
-  {
     path: '/reclamations/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
+      { path: 'client', component: () => import('src/pages/reclamation/Index.vue') },
+      { path: 'client/:id', component: () => import('src/pages/reclamation/show.vue') },
+      { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },
       { path: 'edit', component: () => import('src/pages/reclamation/Edit.vue') },
       { path: 'nature', component: () => import('src/pages/reclamation/nature/index.vue') }
     ]

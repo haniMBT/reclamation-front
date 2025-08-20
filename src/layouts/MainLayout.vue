@@ -188,7 +188,8 @@
                 <q-item-section-label>Réclamation client</q-item-section-label>
               </q-item-section>
             </template>
-            <q-expansion-item :header-inset-level="1" label="Liste des réclamations" expand-icon="0" to="/reclamation_client" />
+            <q-expansion-item :header-inset-level="1" label="Liste des réclamations" expand-icon="0" to="/reclamations/all" />
+            <q-expansion-item :header-inset-level="1" label="Nouvelle réclamation" expand-icon="0" to="/reclamations/client" />
             <q-expansion-item :header-inset-level="1" label="Nature" expand-icon="0" to="/reclamations/nature" />
 
           </q-expansion-item>

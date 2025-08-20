@@ -355,7 +355,7 @@ const closeReclamation = () => {
 }
 
 const createNewReclamation = () => {
-  router.push('/reclamation_client')
+  router.push('/reclamations/client')
 }
 
 // Téléchargement de fichiers

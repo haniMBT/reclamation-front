@@ -426,11 +426,11 @@ const goBack = () => {
 }
 
 const viewReclamation = (id) => {
-  router.push(`/reclamation_client/${id}`)
+  router.push(`/reclamations/client/${id}`)
 }
 
 const createNewReclamation = () => {
-  router.push('/reclamation_client')
+  router.push('/reclamations/client')
 }
 
 // Gestion des filtres

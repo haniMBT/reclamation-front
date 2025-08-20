@@ -512,7 +512,7 @@ const loadReclamations = async (page = 1) => {
 
 // Naviguer vers la page de détails d'une réclamation
 const viewReclamation = (id) => {
-  router.push(`/reclamation_client/${id}`)
+  router.push(`/reclamations/client/${id}`)
 }
 
 // Naviguer vers la page de toutes les réclamations
