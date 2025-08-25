@@ -1,6 +1,8 @@
 import { route } from 'quasar/wrappers'
 import { createRouter, createMemoryHistory, createWebHistory, createWebHashHistory } from 'vue-router'
 import routes from './routes'
+import {useAuthStore} from "stores/auth";
+import { LocalStorage, SessionStorage } from 'quasar'
 
 /*
  * If not building with SSR mode, you can
