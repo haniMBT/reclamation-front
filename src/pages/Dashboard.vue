@@ -1,175 +1,186 @@
 <template>
-  <q-page class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto p-4 sm:p-6">
-      <!-- Header -->
-      <div class="mb-6 sm:mb-8">
-        <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
-          Tableau de bord EPAL
-        </h1>
-        <p class="text-sm sm:text-base text-gray-600">Vue d'ensemble de vos services portuaires</p>
-      </div>
-
-      <!-- Stats Cards -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
-        <!-- Total Transactions -->
-        <div class="bg-white rounded-lg sm:rounded-xl p-4 sm:p-6 shadow-lg border-l-4 border-emerald-500">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-xs sm:text-sm font-medium text-gray-600 uppercase">Total Transactions</p>
-              <p class="text-xl sm:text-2xl font-bold text-gray-900">{{ stats.totalTransactions }}</p>
-            </div>
-            <div class="p-2 sm:p-3 bg-emerald-100 rounded-full">
-              <q-icon name="trending_up" class="text-lg sm:text-xl text-emerald-600" />
-            </div>
-          </div>
-          <div class="mt-3 sm:mt-4">
-            <span class="text-emerald-500 text-xs sm:text-sm font-semibold">+12%</span>
-            <span class="text-gray-500 text-xs sm:text-sm ml-2">ce mois</span>
-          </div>
-        </div>
-
-        <!-- E-paiements -->
-        <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-teal-500">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600 uppercase">E-paiements</p>
-              <p class="text-2xl font-bold text-gray-900">{{ stats.epaiements }}</p>
-            </div>
-            <div class="p-3 bg-teal-100 rounded-full">
-              <q-icon name="account_balance_wallet" class="text-xl text-teal-600" />
-            </div>
-          </div>
-          <div class="mt-4">
-            <span class="text-teal-500 text-sm font-semibold">+8%</span>
-            <span class="text-gray-500 text-sm ml-2">ce mois</span>
-          </div>
-        </div>
-
-        <!-- Factures -->
-        <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-orange-500">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600 uppercase">Factures</p>
-              <p class="text-2xl font-bold text-gray-900">{{ stats.factures }}</p>
-            </div>
-            <div class="p-3 bg-orange-100 rounded-full">
-              <q-icon name="receipt_long" class="text-xl text-orange-600" />
-            </div>
-          </div>
-          <div class="mt-4">
-            <span class="text-orange-500 text-sm font-semibold">+15%</span>
-            <span class="text-gray-500 text-sm ml-2">ce mois</span>
-          </div>
-        </div>
-
-        <!-- Réclamations -->
-        <div class="bg-white rounded-xl p-6 shadow-lg border-l-4 border-red-500">
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-sm font-medium text-gray-600 uppercase">Réclamations</p>
-              <p class="text-2xl font-bold text-gray-900">{{ stats.reclamations }}</p>
-            </div>
-            <div class="p-3 bg-red-100 rounded-full">
-              <q-icon name="support_agent" class="text-xl text-red-600" />
-            </div>
-          </div>
-          <div class="mt-4">
-            <span class="text-red-500 text-sm font-semibold">-3%</span>
-            <span class="text-gray-500 text-sm ml-2">ce mois</span>
-          </div>
+  <q-page class="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
+    <!-- Main Content Section -->
+    <div class="container mx-auto px-4 sm:px-6 py-8 sm:py-16">
+      <!-- Welcome Message -->
+      <div class="text-center mb-8 sm:mb-16">
+        <div
+          class="bg-white rounded-2xl p-8 shadow-lg border border-gray-100 max-w-4xl mx-auto"
+        >
+          <h3 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">
+            Bienvenue sur la plateforme EPAL
+          </h3>
+          <p class="text-base sm:text-lg text-gray-600 leading-relaxed">
+            Vous êtes connecté à votre espace personnel. Explorez les
+            fonctionnalités disponibles pour gérer efficacement vos activités
+            portuaires. Notre solution vous offre un accès simplifié à
+            l’ensemble de vos services essentiels.
+          </p>
         </div>
       </div>
 
-              <!-- Charts Section -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <!-- ApexCharts Bar Chart -->
-          <div class="bg-white rounded-xl p-6 shadow-lg">
-            <div class="flex justify-between items-center mb-6">
-              <h3 class="text-xl font-bold text-gray-800">Transactions par Mois</h3>
-              <q-btn 
-                @click="refreshChart"
-                icon="refresh"
-                color="primary"
-                flat
-                round
-                size="sm"
-              >
-                <q-tooltip>Actualiser avec nouvelles couleurs</q-tooltip>
-              </q-btn>
-            </div>
-            <apexchart
-              type="bar"
-              height="300"
-              :options="chartOptions"
-              :series="chartSeries"
-              ref="chart"
-            />
-          </div>
-
-        <!-- Quick Actions -->
-        <div class="bg-white rounded-xl p-16 shadow-lg">
-          <h3 class="text-xl font-bold text-gray-800 mb-6">Actions Rapides</h3>
-          <div class="space-y-4">
-            <q-btn 
-              class="w-full justify-start" 
-              color="orange-6" 
-              icon="account_balance_wallet" 
-              to="/epayment/factures"
-              label="Paiements"
-              flat
-              size="lg"
-            />
-
-            <q-btn 
-              class="w-full justify-start" 
-              color="teal-6" 
-              icon="support_agent" 
-              label="Nouvelle Réclamation"
-              flat
-              size="lg"
-            />
-            <q-btn 
-              class="w-full justify-start" 
-              color="gray-6" 
-              icon="bar_chart" 
-              label="Voir Rapports"
-              flat
-              size="lg"
-            />
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Recent Activity -->
-      <div class="bg-white rounded-xl p-6 shadow-lg">
-        <h3 class="text-xl font-bold text-gray-800 mb-6">Activités Récentes</h3>
-        <div class="space-y-4">
-          <div 
-            v-for="activity in recentActivities" 
-            :key="activity.id"
-            class="flex items-center p-4 bg-gray-50 rounded-lg transition-all duration-300 hover:bg-gray-100"
-          >
-            <div 
-              class="w-10 h-10 rounded-full flex items-center justify-center mr-4"
-              :class="getActivityColor(activity.type)"
+      <!-- Welcome Cards -->
+      <div
+        class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 max-w-6xl mx-auto px-4"
+      >
+        <!-- Gestion des Paiements -->
+        <div
+          class="welcome-card group bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+        >
+          <div class="flex flex-col items-center text-center">
+            <div
+              class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-emerald-100 to-emerald-200 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-transform duration-300 group-hover:scale-110"
             >
-              <q-icon :name="getActivityIcon(activity.type)" class="text-white" />
+              <q-icon
+                name="account_balance_wallet"
+                class="text-2xl sm:text-3xl text-emerald-600"
+              />
             </div>
-            <div class="flex-1">
-              <p class="font-semibold text-gray-800">{{ activity.title }}</p>
-              <p class="text-sm text-gray-600">{{ activity.description }}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-sm text-gray-500">{{ activity.time }}</p>
-              <span 
-                class="text-xs font-semibold px-2 py-1 rounded-full"
-                :class="getStatusColor(activity.status)"
-              >
-                {{ activity.status }}
-              </span>
+
+            <h3
+              class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4"
+            >
+              Gestion des Paiements
+            </h3>
+            <p
+              class="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6"
+            >
+              Consultez l'historique de vos paiements, suivez vos transactions
+              et gérez vos factures en temps réel.
+            </p>
+
+            <div
+              class="flex items-center text-emerald-600 font-semibold text-sm sm:text-base"
+            >
+              <q-icon name="trending_up" class="mr-2" />
+              <span>Suivi en temps réel</span>
             </div>
           </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div
+          class="welcome-card group bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+        >
+          <div class="flex flex-col items-center text-center">
+            <div
+              class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-transform duration-300 group-hover:scale-110"
+            >
+              <q-icon
+                name="analytics"
+                class="text-2xl sm:text-3xl text-orange-600"
+              />
+            </div>
+
+            <h3
+              class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4"
+            >
+              Facture Proforma
+            </h3>
+            <p
+              class="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6"
+            >
+              Générez vos factures proforma en quelques clics et gardez un
+              contrôle total grâce à un suivi détaillé et une gestion
+              simplifiée.
+            </p>
+
+            <div
+              class="flex items-center text-orange-600 font-semibold text-sm sm:text-base"
+            >
+              <q-icon name="bar_chart" class="mr-2" />
+              <span>Suivi précis</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activités Récentes -->
+        <div
+          class="welcome-card group bg-white rounded-xl sm:rounded-2xl p-6 sm:p-8 shadow-lg border border-gray-100 transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 sm:col-span-2 lg:col-span-1"
+        >
+          <div class="flex flex-col items-center text-center">
+            <div
+              class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-teal-100 to-teal-200 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 transition-transform duration-300 group-hover:scale-110"
+            >
+              <q-icon
+                name="history"
+                class="text-2xl sm:text-3xl text-teal-600"
+              />
+            </div>
+
+            <h3
+              class="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center justify-center gap-2"
+            >
+              Réclamation Client
+              <span
+                class="inline-flex items-center px-2 py-1 text-xs font-semibold text-yellow-700 bg-yellow-100 rounded-full"
+              >
+                <q-icon name="build" class="mr-1 text-yellow-600" /> Bientôt
+              </span>
+            </h3>
+
+            <p
+              class="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6"
+            >
+              Soumettez et suivez vos réclamations facilement. Support client
+              réactif pour résoudre vos problèmes rapidement.
+            </p>
+
+            <div
+              class="flex items-center text-teal-600 font-semibold text-sm sm:text-base"
+            >
+              <q-icon name="notifications_active" class="mr-2" />
+              <span>Assistance rapide</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Features Section -->
+      <div
+        class="mt-12 sm:mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-center px-4"
+      >
+        <div class="flex flex-col items-center">
+          <div
+            class="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center mb-4"
+          >
+            <q-icon name="security" class="text-xl text-emerald-600" />
+          </div>
+          <h4 class="text-lg font-semibold text-gray-800 mb-2">
+            Sécurité Renforcée
+          </h4>
+          <p class="text-gray-600">
+            Toutes vos données sont protégées par des protocoles de sécurité
+            avancés.
+          </p>
+        </div>
+
+        <div class="flex flex-col items-center">
+          <div
+            class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-4"
+          >
+            <q-icon name="speed" class="text-xl text-orange-600" />
+          </div>
+          <h4 class="text-lg font-semibold text-gray-800 mb-2">
+            Performance Optimale
+          </h4>
+          <p class="text-gray-600">
+            Interface rapide et réactive pour une expérience utilisateur fluide.
+          </p>
+        </div>
+
+        <div class="flex flex-col items-center">
+          <div
+            class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center mb-4"
+          >
+            <q-icon name="support" class="text-xl text-teal-600" />
+          </div>
+          <h4 class="text-lg font-semibold text-gray-800 mb-2">
+            Support Technique
+          </h4>
+          <p class="text-gray-600">
+            Équipe support disponible pour vous accompagner dans vos démarches.
+          </p>
         </div>
       </div>
     </div>
@@ -177,238 +188,50 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from "vue";
-import { useAuthStore } from "stores/auth";
-import VueApexCharts from "vue3-apexcharts";
-
-// Enregistrer le composant ApexCharts
-const apexchart = VueApexCharts;
-
-const authStore = useAuthStore();
-
-// Données fictives simplifiées
-const stats = ref({
-  totalTransactions: 1247,
-  epaiements: 456,
-  factures: 381,
-  reclamations: 67
-});
-
-// Données du graphique avec couleurs aléatoires
-const chartSeries = ref([
-  {
-    name: 'Transactions',
-    data: [150, 230, 180, 290, 340, 420, 380, 510, 290, 380, 460, 320]
-  }
-]);
-
-const chartOptions = reactive({
-  chart: {
-    type: 'bar',
-    height: 300,
-    toolbar: {
-      show: false
-    },
-    animations: {
-      enabled: true,
-      easing: 'easeinout',
-      speed: 800,
-      animateGradually: {
-        enabled: true,
-        delay: 150
-      },
-      dynamicAnimation: {
-        enabled: true,
-        speed: 350
-      }
-    }
-  },
-  colors: [], // Sera rempli par generateRandomColors()
-  plotOptions: {
-    bar: {
-      borderRadius: 8,
-      columnWidth: '60%',
-      distributed: true // Couleur différente pour chaque barre
-    }
-  },
-  dataLabels: {
-    enabled: false
-  },
-  legend: {
-    show: false
-  },
-  grid: {
-    show: true,
-    borderColor: '#e0e6ed',
-    strokeDashArray: 3,
-    xaxis: {
-      lines: {
-        show: false
-      }
-    },
-    yaxis: {
-      lines: {
-        show: true
-      }
-    }
-  },
-  xaxis: {
-    categories: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
-    axisBorder: {
-      show: false
-    },
-    axisTicks: {
-      show: false
-    },
-    labels: {
-      style: {
-        colors: '#8b8b8b',
-        fontSize: '12px'
-      }
-    }
-  },
-  yaxis: {
-    labels: {
-      style: {
-        colors: '#8b8b8b',
-        fontSize: '12px'
-      }
-    }
-  },
-  tooltip: {
-    theme: 'dark',
-    y: {
-      formatter: function (val) {
-        return val + ' transactions'
-      }
-    }
-  }
-});
-
-const recentActivities = ref([
-  {
-    id: 1,
-    type: 'payment',
-    title: 'Paiement reçu',
-    description: 'Paiement de 15,000 DA',
-    time: 'Il y a 2h',
-    status: 'Validé'
-  },
-  {
-    id: 2,
-    type: 'invoice',
-    title: 'Facture générée',
-    description: 'Facture #FP-2024-0156',
-    time: 'Il y a 4h',
-    status: 'En attente'
-  },
-  {
-    id: 3,
-    type: 'complaint',
-    title: 'Nouvelle réclamation',
-    description: 'Réclamation #RC-789',
-    time: 'Il y a 6h',
-    status: 'En cours'
-  }
-]);
-
-const getActivityIcon = (type) => {
-  switch (type) {
-    case 'payment': return 'account_balance_wallet';
-    case 'invoice': return 'receipt_long';
-    case 'complaint': return 'support_agent';
-    default: return 'info';
-  }
-};
-
-const getActivityColor = (type) => {
-  switch (type) {
-    case 'payment': return 'bg-emerald-500';
-    case 'invoice': return 'bg-orange-500';
-    case 'complaint': return 'bg-teal-500';
-    default: return 'bg-gray-500';
-  }
-};
-
-const getStatusColor = (status) => {
-  switch (status) {
-    case 'Validé': return 'bg-emerald-100 text-emerald-800';
-    case 'En attente': return 'bg-orange-100 text-orange-800';
-    case 'En cours': return 'bg-teal-100 text-teal-800';
-    default: return 'bg-gray-100 text-gray-800';
-  }
-};
-
-// Fonctions pour les couleurs aléatoires du graphique
-const generateRandomColors = () => {
-  const colors = [];
-  const baseColors = [
-    '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#8b5cf6', 
-    '#f97316', '#06b6d4', '#84cc16', '#ec4899', '#6366f1',
-    '#14b8a6', '#eab308', '#f43f5e', '#0ea5e9'
-  ];
-  
-  // Générer 12 couleurs aléatoires pour les 12 mois
-  for (let i = 0; i < 12; i++) {
-    // Mélanger et choisir une couleur aléatoire
-    const randomIndex = Math.floor(Math.random() * baseColors.length);
-    let chosenColor = baseColors[randomIndex];
-    
-    // Ajouter une variation de luminosité aléatoire
-    const variations = ['', '90', '80', '70', '60', '50'];
-    const variationIndex = Math.floor(Math.random() * variations.length);
-    
-    if (variations[variationIndex]) {
-      // Modifier légèrement la couleur pour plus de variété
-      const r = parseInt(chosenColor.slice(1, 3), 16);
-      const g = parseInt(chosenColor.slice(3, 5), 16);
-      const b = parseInt(chosenColor.slice(5, 7), 16);
-      
-      const factor = parseInt(variations[variationIndex]) / 100;
-      const newR = Math.floor(r * factor);
-      const newG = Math.floor(g * factor);
-      const newB = Math.floor(b * factor);
-      
-      chosenColor = `#${newR.toString(16).padStart(2, '0')}${newG.toString(16).padStart(2, '0')}${newB.toString(16).padStart(2, '0')}`;
-    }
-    
-    colors.push(chosenColor);
-  }
-  
-  return colors;
-};
-
-// Actualiser le graphique avec de nouvelles couleurs
-const refreshChart = () => {
-  chartOptions.colors = generateRandomColors();
-  
-  // Optionnellement, modifier aussi les données légèrement
-  const baseData = [150, 230, 180, 290, 340, 420, 380, 510, 290, 380, 460, 320];
-  const newData = baseData.map(value => {
-    const variation = Math.floor(Math.random() * 50) - 25; // ±25
-    return Math.max(50, value + variation); // Minimum 50
-  });
-  
-  chartSeries.value = [{
-    name: 'Transactions',
-    data: newData
-  }];
-};
-
-// Initialiser les couleurs au chargement
-onMounted(() => {
-  chartOptions.colors = generateRandomColors();
-});
+// Composant Dashboard simplifié avec design élégant
 </script>
 
 <style scoped>
-/* Animations au hover pour les cartes stats */
-.shadow-lg {
-  transition: all 0.3s ease;
+.welcome-card {
+  background: linear-gradient(135deg, #ffffff 0%, #fafafa 100%);
+  backdrop-filter: blur(10px);
 }
 
-.shadow-lg:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+.welcome-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* Animation d'entrée */
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-card {
+  animation: slideInUp 0.6s ease-out;
+}
+
+.welcome-card:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.welcome-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.welcome-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Hover animations */
+.group:hover .group-hover\:scale-110 {
+  transform: scale(1.1);
 }
 </style>

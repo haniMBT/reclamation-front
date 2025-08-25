@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { api } from '../boot/axios'
-const API_BASE_URL = process.env.API_BASE_URL
+const VITE_API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export const useEpaymentStore = defineStore('epayment', {
   state: () => ({
     factures: [],
@@ -93,7 +94,7 @@ export const useEpaymentStore = defineStore('epayment', {
         // Créer un formulaire pour soumettre en POST vers la route web
         const form = document.createElement('form')
         form.method = 'POST'
-        form.action = `${API_BASE_URL}/payment/process/${factureId}/${Email}`
+        form.action = `${VITE_API_BASE_URL}/payment/process/${factureId}/${Email}`
         
         // Ajouter le token CSRF (si disponible)
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')

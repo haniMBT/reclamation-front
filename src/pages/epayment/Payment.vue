@@ -170,7 +170,7 @@ export default defineComponent({
     const $q = useQuasar();
     const epaymentStore = useEpaymentStore();
     const authStore = useAuthStore();
-    const API_BASE_URL = process.env.API_BASE_URL;
+    const VITE_API_BASE_URL = process.env.VITE_API_BASE_URL;
     const loading = ref(false);
     const processing = ref(false);
     const facture = ref(null);
@@ -179,7 +179,6 @@ export default defineComponent({
     const captchaError = ref("");
     const termsError = ref("");
     const recaptchaWidget = ref(null);
-
     const form = ref({
       acceptTerms: false,
       captchaResponse: "",
@@ -187,7 +186,7 @@ export default defineComponent({
 
     // URL du backend pour les conditions d'utilisation
     const conditionsUrl = computed(() => {
-      const baseUrl = process.env.API_BASE_URL
+      const baseUrl = process.env.VITE_API_BASE_URL
       return `${baseUrl}/conditions`;
     });
 
@@ -205,7 +204,7 @@ export default defineComponent({
 
     const printConditions = (facture) => {
       // Ouvrir le PDF dans un nouvel onglet
-      const url = `${API_BASE_URL}/epayment/conditions/pdf`;
+      const url = `${VITE_API_BASE_URL}/epayment/conditions/pdf`;
       window.open(url);
     };
 
@@ -360,6 +359,7 @@ export default defineComponent({
       loading,
       processing,
       facture,
+      VITE_API_BASE_URL,
       showCaptcha,
       captchaError,
       termsError,
