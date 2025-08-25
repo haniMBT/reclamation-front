@@ -215,7 +215,7 @@ import 'moment/locale/fr';
 const router = useRouter()
 const $q = useQuasar()
 const epaymentStore = useEpaymentStore()
-const BASE_URL = process.env.BASE_URL
+const VITE_API_BASE_URL = process.env.VITE_API_BASE_URL
     const loading = ref(false)
     const factures = ref([])
     const stats = ref({
@@ -359,7 +359,7 @@ const BASE_URL = process.env.BASE_URL
 
     const printFacture = (facture) => {
       // Ouvrir le PDF dans un nouvel onglet
-        const url = `${BASE_URL}/epayment/factures/${facture.id}/pdf`
+        const url = `${VITE_API_BASE_URL}/epayment/factures/${facture.id}/pdf`
         window.open(url);
     }
 onMounted(() => {

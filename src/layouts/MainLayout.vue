@@ -185,7 +185,7 @@
             />
           </q-expansion-item>
 
-          <q-expansion-item expand-icon="0" to="/reclamation_client">
+           <q-expansion-item expand-icon="0" to="/under-development">
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
                 <q-icon size="lg">
@@ -197,11 +197,12 @@
                 <q-item-section-label>Réclamation client</q-item-section-label>
               </q-item-section>
             </template>
+         
           </q-expansion-item>
 
 
           <!--    Gestion des utilisateurs   -->
-          <q-expansion-item>
+          <q-expansion-item expand-icon="0" to="/under-development">
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
                 <q-icon size="md">
@@ -211,37 +212,8 @@
 
               <q-item-section> Gestion des utilisateurs </q-item-section>
             </template>
-            <q-expansion-item
-              :header-inset-level="1"
-              label="Utilisateurs"
-              expand-icon="0"
-              to="/utilisateur"
-            />
-            <q-expansion-item
-              :header-inset-level="1"
-              label="Privilèges"
-              expand-icon="0"
-              to="/privilege"
-            />
-            <q-expansion-item
-              :header-inset-level="1"
-              label="Mon profil"
-              expand-icon="0"
-              to="/profile"
-            />
+         
           </q-expansion-item>
-          <!--    Log History   -->
-          <!-- <q-item v-if="authStore?.privileges?.role == 'Admin'" to="/log-history" clickable v-ripple>
-            <q-item-section avatar>
-              <q-icon size="md">
-                <img src="/images/menu/log_history.png" />
-              </q-icon>
-            </q-item-section>
-            <q-item-section>
-              Journal d'activités
-            </q-item-section>
-          </q-item> -->
-
 
         </q-list>
       </q-scroll-area>

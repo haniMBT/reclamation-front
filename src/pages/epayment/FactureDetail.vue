@@ -255,7 +255,6 @@ const details = ref([]);
 const paymentInfo = ref(null);
 const totauxRows = ref([]);
 const prestationsFilter = ref("");
-const BASE_URL = process.env.BASE_URL;
 const VITE_API_BASE_URL = process.env.VITE_API_BASE_URL;
 const detailPagination = ref({
   sortBy: "prscod",
@@ -389,7 +388,7 @@ const viewReceipt = () => {
 };
 
 const printFacture = () => {
-  const url = `${BASE_URL}/epayment/factures/${facture.value.id}/pdf`;
+  const url = `${VITE_API_BASE_URL}/epayment/factures/${facture.value.id}/pdf`;
   window.open(url);
 };
 
