@@ -76,7 +76,7 @@
                   </q-item-section>
                 </q-item>
 
-                <q-item clickable v-close-popup>
+                <q-item clickable v-close-popup @click="$router.push('/under-development')">
                   <q-item-section avatar>
                     <q-icon name="settings" />
                   </q-item-section>
