@@ -52,7 +52,7 @@ export const useAuthStore = defineStore('auth', {
           return photo;
         }
         // Sinon, construire l'URL complète vers le backend
-        const baseUrl = process.env.API_BASE_URL || 'http://localhost:8000';
+        const baseUrl = process.env.VITE_API_BASE_URL || 'http://localhost:8000';
         return `${baseUrl}/storage/photos/${photo}`;
       }
       return null;

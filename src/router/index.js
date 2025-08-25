@@ -29,9 +29,9 @@ export default route(function (/* { store, ssrContext } */) {
   })
 
   Router.beforeEach(async (to, from, next) => {
-    const API_BASE_URL = process.env.API_BASE_URL;
+    const VITE_API_BASE_URL = process.env.VITE_API_BASE_URL;
 
-    if (to.path !== '/login' && to.path !== `/${API_BASE_URL}/fiches_bdt` && to.path !== '/changePasswrod' && to.path !== '/acceuil' && useAuthStore().isLoggedIn === null)
+    if (to.path !== '/login' && to.path !== '/changePasswrod' && to.path !== '/acceuil' && useAuthStore().isLoggedIn === null)
       next('/acceuil');
     else 
       next();
