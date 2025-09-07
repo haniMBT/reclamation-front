@@ -185,7 +185,10 @@
             />
           </q-expansion-item>
 
-           <q-expansion-item expand-icon="0" to="/under-development">
+
+          <!--    Base de données technique   -->
+
+          <q-expansion-item >
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
                 <q-icon size="lg">
@@ -197,6 +200,9 @@
                 <q-item-section-label>Réclamation client</q-item-section-label>
               </q-item-section>
             </template>
+            <q-expansion-item :header-inset-level="1" label="Liste des réclamations" expand-icon="0" to="/reclamations/all" />
+            <q-expansion-item :header-inset-level="1" label="Nouvelle réclamation" expand-icon="0" to="/reclamations/client" />
+            <q-expansion-item :header-inset-level="1" label="Nature" expand-icon="0" to="/reclamations/nature" />
 
           </q-expansion-item>
 

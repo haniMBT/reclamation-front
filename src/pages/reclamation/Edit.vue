@@ -8,7 +8,7 @@
             <q-icon name="feedback" size="2rem" class="text-blue-600 mr-3" />
             <div>
               <h1 class="text-2xl font-bold text-gray-800 mb-1">Réclamation Client</h1>
-              <p class="text-gray-600 text-sm">Envoyez votre réclamation en remplissant le formulaire ci-dessous</p>
+              <p class="text-gray-600 text-sm">Mettez à jour votre réclamation en complétant le formulaire ci-dessous.</p>
             </div>
           </div>
 
@@ -32,12 +32,12 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Type(s) de réclamation *
             </label>
-            
+
             <div v-if="loadingNatures" class="flex items-center justify-center py-4">
               <q-spinner color="blue-6" size="2rem" />
               <span class="ml-2 text-gray-600">Chargement des types...</span>
             </div>
-            
+
             <div v-else class="space-y-4">
               <!-- Sélection des natures -->
               <div v-for="nature in natures" :key="nature.NATID" class="border border-gray-200 rounded-lg p-4">
@@ -52,7 +52,7 @@
                     <label class="font-medium text-gray-800 cursor-pointer" @click="toggleNature(nature.NATID)">
                       {{ nature.NATLIB }}
                     </label>
-                    
+
                     <!-- Sous-natures (affichées seulement si la nature est sélectionnée) -->
                     <div v-if="selectedNatures.includes(nature.NATID) && nature.sous_natures && nature.sous_natures.length > 0" class="mt-3 ml-4 space-y-2">
                       <div class="text-sm font-medium text-gray-600 mb-2">Sous-types :</div>
@@ -71,14 +71,14 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Message si aucune nature disponible -->
               <div v-if="natures.length === 0" class="text-center py-4 text-gray-500">
                 <q-icon name="info" size="1.5rem" class="mb-2" />
                 <p>Aucun type de réclamation disponible</p>
               </div>
             </div>
-            
+
             <!-- Validation error pour les natures -->
             <div v-if="selectedNatures.length === 0 && showNatureError" class="text-red-600 text-xs mt-1">
               Veuillez sélectionner au moins un type de réclamation
@@ -183,6 +183,78 @@
             </q-input>
           </div>
 
+          <!-- Action attendue -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Action attendue
+            </label>
+            <q-input
+              v-model="complaint.action_attendue"
+              type="textarea"
+              rows="3"
+              outlined
+              placeholder="Décrivez l'action que vous attendez..."
+              class="w-full"
+            >
+              <template v-slot:prepend>
+                <q-icon name="edit_note" class="text-purple-600" />
+              </template>
+            </q-input>
+          </div>
+
+    <!-- Ancien Fichiers joints -->
+        <div v-if="reclamation && reclamation.fichiers && reclamation.fichiers.length > 0" class="bg-white rounded-lg shadow-sm p-6">
+          <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+            <q-icon name="attach_file" color="blue-600" size="1.5rem" class="mr-2" />
+            Fichiers joints ({{ reclamation.fichiers.length }})
+          </h3>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div
+              v-for="fichier in reclamation.fichiers"
+              :key="fichier.id"
+              class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow duration-200"
+            >
+              <div class="flex items-start space-x-3">
+                <div class="flex-shrink-0">
+                  <q-icon
+                    :name="getFileIcon(fichier.type_mime)"
+                    size="2rem"
+                    class="text-blue-600"
+                  />
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-medium text-gray-900 truncate" :title="fichier.nom_original">
+                    {{ fichier.nom_original }}
+                  </p>
+                  <p class="text-xs text-gray-500 mt-1">
+                    {{ formatFileSize(fichier.taille) }}
+                  </p>
+                  <p class="text-xs text-gray-500">
+                    Ajouté le {{ formatDate(fichier.date_upload) }}
+                  </p>
+                </div>
+
+                <div class="flex-shrink-0">
+                  <q-btn
+                    icon="delete"
+                    size="sm"
+                    flat
+                    round
+                    color="negative"
+                    @click="deleteFile(fichier)"
+                    class="ml-2"
+                  >
+                    <q-tooltip>Télécharger le fichier</q-tooltip>
+                  </q-btn>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
           <!-- Fichiers joints -->
           <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -270,7 +342,7 @@
               class="px-6"
             />
             <q-btn
-              label="Envoyer la réclamation"
+              label="Modifier la réclamation"
               color="blue-6"
               type="submit"
               :loading="isSubmitting"
@@ -406,34 +478,40 @@ import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
+import { useReclamationStore } from "stores/reclamation";
 
+const RecalmationStore = useReclamationStore();
 const $q = useQuasar()
 const router = useRouter()
 
 // État du formulaire
 const complaint = ref({
+  id: '',
   subject: '',
   content: '',
   consequences: '',
   action_attendue: '',
   autre_type_reclamation: '',
   attachments: null,
-  natures: [], // IDs des natures sélectionnées
-  sous_natures: [] // IDs des sous-natures sélectionnées
+  natures: [],
+  sous_natures: []
 })
 
 // Nouveaux états pour la gestion progressive des fichiers
 const newFiles = ref(null)
 const allFiles = ref([])
 
-// États pour les natures et sous-natures
-const natures = ref([])
-const loadingNatures = ref(false)
-const selectedNatures = ref([])
-const selectedSousNatures = ref([])
-
 // État pour les réclamations existantes avec pagination
 const reclamations = ref([])
+const reclamation = ref(null)
+
+// États pour les natures et sous-natures
+const natures = ref([])
+const selectedNatures = ref([])
+const selectedSousNatures = ref([])
+const loadingNatures = ref(false)
+const showNatureError = ref(false)
+
 const loadingReclamations = ref(false)
 const pagination = ref({
   current_page: 1,
@@ -446,14 +524,12 @@ const pagination = ref({
 
 const isSubmitting = ref(false)
 const contentError = ref(false)
-const showNatureError = ref(false)
 
 // Computed properties
 const isFormValid = computed(() => {
   return complaint.value.subject.trim() !== '' &&
          complaint.value.content.trim() !== '' &&
-         complaint.value.content !== '<p><br></p>' && // Vérifie que le contenu n'est pas vide
-         selectedNatures.value.length > 0 // Au moins une nature sélectionnée
+         complaint.value.content !== '<p><br></p>' // Vérifie que le contenu n'est pas vide
 })
 
 // Fonctions utilitaires
@@ -557,29 +633,76 @@ const resetForm = () => {
   showNatureError.value = false
 }
 
+// Fonctions pour la gestion des natures et sous-natures
+const toggleNature = (natureId) => {
+  const index = selectedNatures.value.indexOf(natureId)
+  if (index > -1) {
+    // Désélectionner la nature
+    selectedNatures.value.splice(index, 1)
+    // Désélectionner toutes les sous-natures de cette nature
+    const nature = natures.value.find(n => n.NATID === natureId)
+    if (nature && nature.sous_natures) {
+      nature.sous_natures.forEach(sn => {
+        const snIndex = selectedSousNatures.value.indexOf(sn.SOUSID)
+        if (snIndex > -1) {
+          selectedSousNatures.value.splice(snIndex, 1)
+        }
+      })
+    }
+  } else {
+    // Sélectionner la nature
+    selectedNatures.value.push(natureId)
+  }
+  showNatureError.value = false
+}
+
+const toggleSousNature = (sousNatureId) => {
+  const index = selectedSousNatures.value.indexOf(sousNatureId)
+  if (index > -1) {
+    selectedSousNatures.value.splice(index, 1)
+  } else {
+    selectedSousNatures.value.push(sousNatureId)
+  }
+}
+
 // Charger les réclamations existantes avec pagination
 const loadReclamations = async (page = 1) => {
   loadingReclamations.value = true
   loadingNatures.value = true
+
   try {
     const params = new URLSearchParams({
       page: page,
-      per_page: pagination.value.per_page
+      per_page: pagination.value.per_page,
+      id_reclamation: RecalmationStore.id
     })
 
     const response = await api.get(`/api/reclamations?${params.toString()}`)
     if (response.data.success) {
       reclamations.value = response.data.data.data
-      // Mettre à jour les informations de pagination
-      pagination.value = {
-        current_page: response.data.data.current_page,
-        per_page: response.data.data.per_page,
-        total: response.data.data.total,
-        last_page: response.data.data.last_page,
-        from: response.data.data.from,
-        to: response.data.data.to
-      }
       
+      // Si on a une réclamation spécifique, remplir le formulaire
+      if (response.data.data.reclamation) {
+        const reclamationData = response.data.data.reclamation
+        
+        complaint.value.id = reclamationData.id
+        complaint.value.subject = reclamationData.objet
+        complaint.value.content = reclamationData.contenu
+        complaint.value.consequences = reclamationData.consequences || ''
+        complaint.value.action_attendue = reclamationData.action_attendue || ''
+        complaint.value.autre_type_reclamation = reclamationData.autre_type_reclamation || ''
+        
+        // Récupérer les natures et sous-natures associées
+        if (reclamationData.natures_associees) {
+          selectedNatures.value = reclamationData.natures_associees.map(na => na.nature_id)
+          selectedSousNatures.value = reclamationData.natures_associees
+            .filter(na => na.sous_nature_id)
+            .map(na => na.sous_nature_id)
+        }
+        
+        console.log("Données réclamation depuis API", reclamationData)
+      }
+
       // Récupérer les natures depuis la réponse de l'API des réclamations
       if (response.data.data.natures) {
         natures.value = response.data.data.natures.map(nature => ({
@@ -592,6 +715,16 @@ const loadReclamations = async (page = 1) => {
             NATID: sousNature.nature_id
           }))
         }))
+      }
+
+      // Mettre à jour les informations de pagination
+      pagination.value = {
+        current_page: response.data.data.current_page,
+        per_page: response.data.data.per_page,
+        total: response.data.data.total,
+        last_page: response.data.data.last_page,
+        from: response.data.data.from,
+        to: response.data.data.to
       }
     }
   } catch (error) {
@@ -676,12 +809,13 @@ const submitComplaint = async () => {
     formData.append('consequences', complaint.value.consequences || '')
     formData.append('action_attendue', complaint.value.action_attendue || '')
     formData.append('autre_type_reclamation', complaint.value.autre_type_reclamation || '')
-    
+    formData.append('_method', 'PUT')
+
     // Ajouter les natures et sous-natures sélectionnées
     selectedNatures.value.forEach((natureId, index) => {
       formData.append(`natures[${index}]`, natureId)
     })
-    
+
     selectedSousNatures.value.forEach((sousNatureId, index) => {
       formData.append(`sous_natures[${index}]`, sousNatureId)
     })
@@ -692,9 +826,12 @@ const submitComplaint = async () => {
         formData.append(`fichiers[${index}]`, file)
       })
     }
+    console.log(complaint.value.id);
+    console.log(formData.get('objet'));
+
 
     // Envoyer vers l'API Laravel
-    const response = await api.post('/api/reclamation', formData, {
+    const response = await api.post(`/api/reclamation/${complaint.value.id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -710,10 +847,11 @@ const submitComplaint = async () => {
         timeout: 5000
       })
 
-      resetForm()
+      // resetForm()
 
       // Recharger la liste des réclamations
       await loadReclamations()
+      allFiles.value = []
 
       // Optionnel: rediriger vers une page de confirmation
       // router.push('/dashboard')
@@ -751,45 +889,34 @@ const submitComplaint = async () => {
   }
 }
 
-// Fonctions pour la gestion des natures et sous-natures
-// Note: Les natures sont maintenant chargées via loadReclamations()
-
-const toggleNature = (natureId) => {
-  const index = selectedNatures.value.indexOf(natureId)
-  if (index > -1) {
-    // Désélectionner la nature
-    selectedNatures.value.splice(index, 1)
-    // Désélectionner toutes les sous-natures de cette nature
-    const nature = natures.value.find(n => n.NATID === natureId)
-    if (nature && nature.sous_natures) {
-      nature.sous_natures.forEach(sn => {
-        const snIndex = selectedSousNatures.value.indexOf(sn.SOUSID)
-        if (snIndex > -1) {
-          selectedSousNatures.value.splice(snIndex, 1)
-        }
-      })
-    }
-  } else {
-    // Sélectionner la nature
-    selectedNatures.value.push(natureId)
-  }
-  showNatureError.value = false
-}
-
-const toggleSousNature = (sousNatureId) => {
-  const index = selectedSousNatures.value.indexOf(sousNatureId)
-  if (index > -1) {
-    selectedSousNatures.value.splice(index, 1)
-  } else {
-    selectedSousNatures.value.push(sousNatureId)
-  }
-}
-
 // Lifecycle
 onMounted(() => {
-  // Charger la liste des réclamations existantes (inclut maintenant les natures)
+  // Charger toutes les données via loadReclamations
   loadReclamations()
 })
+
+// Téléchargement de fichiers
+const deleteFile = async (fichier) => {
+  try {
+    const response = await api.get(`/api/reclamation/${reclamation.value.id}/fichier/${fichier.id}/delete`, {
+      responseType: 'blob'
+    })
+  loadReclamations()
+
+    $q.notify({
+      type: 'negative',
+      message: 'Fichier supprimé avec succès',
+      position: 'top'
+    })
+  } catch (error) {
+    console.error('Erreur lors du téléchargement:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Erreur lors du téléchargement',
+      position: 'top'
+    })
+  }
+}
 </script>
 
 <style scoped>
