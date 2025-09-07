@@ -197,7 +197,7 @@
                 <q-item-section-label>Réclamation client</q-item-section-label>
               </q-item-section>
             </template>
-         
+
           </q-expansion-item>
 
 
@@ -212,7 +212,24 @@
 
               <q-item-section> Gestion des utilisateurs </q-item-section>
             </template>
-         
+            <q-expansion-item
+              :header-inset-level="1"
+              label="Utilisateurs"
+              expand-icon="0"
+              to="/utilisateur"
+            />
+            <q-expansion-item
+              :header-inset-level="1"
+              label="Privilèges"
+              expand-icon="0"
+              to="/privilege"
+            />
+            <q-expansion-item
+              :header-inset-level="1"
+              label="Volet d'application"
+              expand-icon="0"
+              to="/volets"
+            />
           </q-expansion-item>
 
         </q-list>
@@ -295,6 +312,22 @@ onMounted(async () => {
     visible.value = false;
   }, 500);
 });
+
+
+// watch(
+//   () => authStore.volet,
+//   async (newVal, oldVal) => {
+//     if (newVal && newVal != "null" && newVal != oldVal) {
+//       await authStore.getPrivileges();
+//       await authStore.getDirections();
+//     }
+//   },
+//   {
+//     immediate: true,
+//     deep: true,
+//   }
+// );
+
 </script>
 
 <style>
