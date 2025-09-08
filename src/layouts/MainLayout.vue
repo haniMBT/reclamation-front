@@ -208,7 +208,7 @@
 
 
           <!--    Gestion des utilisateurs   -->
-          <q-expansion-item expand-icon="0" to="/under-development">
+          <q-expansion-item>
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
                 <q-icon size="md">
