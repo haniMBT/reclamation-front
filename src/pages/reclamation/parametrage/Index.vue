@@ -103,7 +103,7 @@
 
       <!-- Add Ticket Dialog -->
       <q-dialog v-model="addTicket" persistent>
-        <q-card class="w-full" style="max-width: 80vw;">
+        <q-card class="w-full" style="min-width: 60vw; max-width: 80vw; max-height: 80vh; display: flex; flex-direction: column;">
           <q-card-section class="flex items-center bg-blue-50">
             <q-icon name="add" class="text-blue-600 mr-3" size="2rem" />
             <div>
@@ -114,8 +114,7 @@
 
           <q-separator />
 
-          <q-card-section class="q-pa-lg" style="max-height: 70vh;">
-            <div class="overflow-auto">
+          <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
               <form class="space-y-6">
                 <div class="grid grid-cols-1 gap-6">
                   <!-- Formulaire ticket existant -->
@@ -222,14 +221,12 @@
 
                             <!-- Key attribut -->
                             <div class="flex items-center">
-                              <q-checkbox
-                                v-model="info.key_attribut"
-                                color="blue-6"
-                                class="mr-2"
-                              />
-                              <label class="text-xs font-medium text-gray-600">
-                                information clé
-                              </label>
+                                <q-checkbox
+                                      v-model="info.key_attribut"
+                                      color="blue-6"
+                                      label="Information clé"
+                                      class="text-xs font-medium text-gray-600"
+                                />
                             </div>
                           </div>
 
@@ -257,12 +254,11 @@
                   </div>
                 </div>
               </form>
-            </div>
           </q-card-section>
 
           <q-separator />
 
-          <q-card-actions align="right" class="q-pa-md">
+          <q-card-actions align="right" class="q-pa-md bg-white">
             <q-btn
               flat
               label="Annuler"
@@ -283,7 +279,7 @@
 
       <!-- Delete Ticket Dialog -->
       <q-dialog v-model="deleteTicket" persistent>
-        <q-card class="w-full max-w-md">
+        <q-card class="w-full max-w-md" style="display: flex; flex-direction: column;">
           <q-card-section class="flex items-center bg-red-50">
             <q-icon name="warning" class="text-red-600 mr-3" size="2rem" />
             <div>
@@ -293,7 +289,7 @@
 
           <q-separator />
 
-          <q-card-section class="q-pa-lg">
+          <q-card-section class="q-pa-lg" style="flex: 1;">
             <p class="text-gray-700">
               Êtes-vous sûr de vouloir supprimer le ticket "{{ selectedTicket?.libelle }}" ?
             </p>
@@ -301,7 +297,7 @@
 
           <q-separator />
 
-          <q-card-actions align="right" class="q-pa-md">
+          <q-card-actions align="right" class="q-pa-md bg-white">
             <q-btn
               flat
               label="Annuler"
