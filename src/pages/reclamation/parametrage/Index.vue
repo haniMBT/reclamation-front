@@ -49,68 +49,181 @@
 
       <!-- Table Section -->
       <div class="bg-white rounded-lg shadow-sm p-6">
-        <q-table
-          v-if="showTicketsTable"
-          flat
-          :rows="tickets"
-          :columns="ticketsCols"
-          :pagination="initialPagination"
-          class="my-4"
-        >
-          <template v-slot:body="props">
-            <q-tr v-if="!loadingTickets" :props="props" :class="{ 'bg-gray-50': props.rowIndex % 2 == 0 }">
-              <q-td key="Actions" :props="props">
-                <div class="flex items-center gap-2">
+        <!-- Liste des tickets avec affichage hiérarchisé -->
+        <div class="space-y-4">
+          <q-expansion-item
+            v-for="ticket in filteredTickets"
+            :key="ticket.id"
+            :label="ticket.libelle"
+            :caption="`Direction: ${ticket.direction}`"
+            icon="confirmation_number"
+            class="bg-white shadow-sm rounded-lg overflow-hidden"
+            header-class="bg-blue-50 text-blue-900 font-medium"
+          >
+            <template #header>
+              <div class="flex items-center justify-between w-full">
+                <div class="flex items-center space-x-3">
+                  <q-icon name="confirmation_number" class="text-blue-600" size="1.5rem" />
+                  <div>
+                    <div class="font-semibold text-gray-900">{{ ticket.libelle }}</div>
+                    <div class="text-sm text-gray-600">Direction: {{ ticket.direction }}</div>
+                  </div>
+                </div>
+                <div class="flex space-x-2">
                   <q-btn
-                    flat
-                    round
-                    dense
                     icon="delete"
                     size="sm"
-                    color="negative"
-                    @click="openDeleteTicket(props.row)"
-                    class="hover:bg-red-50"
-                  >
-                    <q-tooltip>Supprimer le ticket</q-tooltip>
-                  </q-btn>
-                  <q-btn
                     flat
                     round
-                    dense
+                    color="negative"
+                    @click.stop="openDeleteTicket(ticket)"
+                  >
+                    <q-tooltip>Supprimer</q-tooltip>
+                  </q-btn>
+                  <q-btn
                     icon="edit"
                     size="sm"
-                    color="warning"
-                    @click="openEditTicket(props.row)"
-                    class="hover:bg-orange-50"
-                  >
-                    <q-tooltip>Modifier le ticket</q-tooltip>
-                  </q-btn>
-                  <q-btn
                     flat
                     round
-                    dense
+                    color="primary"
+                    @click.stop="openEditTicket(ticket)"
+                  >
+                    <q-tooltip>Modifier</q-tooltip>
+                  </q-btn>
+                  <q-btn
                     icon="add"
                     size="sm"
+                    flat
+                    round
                     color="green-6"
-                    @click="openAddTypeDetail(props.row)"
-                    class="hover:bg-green-50"
+                    @click.stop="openAddTypeDetail(ticket)"
                   >
                     <q-tooltip>Ajouter un type et ses détails</q-tooltip>
                   </q-btn>
                 </div>
-              </q-td>
-              <q-td key="libelle" :props="props">
-                <span class="font-medium text-gray-900">{{ props.row.libelle }}</span>
-              </q-td>
-              <q-td key="direction" :props="props">
-                <span class="text-gray-800">{{ props.row.direction }}</span>
-              </q-td>
-              <q-td key="documentAfornir" :props="props">
-                <div class="text-gray-800" v-html="props.row.documentAfornir"></div>
-              </q-td>
-            </q-tr>
-          </template>
-        </q-table>
+              </div>
+            </template>
+
+            <div class="p-6 bg-gray-50">
+              <!-- Document à fournir -->
+              <div v-if="ticket.documentAfornir" class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <q-icon name="description" class="mr-2 text-gray-500" />
+                  Document à fournir
+                </h4>
+                <div class="bg-white p-3 rounded border text-sm" v-html="ticket.documentAfornir"></div>
+              </div>
+
+              <!-- Section Infos générales -->
+              <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <q-icon name="info" class="mr-2 text-blue-500" />
+                  Informations générales
+                  <q-badge v-if="ticket.infos_generales?.length" :label="ticket.infos_generales.length" color="blue-6" class="ml-2" />
+                </h4>
+                <q-list v-if="ticket.infos_generales?.length" bordered separator class="rounded bg-white">
+                  <q-item
+                    v-for="info in ticket.infos_generales"
+                    :key="info.id"
+                    class="py-3"
+                  >
+                    <q-item-section avatar>
+                      <q-icon
+                        :name="info.key_attribut ? 'star' : 'info_outline'"
+                        :color="info.key_attribut ? 'amber-6' : 'blue-grey-5'"
+                        size="1.2rem"
+                      />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="font-medium">{{ info.libelle }}</q-item-label>
+                      <q-item-label v-if="info.key_attribut" caption class="text-amber-600">
+                        <q-icon name="star" size="xs" class="mr-1" />
+                        Information clé
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+                <div v-else class="text-center py-4 text-gray-500 bg-white rounded border border-dashed">
+                  <q-icon name="info_outline" size="1.5rem" class="mb-2" />
+                  <p class="text-sm">Aucune information générale</p>
+                </div>
+              </div>
+
+              <!-- Section Types -->
+              <div>
+                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <q-icon name="category" class="mr-2 text-green-500" />
+                  Types
+                  <q-badge v-if="ticket.types?.length" :label="ticket.types.length" color="green-6" class="ml-2" />
+                </h4>
+                <div v-if="ticket.types?.length" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <q-card
+                    v-for="type in ticket.types"
+                    :key="type.id"
+                    class="bg-white shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <q-card-section class="pb-2">
+                      <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                          <h5 class="font-semibold text-gray-900 mb-1">{{ type.libelle }}</h5>
+                          <p class="text-sm text-gray-600 mb-2">
+                            <q-icon name="business" size="xs" class="mr-1" />
+                            {{ type.direction || 'Non spécifiée' }}
+                          </p>
+                          <q-badge
+                            :color="getStatutColor(type.statut_direction)"
+                            :label="type.statut_direction || 'Non défini'"
+                            class="text-xs"
+                          />
+                        </div>
+                      </div>
+                    </q-card-section>
+
+                    <!-- Section Détails du type -->
+                    <q-card-section v-if="type.details?.length" class="pt-0">
+                      <q-separator class="mb-3" />
+                      <h6 class="text-xs font-medium text-gray-600 mb-2 flex items-center">
+                        <q-icon name="list" size="xs" class="mr-1" />
+                        Détails ({{ type.details.length }})
+                      </h6>
+                      <q-table
+                        :rows="type.details"
+                        :columns="detailColumns"
+                        row-key="id"
+                        flat
+                        dense
+                        :rows-per-page-options="[0]"
+                        hide-pagination
+                        class="text-xs"
+                      >
+                        <template #body-cell-statut_direction="props">
+                          <q-td :props="props">
+                            <q-badge
+                              :color="getStatutColor(props.value)"
+                              :label="props.value || 'Non défini'"
+                              class="text-xs"
+                            />
+                          </q-td>
+                        </template>
+                      </q-table>
+                    </q-card-section>
+                    <q-card-section v-else class="pt-0">
+                      <q-separator class="mb-3" />
+                      <div class="text-center py-2 text-gray-400">
+                        <q-icon name="list" size="1rem" class="mb-1" />
+                        <p class="text-xs">Aucun détail</p>
+                      </div>
+                    </q-card-section>
+                  </q-card>
+                </div>
+                <div v-else class="text-center py-4 text-gray-500 bg-white rounded border border-dashed">
+                  <q-icon name="category" size="1.5rem" class="mb-2" />
+                  <p class="text-sm">Aucun type défini</p>
+                </div>
+              </div>
+            </div>
+          </q-expansion-item>
+        </div>
       </div>
 
       <!-- Add Ticket Dialog -->
@@ -564,6 +677,45 @@ const onTypeSaved = (data) => {
   // Par exemple, rafraîchir les données
   fetchData();
 };
+
+// Méthode pour obtenir la couleur du statut
+const getStatutColor = (statut) => {
+  switch (statut) {
+    case 'Actif':
+      return 'green-6';
+    case 'Inactif':
+      return 'red-6';
+    case 'En attente':
+      return 'orange-6';
+    default:
+      return 'grey-6';
+  }
+};
+
+// Colonnes pour les détails des types
+const detailColumns = ref([
+  {
+    name: 'libelle',
+    label: 'Libellé',
+    field: 'libelle',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'direction',
+    label: 'Direction',
+    field: 'direction',
+    align: 'left',
+    sortable: true
+  },
+  {
+    name: 'statut_direction',
+    label: 'Statut',
+    field: 'statut_direction',
+    align: 'center',
+    sortable: true
+  }
+]);
 
 // Watch for search changes
 watch(searchTickets, () => {
