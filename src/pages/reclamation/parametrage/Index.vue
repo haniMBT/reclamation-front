@@ -85,6 +85,18 @@
                   >
                     <q-tooltip>Modifier le ticket</q-tooltip>
                   </q-btn>
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="add"
+                    size="sm"
+                    color="green-6"
+                    @click="openAddTypeDetail(props.row)"
+                    class="hover:bg-green-50"
+                  >
+                    <q-tooltip>Ajouter un type et ses détails</q-tooltip>
+                  </q-btn>
                 </div>
               </q-td>
               <q-td key="libelle" :props="props">
@@ -317,6 +329,14 @@
       </q-dialog>
     </div>
   </div>
+  <!-- Type Detail Dialog -->
+  <TypeDetail
+    v-model:show="showTypeDetail"
+    :ticket-id="selectedTicket?.id"
+    :ticket-libelle="selectedTicket?.libelle"
+    :directions="directions"
+    @saved="onTypeSaved"
+  />
 </template>
 
 <script setup>
@@ -324,6 +344,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
 import ErrorValidation from 'components/ErrorValidation.vue';
+import TypeDetail from './TypeDetail.vue';
 
 // Reactive variables
 const tickets = ref([]);
@@ -331,6 +352,7 @@ const directions = ref([]);
 const searchTickets = ref('');
 const addTicket = ref(false);
 const deleteTicket = ref(false);
+const showTypeDetail = ref(false);
 const selectedTicket = ref(null);
 const loading = ref(false);
 const loadingTickets = ref(false);
@@ -529,6 +551,19 @@ const filteredTickets = computed(() => {
     ticket.direction?.toLowerCase().includes(needle)
   );
 });
+
+// Méthode pour ouvrir le dialog d'ajout de type et détails
+const openAddTypeDetail = (ticket) => {
+  selectedTicket.value = ticket;
+  showTypeDetail.value = true;
+};
+
+// Méthode appelée après l'enregistrement d'un type et ses détails
+const onTypeSaved = (data) => {
+  // Vous pouvez ajouter ici une logique supplémentaire si nécessaire
+  // Par exemple, rafraîchir les données
+  fetchData();
+};
 
 // Watch for search changes
 watch(searchTickets, () => {
