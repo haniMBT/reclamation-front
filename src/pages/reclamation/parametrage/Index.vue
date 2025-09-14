@@ -404,20 +404,55 @@
 
       <!-- Delete Ticket Dialog -->
       <q-dialog v-model="deleteTicket" persistent>
-        <q-card class="w-full max-w-md" style="display: flex; flex-direction: column;">
+        <q-card class="w-full max-w-lg" style="display: flex; flex-direction: column;">
           <q-card-section class="flex items-center bg-red-50">
-            <q-icon name="warning" class="text-red-600 mr-3" size="2rem" />
+            <q-icon name="warning" class="text-red-600 mr-3" size="2.5rem" />
             <div>
               <div class="text-xl font-semibold text-red-900">Confirmer la suppression</div>
+              <div class="text-sm text-red-700">Cette action est irréversible</div>
             </div>
           </q-card-section>
 
           <q-separator />
 
           <q-card-section class="q-pa-lg" style="flex: 1;">
-            <p class="text-gray-700">
-              Êtes-vous sûr de vouloir supprimer le ticket "{{ selectedTicket?.libelle }}" ?
-            </p>
+            <div class="space-y-4">
+              <p class="text-gray-700 font-medium">
+                Êtes-vous sûr de vouloir supprimer le ticket suivant ?
+              </p>
+
+              <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-red-500">
+                <div class="flex items-start space-x-3">
+                  <q-icon name="confirmation_number" class="text-red-500 mt-1" size="1.2rem" />
+                  <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900">{{ selectedTicket?.libelle }}</h4>
+                    <p class="text-sm text-gray-600 mt-1">
+                      <q-icon name="business" size="xs" class="mr-1" />
+                      Direction: {{ selectedTicket?.direction }}
+                    </p>
+                    <div class="mt-2 text-xs text-gray-500">
+                      <div v-if="selectedTicket?.infos_generales?.length">
+                        <q-icon name="info" size="xs" class="mr-1" />
+                        {{ selectedTicket.infos_generales.length }} information(s) générale(s)
+                      </div>
+                      <div v-if="selectedTicket?.types?.length">
+                        <q-icon name="category" size="xs" class="mr-1" />
+                        {{ selectedTicket.types.length }} type(s) avec leurs détails
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-amber-50 p-3 rounded border border-amber-200">
+                <div class="flex items-start space-x-2">
+                  <q-icon name="info" class="text-amber-600 mt-0.5" size="1rem" />
+                  <div class="text-sm text-amber-800">
+                    <strong>Attention :</strong> La suppression de ce ticket entraînera également la suppression de toutes ses informations générales, types et détails associés.
+                  </div>
+                </div>
+              </div>
+            </div>
           </q-card-section>
 
           <q-separator />
@@ -429,13 +464,15 @@
               color="grey"
               @click="closeDeleteTicket"
               class="px-6"
+              :disable="loading"
             />
             <q-btn
-              label="Supprimer"
+              label="Supprimer définitivement"
               color="negative"
               @click="deleteData"
               :loading="loading"
               class="px-6"
+              icon="delete_forever"
             />
           </q-card-actions>
         </q-card>
@@ -631,22 +668,62 @@ const removeInfoGenerale = (index) => {
 };
 
 const deleteData = async () => {
+  if (!selectedTicket.value) {
+    $q.notify({
+      type: 'negative',
+      message: 'Aucun ticket sélectionné pour la suppression'
+    });
+    return;
+  }
+
   loading.value = true;
 
   try {
     const response = await api.delete(`/api/rec/parametrage/${selectedTicket.value.id}`);
-    message.value = response.data.message;
+
+    // Message de succès personnalisé
+    const successMessage = response.data.message || `Ticket "${selectedTicket.value.libelle}" supprimé avec succès`;
+
     $q.notify({
       type: 'positive',
-      message: message.value
+      message: successMessage,
+      icon: 'check_circle',
+      position: 'top',
+      timeout: 3000
     });
+
     closeDeleteTicket();
     await fetchData(); // Refresh the list
+
   } catch (error) {
     console.error('Erreur lors de la suppression:', error);
+
+    let errorMessage = 'Erreur lors de la suppression du ticket';
+
+    if (error.response) {
+      switch (error.response.status) {
+        case 404:
+          errorMessage = 'Le ticket à supprimer n\'existe plus';
+          break;
+        case 403:
+          errorMessage = 'Vous n\'avez pas les droits pour supprimer ce ticket';
+          break;
+        case 500:
+          errorMessage = error.response.data.message || 'Erreur serveur lors de la suppression';
+          break;
+        default:
+          errorMessage = error.response.data.message || errorMessage;
+      }
+    } else if (error.request) {
+      errorMessage = 'Impossible de contacter le serveur';
+    }
+
     $q.notify({
       type: 'negative',
-      message: 'Erreur lors de la suppression du ticket'
+      message: errorMessage,
+      icon: 'error',
+      position: 'top',
+      timeout: 5000
     });
   } finally {
     loading.value = false;
