@@ -315,9 +315,19 @@ const isFormValid = computed(() => {
   return true;
 });
 
+// Watcher pour synchroniser ticketId avec form.id_btickes
+watch(() => props.ticketId, (newVal) => {
+  console.log('TypeDetail: ticketId changed to:', newVal);
+  form.value.id_btickes = newVal;
+}, { immediate: true });
+
 // Synchroniser le prop show avec la variable locale showDialog
 watch(() => props.show, (newVal) => {
   showDialog.value = newVal;
+  // Réinitialiser le formulaire à chaque ouverture
+  if (newVal) {
+    resetForm();
+  }
 });
 
 watch(() => showDialog.value, (newVal) => {
@@ -355,7 +365,7 @@ const removeDetail = (typeIndex, detailIndex) => {
 
 const resetForm = () => {
   form.value = {
-    id_btickes: props.ticketId,
+    id_btickes: props.ticketId, // Utilise toujours la valeur actuelle du prop
     types: [
       {
         libelle: '',

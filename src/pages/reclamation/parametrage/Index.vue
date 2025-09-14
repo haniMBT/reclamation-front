@@ -744,6 +744,15 @@ const filteredTickets = computed(() => {
 
 // Méthode pour ouvrir le dialog d'ajout de type et détails
 const openAddTypeDetail = (ticket) => {
+  if (!ticket || !ticket.id) {
+    $q.notify({
+      type: 'negative',
+      message: 'Erreur: Ticket non valide'
+    });
+    return;
+  }
+
+  console.log('Index: Opening TypeDetail for ticket:', ticket.id, ticket.libelle);
   selectedTicket.value = ticket;
   showTypeDetail.value = true;
 };
