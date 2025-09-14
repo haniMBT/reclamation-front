@@ -203,6 +203,7 @@
             <q-expansion-item :header-inset-level="1" label="Liste des réclamations" expand-icon="0" to="/reclamations/all" />
             <q-expansion-item :header-inset-level="1" label="Nouvelle réclamation" expand-icon="0" to="/reclamations/client" />
             <q-expansion-item :header-inset-level="1" label="Nature" expand-icon="0" to="/reclamations/nature" />
+            <q-expansion-item :header-inset-level="1" label="Parametrage" expand-icon="0" to="/reclamations/parametrage" />
 
           </q-expansion-item>
 

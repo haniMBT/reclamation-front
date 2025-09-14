@@ -32,7 +32,8 @@ const routes = [
       { path: 'client/:id', component: () => import('src/pages/reclamation/show.vue') },
       { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },
       { path: 'edit', component: () => import('src/pages/reclamation/Edit.vue') },
-      { path: 'nature', component: () => import('src/pages/reclamation/nature/index.vue') }
+      { path: 'nature', component: () => import('src/pages/reclamation/nature/index.vue') },
+      { path: 'parametrage', component: () => import('src/pages/reclamation/parametrage/index.vue') }
     ]
   },
   {
