@@ -318,58 +318,76 @@
                       </q-btn>
                     </div>
 
-                    <!-- Liste des infos générales -->
-                    <div v-if="form.infos_generales.length > 0" class="space-y-3">
-                      <div
-                        v-for="(info, index) in form.infos_generales"
-                        :key="index"
-                        class="border border-gray-200 rounded-lg p-4 bg-gray-50"
-                      >
-                        <div class="flex items-start space-x-3">
-                          <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Libellé -->
-                            <div>
-                              <label class="block text-xs font-medium text-gray-600 mb-1">
-                                Libellé
-                              </label>
-                              <q-input
-                                v-model="info.libelle"
-                                outlined
-                                dense
-                                placeholder="Entrez le libellé"
-                              >
-                                <template #prepend>
-                                  <q-icon name="text_fields" class="text-gray-500" size="sm" />
-                                </template>
-                              </q-input>
-                            </div>
+                    <!-- Liste des infos générales avec drag & drop -->
+                    <draggable
+                      v-if="form.infos_generales.length > 0"
+                      v-model="form.infos_generales"
+                      item-key="id"
+                      class="space-y-3"
+                      ghost-class="ghost"
+                      chosen-class="chosen"
+                      drag-class="drag"
+                      handle=".drag-handle"
+                    >
+                      <template #item="{ element: info, index }">
+                        <div class="row items-center justify-between space-x-4">
+                          <!-- Zone draggable à gauche -->
+                          <div class="flex-1 border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition-shadow">
+                            <div class="flex items-start space-x-3">
+                              <!-- Handle de drag explicite -->
+                              <div class="flex items-center mt-2 drag-handle cursor-move">
+                                <q-icon name="drag_indicator" class="text-gray-400" size="sm" />
+                              </div>
 
-                            <!-- Key attribut -->
-                            <div class="flex items-center">
-                                <q-checkbox
-                                      v-model="info.key_attribut"
-                                      color="blue-6"
-                                      label="Information clé"
-                                      class="text-xs font-medium text-gray-600"
-                                />
+                              <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Libellé -->
+                                <div>
+                                  <label class="block text-xs font-medium text-gray-600 mb-1">
+                                    Libellé
+                                  </label>
+                                  <q-input
+                                    v-model="info.libelle"
+                                    outlined
+                                    dense
+                                    placeholder="Entrez le libellé"
+                                  >
+                                    <template #prepend>
+                                      <q-icon name="text_fields" class="text-gray-500" size="sm" />
+                                    </template>
+                                  </q-input>
+                                </div>
+
+                                <!-- Key attribut -->
+                                <div class="flex items-center">
+                                    <q-checkbox
+                                          v-model="info.key_attribut"
+                                          color="blue-6"
+                                          label="Information clé"
+                                          class="text-xs font-medium text-gray-600"
+                                    />
+                                </div>
+                              </div>
                             </div>
                           </div>
 
-                          <!-- Bouton supprimer -->
-                          <q-btn
-                            icon="close"
-                            size="sm"
-                            flat
-                            round
-                            color="negative"
-                            @click="removeInfoGenerale(index)"
-                            class="mt-1"
-                          >
-                            <q-tooltip>Supprimer cette info générale</q-tooltip>
-                          </q-btn>
+                          <!-- Bouton supprimer à droite (en dehors de la zone draggable) -->
+                          <div class="flex-shrink-0">
+                            <q-btn
+                              icon="delete"
+                              size="sm"
+                              flat
+                              round
+                              color="negative"
+                              @click.stop="removeInfoGenerale(info.id)"
+                              @mousedown.prevent
+                              class="mt-1"
+                            >
+                              <q-tooltip>Supprimer cette info générale</q-tooltip>
+                            </q-btn>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      </template>
+                    </draggable>
 
                     <!-- Message si aucune info générale -->
                     <div v-else class="text-center py-4 text-gray-500 border border-dashed border-gray-300 rounded-lg">
@@ -396,6 +414,7 @@
               color="blue-6"
               @click="sendData"
               :loading="loading"
+              :disable="!isFormValid || loading"
               class="px-6"
             />
           </q-card-actions>
@@ -495,6 +514,7 @@ import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
 import ErrorValidation from 'components/ErrorValidation.vue';
 import TypeDetail from './TypeDetail.vue';
+import draggable from 'vuedraggable';
 
 // Reactive variables
 const tickets = ref([]);
@@ -515,6 +535,23 @@ const form = ref({
   direction: '',
   documentAfornir: '',
   infos_generales: []
+});
+
+// Validation du formulaire
+const isFormValid = computed(() => {
+  // Vérifier les champs obligatoires du ticket
+  if (!form.value.libelle || !form.value.direction) {
+    return false;
+  }
+
+  // Si des infos générales sont ajoutées, vérifier que chaque libellé est rempli
+  for (const info of form.value.infos_generales) {
+    if (!info.libelle) {
+      return false;
+    }
+  }
+
+  return true;
 });
 
 // Table configuration
@@ -658,13 +695,17 @@ const sendData = async () => {
 // Méthodes pour la gestion des infos générales
 const addInfoGenerale = () => {
   form.value.infos_generales.push({
+    id: Date.now() + Math.random(), // ID unique pour vuedraggable
     libelle: '',
     key_attribut: false
   });
 };
 
-const removeInfoGenerale = (index) => {
-  form.value.infos_generales.splice(index, 1);
+const removeInfoGenerale = (id) => {
+  const index = form.value.infos_generales.findIndex(info => info.id === id);
+  if (index !== -1) {
+    form.value.infos_generales.splice(index, 1);
+  }
 };
 
 const deleteData = async () => {
@@ -817,4 +858,21 @@ onMounted(() => {
 
 <style scoped>
 /* Add any custom styles here */
+
+/* Styles pour le drag & drop */
+.ghost {
+  opacity: 0.5;
+  background: #c8ebfb;
+  border: 2px dashed #2196f3;
+}
+
+.chosen {
+  transform: rotate(5deg);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.drag {
+  transform: rotate(5deg);
+  opacity: 0.8;
+}
 </style>
