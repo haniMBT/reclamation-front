@@ -176,6 +176,18 @@
                             class="text-xs"
                           />
                         </div>
+                        <div class="flex space-x-1">
+                          <q-btn
+                            icon="edit"
+                            size="sm"
+                            flat
+                            round
+                            color="primary"
+                            @click="openEditType(type, ticket)"
+                          >
+                            <q-tooltip>Modifier ce type</q-tooltip>
+                          </q-btn>
+                        </div>
                       </div>
                     </q-card-section>
 
@@ -696,14 +708,27 @@
     :directions="directions"
     @saved="onTypeSaved"
   />
+  
+  <!-- Edit Type Detail Dialog -->
+  <EditTypeDetail
+    v-model:show="showEditTypeDetail"
+    :type-id="selectedType?.id"
+    :type-data="selectedType"
+    :ticket-id="selectedTicket?.id"
+    :ticket-libelle="selectedTicket?.libelle"
+    :directions="directions"
+    :is-edit-mode="true"
+    @saved="onEditTypeSaved"
+  />
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
-import ErrorValidation from 'components/ErrorValidation.vue';
+import ErrorValidation from 'src/components/ErrorValidation.vue';
 import TypeDetail from './TypeDetail.vue';
+import EditTypeDetail from './EditTypeDetail.vue';
 import draggable from 'vuedraggable';
 
 // Reactive variables
@@ -714,7 +739,9 @@ const addTicket = ref(false);
 const editTicket = ref(false);
 const deleteTicket = ref(false);
 const showTypeDetail = ref(false);
+const showEditTypeDetail = ref(false);
 const selectedTicket = ref(null);
+const selectedType = ref(null);
 const loading = ref(false);
 const loadingTickets = ref(false);
 const myerrors = ref();
@@ -1059,10 +1086,43 @@ const openAddTypeDetail = (ticket) => {
   showTypeDetail.value = true;
 };
 
+// Méthode pour ouvrir le dialog d'édition de type
+const openEditType = (type, ticket) => {
+  if (!type || !type.id) {
+    $q.notify({
+      type: 'negative',
+      message: 'Erreur: Type non valide'
+    });
+    return;
+  }
+
+  if (!ticket || !ticket.id) {
+    $q.notify({
+      type: 'negative',
+      message: 'Erreur: Ticket non valide'
+    });
+    return;
+  }
+
+  console.log('Index: Opening EditTypeDetail for type:', type.id, type.libelle);
+  selectedType.value = type;
+  selectedTicket.value = ticket;
+  showEditTypeDetail.value = true;
+};
+
 // Méthode appelée après l'enregistrement d'un type et ses détails
 const onTypeSaved = (data) => {
   // Vous pouvez ajouter ici une logique supplémentaire si nécessaire
   // Par exemple, rafraîchir les données
+  fetchData();
+};
+
+const onEditTypeSaved = (data) => {
+  console.log('Type updated:', data);
+  showEditTypeDetail.value = false;
+  selectedType.value = null;
+  selectedTicket.value = null;
+  // Refresh data
   fetchData();
 };
 

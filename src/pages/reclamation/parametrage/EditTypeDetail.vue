@@ -1,13 +1,13 @@
 <template>
   <div>
-    <!-- Dialog pour ajouter un type et ses détails -->
+    <!-- Dialog pour modifier un type et ses détails -->
     <q-dialog v-model="showDialog" persistent>
       <q-card class="w-full" style="min-width: 60vw; max-width: 80vw; max-height: 80vh; display: flex; flex-direction: column;">
         <q-card-section class="flex items-center" :class="isEditMode ? 'bg-orange-50' : 'bg-blue-50'">
           <q-icon :name="isEditMode ? 'edit' : 'add'" :class="isEditMode ? 'text-orange-600' : 'text-blue-600'" class="mr-3" size="2rem" />
           <div>
             <div class="text-xl font-semibold" :class="isEditMode ? 'text-orange-900' : 'text-blue-900'">
-              {{ isEditMode ? 'Modifier le type et ses détails' : 'Ajouter des types et leurs détails' }}
+              {{ isEditMode ? 'Modifier le type et ses détails' : 'Ajouter un type et ses détails' }}
             </div>
             <div class="text-sm" :class="isEditMode ? 'text-orange-700' : 'text-blue-700'">Pour le ticket: {{ ticketLibelle }}</div>
           </div>
@@ -109,21 +109,26 @@
               </div>
 
               <!-- Section Détails -->
-              <div class="mt-4">
-                <div class="flex items-center justify-between mb-4">
-                  <h4 class="text-md font-medium text-gray-700">Détails</h4>
+              <div class="mt-6">
+                <div class="flex items-center justify-between mb-3">
+                  <h4 class="text-md font-medium text-gray-800 flex items-center">
+                    <q-icon name="list" class="mr-2 text-green-600" />
+                    Détails du type
+                    <q-badge v-if="type.details.length" :label="type.details.length" color="green-6" class="ml-2" />
+                  </h4>
                   <q-btn
                     icon="add"
                     color="green-6"
-                    label="Ajouter un détail"
+                    size="sm"
                     flat
+                    round
                     @click="addDetail(typeIndex)"
-                    class="text-sm"
-                  />
+                  >
+                    <q-tooltip>Ajouter un détail</q-tooltip>
+                  </q-btn>
                 </div>
 
-                <!-- Liste des détails -->
-                <div v-if="type.details.length > 0" class="space-y-4">
+                <div v-if="type.details.length" class="space-y-4">
                   <draggable
                     v-model="type.details"
                     :item-key="'uid'"
@@ -133,85 +138,85 @@
                     drag-class="drag"
                   >
                     <template #item="{ element: detail, index: detailIndex }">
-                      <div class="p-4 border border-gray-200 rounded-lg bg-gray-50">
-                    <div class="flex justify-between items-center mb-3">
-                      <div class="flex items-center">
-                        <q-icon name="drag_indicator" class="detail-drag-handle text-gray-400 mr-2 cursor-move" size="xs" />
-                        <h5 class="text-sm font-medium text-gray-700">Détail #{{ detailIndex + 1 }}</h5>
-                      </div>
-                      <q-btn
-                        icon="delete"
-                        color="red-6"
-                        flat
-                        round
-                        dense
-                        @click.stop="removeDetail(typeIndex, detail.uid)"
-                        @mousedown.prevent
-                      >
-                        <q-tooltip>Supprimer ce détail</q-tooltip>
-                      </q-btn>
-                    </div>
+                      <div class="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                          <div class="flex items-center">
+                            <q-icon name="drag_indicator" class="detail-drag-handle text-gray-400 mr-2 cursor-move" size="xs" />
+                            <span class="text-sm font-medium text-gray-700">Détail #{{ detailIndex + 1 }}</span>
+                          </div>
+                          <q-btn
+                            icon="delete"
+                            color="red-6"
+                            size="xs"
+                            flat
+                            round
+                            @click.stop="removeDetail(typeIndex, detail.uid)"
+                            @mousedown.prevent
+                          >
+                            <q-tooltip>Supprimer ce détail</q-tooltip>
+                          </q-btn>
+                        </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <!-- Libellé du détail -->
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                          Libellé <span class="text-red-500">*</span>
-                        </label>
-                        <q-input
-                          v-model="detail.libelle"
-                          outlined
-                          dense
-                          placeholder="Entrez le libellé du détail"
-                          :rules="[val => !!val || 'Le libellé est requis']"
-                        >
-                          <template #prepend>
-                            <q-icon name="label" class="text-blue-600" />
-                          </template>
-                        </q-input>
-                      </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                          <!-- Libellé du détail -->
+                          <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">
+                              Libellé <span class="text-red-500">*</span>
+                            </label>
+                            <q-input
+                              v-model="detail.libelle"
+                              outlined
+                              dense
+                              placeholder="Libellé du détail"
+                              :rules="[val => !!val || 'Le libellé est requis']"
+                            >
+                              <template #prepend>
+                                <q-icon name="label" class="text-blue-600" size="xs" />
+                              </template>
+                            </q-input>
+                          </div>
 
-                      <!-- Direction du détail -->
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                          Direction
-                        </label>
-                        <q-select
-                          v-model="detail.direction"
-                          :options="directions"
-                          option-value="DIRECTION"
-                          option-label="DIRECTION"
-                          emit-value
-                          map-options
-                          outlined
-                          dense
-                          placeholder="Sélectionnez une direction"
-                          clearable
-                        >
-                          <template #prepend>
-                            <q-icon name="business" class="text-blue-600" />
-                          </template>
-                        </q-select>
-                      </div>
+                          <!-- Direction du détail -->
+                          <div>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">
+                              Direction
+                            </label>
+                            <q-select
+                              v-model="detail.direction"
+                              :options="directions"
+                              option-value="DIRECTION"
+                              option-label="DIRECTION"
+                              emit-value
+                              map-options
+                              outlined
+                              dense
+                              placeholder="Direction"
+                              clearable
+                            >
+                              <template #prepend>
+                                <q-icon name="business" class="text-blue-600" size="xs" />
+                              </template>
+                            </q-select>
+                          </div>
 
-                      <!-- Statut Direction du détail (apparaît uniquement si une direction est sélectionnée) -->
-                      <div v-if="detail.direction">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                          Statut Direction <span class="text-red-500">*</span>
-                        </label>
-                        <q-select
-                          v-model="detail.statut_direction"
-                          :options="statutOptions"
-                          outlined
-                          dense
-                          placeholder="Sélectionnez un statut"
-                        >
-                          <template #prepend>
-                            <q-icon name="assignment" class="text-blue-600" />
-                          </template>
-                        </q-select>
-                      </div>
-                    </div>
+                          <!-- Statut Direction du détail -->
+                          <div v-if="detail.direction">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">
+                              Statut <span class="text-red-500">*</span>
+                            </label>
+                            <q-select
+                              v-model="detail.statut_direction"
+                              :options="statutOptions"
+                              outlined
+                              dense
+                              placeholder="Sélectionnez un statut"
+                            >
+                              <template #prepend>
+                                <q-icon name="assignment" class="text-blue-600" />
+                              </template>
+                            </q-select>
+                          </div>
+                        </div>
                       </div>
                     </template>
                   </draggable>
@@ -252,9 +257,9 @@
             class="px-6"
           />
           <q-btn
-            :label="isEditMode ? 'Modifier' : 'Enregistrer'"
+            :label="isEditMode ? 'Modifier' : 'Créer'"
             :color="isEditMode ? 'orange-6' : 'blue-6'"
-            @click="saveTypeAndDetails"
+            @click="updateTypeAndDetails"
             :loading="loading"
             :disable="!isFormValid"
             class="px-6"
@@ -272,6 +277,14 @@ import { api } from 'boot/axios';
 import draggable from 'vuedraggable';
 
 const props = defineProps({
+  typeId: {
+    type: [Number, String],
+    required: true
+  },
+  typeData: {
+    type: Object,
+    required: true
+  },
   ticketId: {
     type: [Number, String],
     required: true
@@ -290,7 +303,7 @@ const props = defineProps({
   },
   isEditMode: {
     type: Boolean,
-    default: false
+    default: true
   }
 });
 
@@ -354,29 +367,49 @@ const isFormValid = computed(() => {
   return true;
 });
 
-// Watcher pour synchroniser ticketId avec form.id_btickes
-watch(() => props.ticketId, (newVal) => {
-  console.log('TypeDetail: ticketId changed to:', newVal);
-  form.value.id_btickes = newVal;
-}, { immediate: true });
-
-// Synchroniser le prop show avec la variable locale showDialog
+// Watcher pour synchroniser la prop show avec showDialog
 watch(() => props.show, (newVal) => {
   showDialog.value = newVal;
-  // Réinitialiser le formulaire à chaque ouverture
   if (newVal) {
-    resetForm();
+    // Préremplir le formulaire avec les données du type existant
+    populateForm();
   }
 });
 
-watch(() => showDialog.value, (newVal) => {
+watch(showDialog, (newVal) => {
   emit('update:show', newVal);
-  if (!newVal) {
-    resetForm();
+});
+
+// Watcher pour mettre à jour l'id du ticket si il change
+watch(() => props.ticketId, (newVal) => {
+  if (newVal) {
+    form.value.id_btickes = newVal;
   }
 });
 
 // Méthodes
+const populateForm = () => {
+  if (props.typeData) {
+    form.value = {
+      id_btickes: props.ticketId,
+      types: [
+        {
+          uid: generateUid(),
+          libelle: props.typeData.libelle || '',
+          direction: props.typeData.direction || null,
+          statut_direction: props.typeData.statut_direction || null,
+          details: (props.typeData.details || []).map(detail => ({
+            uid: generateUid(),
+            libelle: detail.libelle || '',
+            direction: detail.direction || null,
+            statut_direction: detail.statut_direction || null
+          }))
+        }
+      ]
+    };
+  }
+};
+
 const addType = () => {
   form.value.types.push({
     uid: generateUid(),
@@ -412,7 +445,7 @@ const removeDetail = (typeIndex, detailUid) => {
 
 const resetForm = () => {
   form.value = {
-    id_btickes: props.ticketId, // Utilise toujours la valeur actuelle du prop
+    id_btickes: props.ticketId,
     types: [
       {
         uid: generateUid(),
@@ -429,7 +462,7 @@ const closeDialog = () => {
   showDialog.value = false;
 };
 
-const saveTypeAndDetails = async () => {
+const updateTypeAndDetails = async () => {
   if (!isFormValid.value) {
     $q.notify({
       type: 'negative',
@@ -441,30 +474,58 @@ const saveTypeAndDetails = async () => {
   loading.value = true;
 
   try {
-    const response = await api.post('/api/rec/type', form.value);
-
+    console.log('Envoi des données de modification:', form.value);
+    
+    const response = await api.put(`/api/rec/type/${props.typeId}`, form.value);
+    
+    console.log('Réponse du serveur:', response.data);
+    
     $q.notify({
       type: 'positive',
-      message: 'Types et détails enregistrés avec succès'
+      message: response.data.message || 'Type modifié avec succès',
+      icon: 'check_circle',
+      position: 'top',
+      timeout: 3000
     });
-
+    
+    // Émettre l'événement saved avec les données
     emit('saved', response.data);
+    
+    // Fermer le dialog
     closeDialog();
+    
   } catch (error) {
-    console.error('Erreur lors de l\'enregistrement:', error);
-
-    let errorMessage = 'Erreur lors de l\'enregistrement';
-    if (error.response?.data?.message) {
-      errorMessage = error.response.data.message;
-    } else if (error.response?.data?.errors) {
-      const errors = error.response.data.errors;
-      const firstError = Object.values(errors)[0];
-      errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+    console.error('Erreur lors de la modification:', error);
+    
+    let errorMessage = 'Erreur lors de la modification du type';
+    
+    if (error.response) {
+      switch (error.response.status) {
+        case 422:
+          errorMessage = 'Données invalides. Veuillez vérifier les champs.';
+          if (error.response.data.messages) {
+            console.error('Erreurs de validation:', error.response.data.messages);
+          }
+          break;
+        case 404:
+          errorMessage = 'Le type à modifier n\'existe plus';
+          break;
+        case 500:
+          errorMessage = error.response.data.message || 'Erreur serveur lors de la modification';
+          break;
+        default:
+          errorMessage = error.response.data.message || errorMessage;
+      }
+    } else if (error.request) {
+      errorMessage = 'Impossible de contacter le serveur';
     }
-
+    
     $q.notify({
       type: 'negative',
-      message: errorMessage
+      message: errorMessage,
+      icon: 'error',
+      position: 'top',
+      timeout: 5000
     });
   } finally {
     loading.value = false;
@@ -473,24 +534,20 @@ const saveTypeAndDetails = async () => {
 </script>
 
 <style scoped>
+/* Styles pour le drag & drop */
 .ghost {
   opacity: 0.5;
   background: #c8ebfb;
+  border: 2px dashed #2196f3;
 }
 
 .chosen {
-  background: #e3f2fd;
+  transform: rotate(5deg);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
 .drag {
-  background: #bbdefb;
-}
-
-.drag-handle {
-  cursor: move;
-}
-
-.detail-drag-handle {
-  cursor: move;
+  transform: rotate(5deg);
+  opacity: 0.8;
 }
 </style>
