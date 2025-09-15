@@ -100,6 +100,16 @@
                   >
                     <q-tooltip>Ajouter un type et ses détails</q-tooltip>
                   </q-btn>
+                  <q-btn
+                    icon="rule"
+                    size="sm"
+                    flat
+                    round
+                    color="purple-6"
+                    @click.stop="openGlobalEdit(ticket)"
+                  >
+                    <q-tooltip>Modification globale des types et détails</q-tooltip>
+                  </q-btn>
                 </div>
               </div>
             </template>
@@ -720,6 +730,229 @@
     :is-edit-mode="true"
     @saved="onEditTypeSaved"
   />
+
+  <!-- Global Edit Dialog -->
+  <q-dialog v-model="globalEditDialog" persistent>
+    <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
+      <q-card-section class="flex items-center bg-purple-50">
+        <q-icon name="rule" class="text-purple-600 mr-3" size="2rem" />
+        <div>
+          <div class="text-xl font-semibold text-purple-900">Modification globale des Types et Détails</div>
+          <div class="text-sm text-purple-700">Ticket: {{ selectedTicket?.libelle }}</div>
+        </div>
+      </q-card-section>
+
+      <q-separator />
+
+      <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+        <div class="space-y-6">
+          <!-- Types Section -->
+          <div v-if="globalEditForm.types.length > 0">
+            <draggable
+              v-model="globalEditForm.types"
+              group="types"
+              @start="drag = true"
+              @end="drag = false"
+              item-key="id"
+              class="space-y-4"
+            >
+              <template #item="{ element: type, index: typeIndex }">
+                <q-card class="bg-white shadow-sm border-l-4 border-purple-500">
+                  <q-card-section class="pb-2">
+                    <div class="flex items-center justify-between mb-4">
+                      <div class="flex items-center space-x-2">
+                        <q-icon name="drag_indicator" class="text-gray-400 cursor-move" />
+                        <h4 class="text-lg font-semibold text-gray-800">Type {{ typeIndex + 1 }}</h4>
+                      </div>
+                      <q-btn
+                        icon="delete"
+                        size="sm"
+                        flat
+                        round
+                        color="negative"
+                        @click="removeType(typeIndex)"
+                      >
+                        <q-tooltip>Supprimer ce type</q-tooltip>
+                      </q-btn>
+                    </div>
+
+                    <!-- Type Fields -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                          Libellé du type <span class="text-red-500">*</span>
+                        </label>
+                        <q-input
+                          v-model="type.libelle"
+                          outlined
+                          dense
+                          placeholder="Entrez le libellé du type"
+                        />
+                      </div>
+                      <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                          Direction
+                        </label>
+                        <q-select
+                          v-model="type.direction"
+                          :options="directions"
+                          outlined
+                          dense
+                          clearable
+                          placeholder="Sélectionnez une direction"
+                        />
+                      </div>
+                      <div v-if="type.direction">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                          Statut Direction <span class="text-red-500">*</span>
+                        </label>
+                        <q-select
+                          v-model="type.statut_direction"
+                          :options="['consultation', 'traitement']"
+                          outlined
+                          dense
+                          placeholder="Sélectionnez un statut"
+                        />
+                      </div>
+                    </div>
+
+                    <!-- Details Section -->
+                    <div class="border-t pt-4">
+                      <div class="flex items-center justify-between mb-3">
+                        <h5 class="text-md font-medium text-gray-700">Détails du type</h5>
+                        <q-btn
+                          icon="add"
+                          size="sm"
+                          flat
+                          round
+                          color="green-6"
+                          @click="addDetail(typeIndex)"
+                        >
+                          <q-tooltip>Ajouter un détail</q-tooltip>
+                        </q-btn>
+                      </div>
+
+                      <draggable
+                        v-model="type.details"
+                        group="details"
+                        @start="drag = true"
+                        @end="drag = false"
+                        item-key="id"
+                        class="space-y-3"
+                      >
+                        <template #item="{ element: detail, index: detailIndex }">
+                          <div class="bg-gray-50 p-4 rounded border">
+                            <div class="flex items-center justify-between mb-3">
+                              <div class="flex items-center space-x-2">
+                                <q-icon name="drag_indicator" class="text-gray-400 cursor-move" size="sm" />
+                                <span class="text-sm font-medium text-gray-600">Détail {{ detailIndex + 1 }}</span>
+                              </div>
+                              <q-btn
+                                icon="delete"
+                                size="xs"
+                                flat
+                                round
+                                color="negative"
+                                @click="removeDetail(typeIndex, detailIndex)"
+                              >
+                                <q-tooltip>Supprimer ce détail</q-tooltip>
+                              </q-btn>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">
+                                  Libellé <span class="text-red-500">*</span>
+                                </label>
+                                <q-input
+                                  v-model="detail.libelle"
+                                  outlined
+                                  dense
+                                  placeholder="Libellé du détail"
+                                />
+                              </div>
+                              <div>
+                                <label class="block text-xs font-medium text-gray-600 mb-1">
+                                  Direction
+                                </label>
+                                <q-select
+                                  v-model="detail.direction"
+                                  :options="directions"
+                                  outlined
+                                  dense
+                                  clearable
+                                  placeholder="Direction"
+                                />
+                              </div>
+                              <div v-if="detail.direction">
+                                <label class="block text-xs font-medium text-gray-600 mb-1">
+                                  Statut <span class="text-red-500">*</span>
+                                </label>
+                                <q-select
+                                  v-model="detail.statut_direction"
+                                  :options="['consultation', 'traitement']"
+                                  outlined
+                                  dense
+                                  placeholder="Statut"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </template>
+                      </draggable>
+
+                      <div v-if="type.details.length === 0" class="text-center py-4 text-gray-500 bg-gray-50 rounded border border-dashed">
+                        <q-icon name="list" size="1.5rem" class="mb-2" />
+                        <p class="text-sm">Aucun détail pour ce type</p>
+                      </div>
+                    </div>
+                  </q-card-section>
+                </q-card>
+              </template>
+            </draggable>
+          </div>
+
+          <!-- Add Type Button -->
+          <div class="text-center">
+            <q-btn
+              icon="add"
+              label="Ajouter un Type"
+              color="purple-6"
+              outline
+              @click="addType"
+              class="px-6"
+            />
+          </div>
+
+          <div v-if="globalEditForm.types.length === 0" class="text-center py-8 text-gray-500">
+            <q-icon name="category" size="3rem" class="mb-4" />
+            <p class="text-lg">Aucun type défini</p>
+            <p class="text-sm">Cliquez sur "Ajouter un Type" pour commencer</p>
+          </div>
+        </div>
+      </q-card-section>
+
+      <q-separator />
+
+      <q-card-actions align="right" class="q-pa-md bg-white">
+        <q-btn
+          flat
+          label="Annuler"
+          color="grey"
+          @click="closeGlobalEdit"
+          class="px-6"
+        />
+        <q-btn
+          label="Modifier"
+          color="purple-6"
+          @click="saveGlobalEdit"
+          :loading="loading"
+          :disable="!isGlobalEditFormValid || loading"
+          class="px-6"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -747,6 +980,14 @@ const loadingTickets = ref(false);
 const myerrors = ref();
 const message = ref();
 
+// Global Edit Dialog variables
+const globalEditDialog = ref(false);
+const drag = ref(false);
+const globalEditForm = ref({
+  types: []
+});
+const savingOrder = ref(false);
+
 // Form data
 const form = ref({
   libelle: '',
@@ -766,6 +1007,42 @@ const isFormValid = computed(() => {
   for (const info of form.value.infos_generales) {
     if (!info.libelle) {
       return false;
+    }
+  }
+
+  return true;
+});
+
+// Global Edit Form Validation
+const isGlobalEditFormValid = computed(() => {
+  // Vérifier qu'il y a au moins un type
+  if (globalEditForm.value.types.length === 0) {
+    return false;
+  }
+
+  // Vérifier chaque type
+  for (const type of globalEditForm.value.types) {
+    // Libellé obligatoire
+    if (!type.libelle) {
+      return false;
+    }
+
+    // Si direction définie, statut_direction obligatoire
+    if (type.direction && !type.statut_direction) {
+      return false;
+    }
+
+    // Vérifier chaque détail
+    for (const detail of type.details) {
+      // Libellé obligatoire
+      if (!detail.libelle) {
+        return false;
+      }
+
+      // Si direction définie, statut_direction obligatoire
+      if (detail.direction && !detail.statut_direction) {
+        return false;
+      }
     }
   }
 
@@ -1170,6 +1447,102 @@ watch(searchTickets, () => {
   // Update table data when search changes
   // This could be implemented with a computed property or by updating the table directly
 });
+
+// Global Edit Methods
+const openGlobalEdit = (ticket) => {
+  selectedTicket.value = ticket;
+  
+  // Préparer le formulaire avec les types existants du ticket
+  globalEditForm.value.types = ticket.types ? ticket.types.map(type => ({
+    id: type.id || Date.now() + Math.random(),
+    libelle: type.libelle || '',
+    direction: type.direction || null,
+    statut_direction: type.statut_direction || null,
+    details: type.details ? type.details.map(detail => ({
+      id: detail.id || Date.now() + Math.random(),
+      libelle: detail.libelle || '',
+      direction: detail.direction || null,
+      statut_direction: detail.statut_direction || null
+    })) : []
+  })) : [];
+  
+  globalEditDialog.value = true;
+};
+
+const closeGlobalEdit = () => {
+  globalEditDialog.value = false;
+  selectedTicket.value = null;
+  globalEditForm.value.types = [];
+  myerrors.value = null;
+};
+
+const addType = () => {
+  globalEditForm.value.types.push({
+    id: Date.now() + Math.random(),
+    libelle: '',
+    direction: null,
+    statut_direction: null,
+    details: []
+  });
+};
+
+const removeType = (typeIndex) => {
+  globalEditForm.value.types.splice(typeIndex, 1);
+};
+
+const addDetail = (typeIndex) => {
+  globalEditForm.value.types[typeIndex].details.push({
+    id: Date.now() + Math.random(),
+    libelle: '',
+    direction: null,
+    statut_direction: null
+  });
+};
+
+const removeDetail = (typeIndex, detailIndex) => {
+  globalEditForm.value.types[typeIndex].details.splice(detailIndex, 1);
+};
+
+const saveGlobalEdit = async () => {
+  loading.value = true;
+  myerrors.value = null;
+
+  const data = {
+    types: globalEditForm.value.types.map(type => ({
+      libelle: type.libelle,
+      direction: type.direction,
+      statut_direction: type.statut_direction,
+      details: type.details.map(detail => ({
+        libelle: detail.libelle,
+        direction: detail.direction,
+        statut_direction: detail.statut_direction
+      }))
+    }))
+  };
+
+  try {
+    const response = await api.put(`/api/rec/ticket/${selectedTicket.value.id}/types`, data);
+    message.value = response.data.message || 'Types et détails modifiés avec succès';
+    $q.notify({
+      type: 'positive',
+      message: message.value
+    });
+    closeGlobalEdit();
+    await fetchData(); // Refresh the list
+  } catch (error) {
+    console.error('Erreur lors de la modification globale:', error);
+    if (error.response && error.response.status === 422) {
+      myerrors.value = error.response.data.errors;
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Erreur lors de la modification des types et détails'
+      });
+    }
+  } finally {
+    loading.value = false;
+  }
+};
 
 // Lifecycle
 onMounted(() => {
