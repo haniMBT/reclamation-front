@@ -16,9 +16,21 @@
         <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
           <form class="space-y-6">
             <!-- Section Types -->
-            <div v-for="(type, typeIndex) in form.types" :key="typeIndex" class="mb-8 p-4 border border-gray-200 rounded-lg">
+            <draggable
+              v-model="form.types"
+              :item-key="'uid'"
+              handle=".drag-handle"
+              ghost-class="ghost"
+              chosen-class="chosen"
+              drag-class="drag"
+            >
+              <template #item="{ element: type, index: typeIndex }">
+                <div class="mb-8 p-4 border border-gray-200 rounded-lg">
               <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-medium text-gray-800">Type #{{ typeIndex + 1 }}</h3>
+                <div class="flex items-center">
+                  <q-icon name="drag_indicator" class="drag-handle text-gray-400 mr-2 cursor-move" size="sm" />
+                  <h3 class="text-lg font-medium text-gray-800">Type #{{ typeIndex + 1 }}</h3>
+                </div>
                 <q-btn
                   v-if="form.types.length > 1"
                   icon="delete"
@@ -26,7 +38,8 @@
                   flat
                   round
                   dense
-                  @click="removeType(typeIndex)"
+                  @click.stop="removeType(type.uid)"
+                  @mousedown.prevent
                 >
                   <q-tooltip>Supprimer ce type</q-tooltip>
                 </q-btn>
@@ -109,20 +122,29 @@
 
                 <!-- Liste des détails -->
                 <div v-if="type.details.length > 0" class="space-y-4">
-                  <div
-                    v-for="(detail, detailIndex) in type.details"
-                    :key="detailIndex"
-                    class="p-4 border border-gray-200 rounded-lg bg-gray-50"
+                  <draggable
+                    v-model="type.details"
+                    :item-key="'uid'"
+                    handle=".detail-drag-handle"
+                    ghost-class="ghost"
+                    chosen-class="chosen"
+                    drag-class="drag"
                   >
+                    <template #item="{ element: detail, index: detailIndex }">
+                      <div class="p-4 border border-gray-200 rounded-lg bg-gray-50">
                     <div class="flex justify-between items-center mb-3">
-                      <h5 class="text-sm font-medium text-gray-700">Détail #{{ detailIndex + 1 }}</h5>
+                      <div class="flex items-center">
+                        <q-icon name="drag_indicator" class="detail-drag-handle text-gray-400 mr-2 cursor-move" size="xs" />
+                        <h5 class="text-sm font-medium text-gray-700">Détail #{{ detailIndex + 1 }}</h5>
+                      </div>
                       <q-btn
                         icon="delete"
                         color="red-6"
                         flat
                         round
                         dense
-                        @click="removeDetail(typeIndex, detailIndex)"
+                        @click.stop="removeDetail(typeIndex, detail.uid)"
+                        @mousedown.prevent
                       >
                         <q-tooltip>Supprimer ce détail</q-tooltip>
                       </q-btn>
@@ -188,7 +210,9 @@
                         </q-select>
                       </div>
                     </div>
-                  </div>
+                      </div>
+                    </template>
+                  </draggable>
                 </div>
 
                 <!-- Message si aucun détail -->
@@ -197,7 +221,9 @@
                   <p class="text-gray-500 text-sm">Aucun détail ajouté. Cliquez sur "Ajouter un détail" pour commencer.</p>
                 </div>
               </div>
-            </div>
+                </div>
+              </template>
+            </draggable>
 
             <!-- Bouton pour ajouter un nouveau type -->
             <div class="flex justify-center">
@@ -241,6 +267,7 @@
 import { ref, computed, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
+import draggable from 'vuedraggable';
 
 const props = defineProps({
   ticketId: {
@@ -273,11 +300,17 @@ const statutOptions = [
   'traitement'
 ];
 
+// Fonction pour générer un uid unique
+const generateUid = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
+
 // Formulaire
 const form = ref({
   id_btickes: props.ticketId,
   types: [
     {
+      uid: generateUid(),
       libelle: '',
       direction: null,
       statut_direction: null,
@@ -340,6 +373,7 @@ watch(() => showDialog.value, (newVal) => {
 // Méthodes
 const addType = () => {
   form.value.types.push({
+    uid: generateUid(),
     libelle: '',
     direction: null,
     statut_direction: null,
@@ -347,20 +381,27 @@ const addType = () => {
   });
 };
 
-const removeType = (typeIndex) => {
-  form.value.types.splice(typeIndex, 1);
+const removeType = (typeUid) => {
+  const index = form.value.types.findIndex(type => type.uid === typeUid);
+  if (index !== -1) {
+    form.value.types.splice(index, 1);
+  }
 };
 
 const addDetail = (typeIndex) => {
   form.value.types[typeIndex].details.push({
+    uid: generateUid(),
     libelle: '',
     direction: null,
     statut_direction: null
   });
 };
 
-const removeDetail = (typeIndex, detailIndex) => {
-  form.value.types[typeIndex].details.splice(detailIndex, 1);
+const removeDetail = (typeIndex, detailUid) => {
+  const detailIndex = form.value.types[typeIndex].details.findIndex(detail => detail.uid === detailUid);
+  if (detailIndex !== -1) {
+    form.value.types[typeIndex].details.splice(detailIndex, 1);
+  }
 };
 
 const resetForm = () => {
@@ -368,6 +409,7 @@ const resetForm = () => {
     id_btickes: props.ticketId, // Utilise toujours la valeur actuelle du prop
     types: [
       {
+        uid: generateUid(),
         libelle: '',
         direction: null,
         statut_direction: null,
@@ -423,3 +465,26 @@ const saveTypeAndDetails = async () => {
   }
 };
 </script>
+
+<style scoped>
+.ghost {
+  opacity: 0.5;
+  background: #c8ebfb;
+}
+
+.chosen {
+  background: #e3f2fd;
+}
+
+.drag {
+  background: #bbdefb;
+}
+
+.drag-handle {
+  cursor: move;
+}
+
+.detail-drag-handle {
+  cursor: move;
+}
+</style>
