@@ -421,6 +421,196 @@
         </q-card>
       </q-dialog>
 
+      <!-- Edit Ticket Dialog -->
+      <q-dialog v-model="editTicket" persistent>
+        <q-card class="w-full" style="min-width: 60vw; max-width: 80vw; max-height: 80vh; display: flex; flex-direction: column;">
+          <q-card-section class="flex items-center bg-orange-50">
+            <q-icon name="edit" class="text-orange-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-orange-900">Modifier le ticket</div>
+              <div class="text-sm text-orange-700">Modifiez les informations du ticket</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+              <form class="space-y-6">
+                <div class="grid grid-cols-1 gap-6">
+                  <!-- Formulaire ticket existant -->
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Libellé du ticket <span class="text-red-500">*</span>
+                    </label>
+                    <q-input
+                      v-model="form.libelle"
+                      outlined
+                      dense
+                      placeholder="Entrez le libellé du ticket"
+                      :rules="[val => !!val || 'Le libellé est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="label" class="text-orange-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.libelle" :myerrors="myerrors?.libelle" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Direction <span class="text-red-500">*</span>
+                    </label>
+                    <q-select
+                      v-model="form.direction"
+                      :options="directions"
+                      option-value="DIRECTION"
+                      option-label="DIRECTION"
+                      emit-value
+                      map-options
+                      outlined
+                      dense
+                      placeholder="Sélectionnez une direction"
+                      :rules="[val => !!val || 'La direction est requise']"
+                    >
+                      <template #prepend>
+                        <q-icon name="business" class="text-orange-600" />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Document à fournir
+                    </label>
+                    <q-editor
+                      v-model="form.documentAfornir"
+                      min-height="5rem"
+                      :toolbar="[
+                        ['bold', 'italic', 'underline'],
+                        ['unordered', 'ordered'],
+                        ['undo', 'redo']
+                      ]"
+                    />
+                    <ErrorValidation v-if="myerrors?.documentAfornir" :myerrors="myerrors?.documentAfornir" />
+                  </div>
+
+                  <!-- Section Infos générales -->
+                  <div>
+                    <div class="flex items-center justify-between mb-4">
+                      <label class="block text-sm font-medium text-gray-700">
+                        Informations générales
+                      </label>
+                      <q-btn
+                        icon="add"
+                        label="Ajouter une info"
+                        color="orange-6"
+                        size="sm"
+                        @click="addInfoGenerale"
+                        class="px-4"
+                      />
+                    </div>
+
+                    <div class="space-y-3">
+                      <!-- Liste des infos générales avec drag & drop -->
+                      <draggable
+                        v-if="form.infos_generales.length > 0"
+                        v-model="form.infos_generales"
+                        item-key="id"
+                        handle=".drag-handle"
+                        class="space-y-3"
+                      >
+                        <template #item="{ element: info }">
+                          <div class="flex items-start space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                            <!-- Handle de drag -->
+                            <div class="drag-handle cursor-move flex-shrink-0 mt-2">
+                              <q-icon name="drag_indicator" class="text-gray-400" size="sm" />
+                            </div>
+
+                            <!-- Contenu de l'info générale -->
+                            <div class="flex-1 space-y-3">
+                              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Libellé -->
+                                <div>
+                                  <label class="block text-xs font-medium text-gray-600 mb-1">
+                                    Libellé <span class="text-red-500">*</span>
+                                  </label>
+                                  <q-input
+                                    v-model="info.libelle"
+                                    outlined
+                                    dense
+                                    placeholder="Entrez le libellé"
+                                  >
+                                    <template #prepend>
+                                      <q-icon name="text_fields" class="text-gray-500" size="sm" />
+                                    </template>
+                                  </q-input>
+                                </div>
+
+                                <!-- Key attribut -->
+                                <div class="flex items-center">
+                                    <q-checkbox
+                                          v-model="info.key_attribut"
+                                          color="orange-6"
+                                          label="Information clé"
+                                          class="text-xs font-medium text-gray-600"
+                                    />
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Bouton supprimer à droite (en dehors de la zone draggable) -->
+                            <div class="flex-shrink-0">
+                              <q-btn
+                                icon="delete"
+                                size="sm"
+                                flat
+                                round
+                                color="negative"
+                                @click.stop="removeInfoGenerale(info.id)"
+                                @mousedown.prevent
+                                class="mt-1"
+                              >
+                                <q-tooltip>Supprimer cette info générale</q-tooltip>
+                              </q-btn>
+                            </div>
+                          </div>
+                        </template>
+                      </draggable>
+
+                      <!-- Message si aucune info générale -->
+                      <div v-else class="text-center py-4 text-gray-500 border border-dashed border-gray-300 rounded-lg">
+                        <q-icon name="info" size="1.5rem" class="mb-2" />
+                        <p class="text-sm">Aucune info générale ajoutée</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-md bg-white">
+            <q-btn
+              flat
+              label="Annuler"
+              color="grey"
+              @click="closeEditTicket"
+              class="px-6"
+            />
+            <q-btn
+              label="Modifier"
+              color="orange-6"
+              @click="updateData"
+              :loading="loading"
+              :disable="!isFormValid || loading"
+              class="px-6"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
       <!-- Delete Ticket Dialog -->
       <q-dialog v-model="deleteTicket" persistent>
         <q-card class="w-full max-w-lg" style="display: flex; flex-direction: column;">
@@ -521,6 +711,7 @@ const tickets = ref([]);
 const directions = ref([]);
 const searchTickets = ref('');
 const addTicket = ref(false);
+const editTicket = ref(false);
 const deleteTicket = ref(false);
 const showTypeDetail = ref(false);
 const selectedTicket = ref(null);
@@ -649,8 +840,32 @@ const closeDeleteTicket = () => {
 };
 
 const openEditTicket = (ticket) => {
-  // TODO: Implement edit functionality
-  console.log('Edit ticket:', ticket);
+  selectedTicket.value = ticket;
+  // Pré-remplir le formulaire avec les données du ticket
+  form.value = {
+    libelle: ticket.libelle,
+    direction: ticket.direction,
+    documentAfornir: ticket.documentAfornir || '',
+    infos_generales: ticket.infos_generales.map(info => ({
+      id: info.id || Date.now() + Math.random(),
+      libelle: info.libelle,
+      key_attribut: info.key_attribut
+    }))
+  };
+  myerrors.value = null;
+  editTicket.value = true;
+};
+
+const closeEditTicket = () => {
+  editTicket.value = false;
+  selectedTicket.value = null;
+  form.value = {
+    libelle: '',
+    direction: '',
+    documentAfornir: '',
+    infos_generales: []
+  };
+  myerrors.value = null;
 };
 
 const clearSearchTickets = () => {
@@ -685,6 +900,52 @@ const sendData = async () => {
       $q.notify({
         type: 'negative',
         message: 'Erreur lors de l\'enregistrement du ticket'
+      });
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+
+const updateData = async () => {
+  if (!selectedTicket.value) {
+    $q.notify({
+      type: 'negative',
+      message: 'Aucun ticket sélectionné pour la modification'
+    });
+    return;
+  }
+
+  loading.value = true;
+  myerrors.value = null;
+
+  const data = {
+    libelle: form.value.libelle,
+    direction: form.value.direction,
+    documentAfornir: form.value.documentAfornir,
+    infos_generales: form.value.infos_generales.map(info => ({
+      libelle: info.libelle,
+      key_attribut: info.key_attribut
+    }))
+  };
+
+  try {
+    const response = await api.put(`/api/rec/parametrage/${selectedTicket.value.id}`, data);
+    message.value = response.data.message;
+    $q.notify({
+      type: 'positive',
+      message: message.value || 'Ticket modifié avec succès'
+    });
+    closeEditTicket();
+    await fetchData(); // Refresh the list
+  } catch (error) {
+    console.error('Erreur lors de la modification:', error);
+    if (error.response && error.response.status === 422) {
+      myerrors.value = error.response.data.errors;
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Erreur lors de la modification du ticket'
       });
     }
   } finally {
