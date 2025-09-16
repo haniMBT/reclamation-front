@@ -91,7 +91,7 @@
                     <q-tooltip>Modifier</q-tooltip>
                   </q-btn>
 
-                  <!-- <q-btn
+                  <q-btn
                     icon="rule"
                     size="sm"
                     flat
@@ -100,7 +100,7 @@
                     @click.stop="openGlobalEdit(ticket)"
                   >
                     <q-tooltip>Modification globale des types et détails</q-tooltip>
-                  </q-btn> -->
+                  </q-btn>
                 </div>
               </div>
             </template>
@@ -823,7 +823,7 @@
                             class="bg-white"
                           >
                             <template #prepend>
-                              <q-icon name="business" class="text-blue-600" size="xs" />
+                              <q-icon name="business" class="text-purple-600" size="xs" />
                             </template>
                           </q-select>
                         </div>
@@ -919,7 +919,7 @@
                                       <span class="text-xs text-gray-500 mr-2">Direction:</span>
                                     </template>
                                     <template #prepend>
-                                      <q-icon name="business" class="text-blue-600" size="xs" />
+                                      <q-icon name="business" class="text-purple-600" size="xs" />
                                     </template>
                                   </q-select>
                                 </div>
@@ -1409,6 +1409,10 @@ const filteredTickets = computed(() => {
 // Méthode pour obtenir la couleur du statut
 const getStatutColor = (statut) => {
   switch (statut) {
+    case 'traitement':
+      return 'green-6';
+    case 'consultation':
+      return 'blue-6';
     case 'Actif':
       return 'green-6';
     case 'Inactif':
