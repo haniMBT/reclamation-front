@@ -718,7 +718,7 @@
     :directions="directions"
     @saved="onTypeSaved"
   />
-  
+
   <!-- Edit Type Detail Dialog -->
   <EditTypeDetail
     v-model:show="showEditTypeDetail"
@@ -777,7 +777,7 @@
                       <div class="type-drag-handle cursor-move flex-shrink-0 mr-3 p-1 rounded hover:bg-gray-100 transition-colors">
                         <q-icon name="drag_indicator" class="text-gray-400" size="sm" />
                       </div>
-                      
+
                       <!-- Informations du type -->
                       <div class="flex-1 min-w-0">
                         <div class="flex items-center space-x-3">
@@ -797,7 +797,7 @@
                           </div>
                         </div>
                       </div>
-                      
+
                       <!-- Actions -->
                       <div class="flex items-center space-x-1 ml-3">
                         <q-btn
@@ -851,12 +851,20 @@
                           <q-select
                             v-model="type.direction"
                             :options="directions"
+                            option-value="DIRECTION"
+                            option-label="DIRECTION"
+                            emit-value
+                            map-options
                             outlined
                             dense
                             clearable
                             placeholder="Sélectionnez une direction"
                             class="bg-white"
-                          />
+                          >
+                            <template #prepend>
+                              <q-icon name="business" class="text-blue-600" size="xs" />
+                            </template>
+                          </q-select>
                         </div>
                         <div v-if="type.direction">
                           <label class="block text-xs font-medium text-gray-600 mb-1">
@@ -916,7 +924,7 @@
                                 <q-icon name="drag_indicator" class="text-gray-400" size="xs" />
                               </div>
                             </q-item-section>
-                            
+
                             <q-item-section>
                               <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
                                 <div>
@@ -936,6 +944,10 @@
                                   <q-select
                                     v-model="detail.direction"
                                     :options="directions"
+                                    option-value="DIRECTION"
+                                    option-label="DIRECTION"
+                                    emit-value
+                                    map-options
                                     outlined
                                     dense
                                     clearable
@@ -944,6 +956,9 @@
                                   >
                                     <template #before>
                                       <span class="text-xs text-gray-500 mr-2">Direction:</span>
+                                    </template>
+                                    <template #prepend>
+                                      <q-icon name="business" class="text-blue-600" size="xs" />
                                     </template>
                                   </q-select>
                                 </div>
@@ -1533,7 +1548,7 @@ watch(searchTickets, () => {
 // Global Edit Methods
 const openGlobalEdit = (ticket) => {
   selectedTicket.value = ticket;
-  
+
   // Préparer le formulaire avec les types existants du ticket
   globalEditForm.value.types = ticket.types ? ticket.types.map(type => ({
     id: type.id || Date.now() + Math.random(),
@@ -1550,7 +1565,7 @@ const openGlobalEdit = (ticket) => {
       isDragging: false // État de drag pour les détails
     })) : []
   })) : [];
-  
+
   globalEditDialog.value = true;
 };
 
@@ -1580,7 +1595,7 @@ const removeType = (typeIndex) => {
 const addDetail = (typeIndex) => {
   // S'assurer que le type est ouvert quand on ajoute un détail
   globalEditForm.value.types[typeIndex].expanded = true;
-  
+
   globalEditForm.value.types[typeIndex].details.push({
     id: Date.now() + Math.random(),
     libelle: '',
@@ -1809,11 +1824,11 @@ onMounted(() => {
   .grid-cols-4 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-  
+
   .grid-cols-3 {
     grid-template-columns: repeat(1, minmax(0, 1fr));
   }
-  
+
   .space-x-3 > * + * {
     margin-left: 0;
     margin-top: 0.75rem;
