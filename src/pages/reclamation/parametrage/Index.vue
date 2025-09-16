@@ -745,169 +745,250 @@
       <q-separator />
 
       <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
-        <div class="space-y-6">
+        <div class="space-y-3">
           <!-- Types Section -->
           <div v-if="globalEditForm.types.length > 0">
             <draggable
               v-model="globalEditForm.types"
               group="types"
-              @start="drag = true"
-              @end="drag = false"
+              @start="onDragStart"
+              @end="onDragEnd"
               item-key="id"
-              class="space-y-4"
+              handle=".type-drag-handle"
+              ghost-class="drag-ghost"
+              chosen-class="drag-chosen"
+              drag-class="drag-active"
+              class="space-y-2"
             >
               <template #item="{ element: type, index: typeIndex }">
-                <q-card class="bg-white shadow-sm border-l-4 border-purple-500">
-                  <q-card-section class="pb-2">
-                    <div class="flex items-center justify-between mb-4">
-                      <div class="flex items-center space-x-2">
-                        <q-icon name="drag_indicator" class="text-gray-400 cursor-move" />
-                        <h4 class="text-lg font-semibold text-gray-800">Type {{ typeIndex + 1 }}</h4>
+                <q-expansion-item
+                  :model-value="type.expanded || false"
+                  @update:model-value="(val) => type.expanded = val"
+                  :class="{
+                    'drag-item-dragging': type.isDragging,
+                    'border-l-4 border-purple-500': true
+                  }"
+                  class="bg-white shadow-sm rounded-lg overflow-hidden transition-all duration-200 hover:shadow-md"
+                >
+                  <!-- En-tête compact du type -->
+                  <template #header>
+                    <div class="flex items-center w-full py-2 px-1">
+                      <!-- Handle de drag -->
+                      <div class="type-drag-handle cursor-move flex-shrink-0 mr-3 p-1 rounded hover:bg-gray-100 transition-colors">
+                        <q-icon name="drag_indicator" class="text-gray-400" size="sm" />
                       </div>
-                      <q-btn
-                        icon="delete"
-                        size="sm"
-                        flat
-                        round
-                        color="negative"
-                        @click="removeType(typeIndex)"
-                      >
-                        <q-tooltip>Supprimer ce type</q-tooltip>
-                      </q-btn>
-                    </div>
-
-                    <!-- Type Fields -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                          Libellé du type <span class="text-red-500">*</span>
-                        </label>
-                        <q-input
-                          v-model="type.libelle"
-                          outlined
-                          dense
-                          placeholder="Entrez le libellé du type"
-                        />
+                      
+                      <!-- Informations du type -->
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center space-x-3">
+                          <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 truncate">
+                              {{ type.libelle || `Type ${typeIndex + 1}` }}
+                            </div>
+                            <div class="text-xs text-gray-500 flex items-center space-x-2">
+                              <span v-if="type.direction" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ type.direction }}
+                              </span>
+                              <span v-if="type.statut_direction" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                {{ type.statut_direction }}
+                              </span>
+                              <span class="text-gray-400">{{ type.details?.length || 0 }} détail(s)</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                          Direction
-                        </label>
-                        <q-select
-                          v-model="type.direction"
-                          :options="directions"
-                          outlined
-                          dense
-                          clearable
-                          placeholder="Sélectionnez une direction"
-                        />
-                      </div>
-                      <div v-if="type.direction">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                          Statut Direction <span class="text-red-500">*</span>
-                        </label>
-                        <q-select
-                          v-model="type.statut_direction"
-                          :options="['consultation', 'traitement']"
-                          outlined
-                          dense
-                          placeholder="Sélectionnez un statut"
-                        />
-                      </div>
-                    </div>
-
-                    <!-- Details Section -->
-                    <div class="border-t pt-4">
-                      <div class="flex items-center justify-between mb-3">
-                        <h5 class="text-md font-medium text-gray-700">Détails du type</h5>
+                      
+                      <!-- Actions -->
+                      <div class="flex items-center space-x-1 ml-3">
                         <q-btn
                           icon="add"
-                          size="sm"
+                          size="xs"
                           flat
                           round
                           color="green-6"
-                          @click="addDetail(typeIndex)"
+                          @click.stop="addDetail(typeIndex)"
+                          class="hover:bg-green-50"
                         >
                           <q-tooltip>Ajouter un détail</q-tooltip>
                         </q-btn>
+                        <q-btn
+                          icon="delete"
+                          size="xs"
+                          flat
+                          round
+                          color="negative"
+                          @click.stop="removeType(typeIndex)"
+                          class="hover:bg-red-50"
+                        >
+                          <q-tooltip>Supprimer ce type</q-tooltip>
+                        </q-btn>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Contenu détaillé du type (dans l'accordéon) -->
+                  <div class="px-4 pb-4">
+                    <!-- Formulaire du type -->
+                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                      <h6 class="text-sm font-medium text-gray-700 mb-3">Configuration du type</h6>
+                      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <label class="block text-xs font-medium text-gray-600 mb-1">
+                            Libellé du type <span class="text-red-500">*</span>
+                          </label>
+                          <q-input
+                            v-model="type.libelle"
+                            outlined
+                            dense
+                            placeholder="Entrez le libellé du type"
+                            class="bg-white"
+                          />
+                        </div>
+                        <div>
+                          <label class="block text-xs font-medium text-gray-600 mb-1">
+                            Direction
+                          </label>
+                          <q-select
+                            v-model="type.direction"
+                            :options="directions"
+                            outlined
+                            dense
+                            clearable
+                            placeholder="Sélectionnez une direction"
+                            class="bg-white"
+                          />
+                        </div>
+                        <div v-if="type.direction">
+                          <label class="block text-xs font-medium text-gray-600 mb-1">
+                            Statut Direction <span class="text-red-500">*</span>
+                          </label>
+                          <q-select
+                            v-model="type.statut_direction"
+                            :options="['consultation', 'traitement']"
+                            outlined
+                            dense
+                            placeholder="Sélectionnez un statut"
+                            class="bg-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Section des détails -->
+                    <div>
+                      <div class="flex items-center justify-between mb-3">
+                        <h6 class="text-sm font-medium text-gray-700">Détails du type</h6>
+                        <q-btn
+                          icon="add"
+                          label="Ajouter un détail"
+                          size="sm"
+                          outline
+                          color="green-6"
+                          @click="addDetail(typeIndex)"
+                          class="text-xs"
+                        />
                       </div>
 
+                      <!-- Liste des détails avec drag & drop -->
                       <draggable
+                        v-if="type.details && type.details.length > 0"
                         v-model="type.details"
                         group="details"
-                        @start="drag = true"
-                        @end="drag = false"
+                        @start="onDetailDragStart"
+                        @end="onDetailDragEnd"
                         item-key="id"
-                        class="space-y-3"
+                        handle=".detail-drag-handle"
+                        ghost-class="drag-ghost"
+                        chosen-class="drag-chosen"
+                        drag-class="drag-active"
+                        class="space-y-2"
                       >
                         <template #item="{ element: detail, index: detailIndex }">
-                          <div class="bg-gray-50 p-4 rounded border">
-                            <div class="flex items-center justify-between mb-3">
-                              <div class="flex items-center space-x-2">
-                                <q-icon name="drag_indicator" class="text-gray-400 cursor-move" size="sm" />
-                                <span class="text-sm font-medium text-gray-600">Détail {{ detailIndex + 1 }}</span>
+                          <q-item
+                            :class="{
+                              'drag-item-dragging': detail.isDragging,
+                              'bg-white': true
+                            }"
+                            class="border border-gray-200 rounded-lg transition-all duration-200 hover:shadow-sm"
+                          >
+                            <q-item-section side class="pr-3">
+                              <div class="detail-drag-handle cursor-move p-1 rounded hover:bg-gray-100 transition-colors">
+                                <q-icon name="drag_indicator" class="text-gray-400" size="xs" />
                               </div>
-                              <q-btn
-                                icon="delete"
-                                size="xs"
-                                flat
-                                round
-                                color="negative"
-                                @click="removeDetail(typeIndex, detailIndex)"
-                              >
-                                <q-tooltip>Supprimer ce détail</q-tooltip>
-                              </q-btn>
-                            </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">
-                                  Libellé <span class="text-red-500">*</span>
-                                </label>
-                                <q-input
-                                  v-model="detail.libelle"
-                                  outlined
-                                  dense
-                                  placeholder="Libellé du détail"
-                                />
+                            </q-item-section>
+                            
+                            <q-item-section>
+                              <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                                <div>
+                                  <q-input
+                                    v-model="detail.libelle"
+                                    outlined
+                                    dense
+                                    placeholder="Libellé du détail"
+                                    class="text-sm"
+                                  >
+                                    <template #before>
+                                      <span class="text-xs text-gray-500 mr-2">Libellé:</span>
+                                    </template>
+                                  </q-input>
+                                </div>
+                                <div>
+                                  <q-select
+                                    v-model="detail.direction"
+                                    :options="directions"
+                                    outlined
+                                    dense
+                                    clearable
+                                    placeholder="Direction"
+                                    class="text-sm"
+                                  >
+                                    <template #before>
+                                      <span class="text-xs text-gray-500 mr-2">Direction:</span>
+                                    </template>
+                                  </q-select>
+                                </div>
+                                <div v-if="detail.direction">
+                                  <q-select
+                                    v-model="detail.statut_direction"
+                                    :options="['consultation', 'traitement']"
+                                    outlined
+                                    dense
+                                    placeholder="Statut"
+                                    class="text-sm"
+                                  >
+                                    <template #before>
+                                      <span class="text-xs text-gray-500 mr-2">Statut:</span>
+                                    </template>
+                                  </q-select>
+                                </div>
+                                <div class="flex justify-end">
+                                  <q-btn
+                                    icon="delete"
+                                    size="xs"
+                                    flat
+                                    round
+                                    color="negative"
+                                    @click="removeDetail(typeIndex, detailIndex)"
+                                    class="hover:bg-red-50"
+                                  >
+                                    <q-tooltip>Supprimer ce détail</q-tooltip>
+                                  </q-btn>
+                                </div>
                               </div>
-                              <div>
-                                <label class="block text-xs font-medium text-gray-600 mb-1">
-                                  Direction
-                                </label>
-                                <q-select
-                                  v-model="detail.direction"
-                                  :options="directions"
-                                  outlined
-                                  dense
-                                  clearable
-                                  placeholder="Direction"
-                                />
-                              </div>
-                              <div v-if="detail.direction">
-                                <label class="block text-xs font-medium text-gray-600 mb-1">
-                                  Statut <span class="text-red-500">*</span>
-                                </label>
-                                <q-select
-                                  v-model="detail.statut_direction"
-                                  :options="['consultation', 'traitement']"
-                                  outlined
-                                  dense
-                                  placeholder="Statut"
-                                />
-                              </div>
-                            </div>
-                          </div>
+                            </q-item-section>
+                          </q-item>
                         </template>
                       </draggable>
 
-                      <div v-if="type.details.length === 0" class="text-center py-4 text-gray-500 bg-gray-50 rounded border border-dashed">
+                      <!-- Message si aucun détail -->
+                      <div v-else class="text-center py-6 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
                         <q-icon name="list" size="1.5rem" class="mb-2" />
                         <p class="text-sm">Aucun détail pour ce type</p>
+                        <p class="text-xs text-gray-400">Cliquez sur "Ajouter un détail" pour commencer</p>
                       </div>
                     </div>
-                  </q-card-section>
-                </q-card>
+                  </div>
+                </q-expansion-item>
               </template>
             </draggable>
           </div>
@@ -983,6 +1064,7 @@ const message = ref();
 // Global Edit Dialog variables
 const globalEditDialog = ref(false);
 const drag = ref(false);
+const detailDrag = ref(false);
 const globalEditForm = ref({
   types: []
 });
@@ -1458,11 +1540,14 @@ const openGlobalEdit = (ticket) => {
     libelle: type.libelle || '',
     direction: type.direction || null,
     statut_direction: type.statut_direction || null,
+    expanded: false, // Accordéons fermés par défaut
+    isDragging: false, // État de drag
     details: type.details ? type.details.map(detail => ({
       id: detail.id || Date.now() + Math.random(),
       libelle: detail.libelle || '',
       direction: detail.direction || null,
-      statut_direction: detail.statut_direction || null
+      statut_direction: detail.statut_direction || null,
+      isDragging: false // État de drag pour les détails
     })) : []
   })) : [];
   
@@ -1482,6 +1567,8 @@ const addType = () => {
     libelle: '',
     direction: null,
     statut_direction: null,
+    expanded: true, // Nouveau type ouvert par défaut
+    isDragging: false,
     details: []
   });
 };
@@ -1491,16 +1578,63 @@ const removeType = (typeIndex) => {
 };
 
 const addDetail = (typeIndex) => {
+  // S'assurer que le type est ouvert quand on ajoute un détail
+  globalEditForm.value.types[typeIndex].expanded = true;
+  
   globalEditForm.value.types[typeIndex].details.push({
     id: Date.now() + Math.random(),
     libelle: '',
     direction: null,
-    statut_direction: null
+    statut_direction: null,
+    isDragging: false
   });
 };
 
 const removeDetail = (typeIndex, detailIndex) => {
   globalEditForm.value.types[typeIndex].details.splice(detailIndex, 1);
+};
+
+// Drag & Drop event handlers
+const onDragStart = (evt) => {
+  drag.value = true;
+  const typeIndex = evt.oldIndex;
+  if (globalEditForm.value.types[typeIndex]) {
+    globalEditForm.value.types[typeIndex].isDragging = true;
+  }
+};
+
+const onDragEnd = (evt) => {
+  drag.value = false;
+  // Reset dragging state for all types
+  globalEditForm.value.types.forEach(type => {
+    type.isDragging = false;
+  });
+};
+
+const onDetailDragStart = (evt) => {
+  detailDrag.value = true;
+  // Find the parent type and detail being dragged
+  const detailElement = evt.item;
+  const typeElement = detailElement.closest('.q-expansion-item');
+  if (typeElement) {
+    const typeIndex = Array.from(typeElement.parentNode.children).indexOf(typeElement);
+    const detailIndex = evt.oldIndex;
+    if (globalEditForm.value.types[typeIndex]?.details[detailIndex]) {
+      globalEditForm.value.types[typeIndex].details[detailIndex].isDragging = true;
+    }
+  }
+};
+
+const onDetailDragEnd = (evt) => {
+  detailDrag.value = false;
+  // Reset dragging state for all details
+  globalEditForm.value.types.forEach(type => {
+    if (type.details) {
+      type.details.forEach(detail => {
+        detail.isDragging = false;
+      });
+    }
+  });
 };
 
 const saveGlobalEdit = async () => {
@@ -1553,20 +1687,136 @@ onMounted(() => {
 <style scoped>
 /* Add any custom styles here */
 
-/* Styles pour le drag & drop */
-.ghost {
-  opacity: 0.5;
-  background: #c8ebfb;
+/* Styles améliorés pour le drag & drop */
+.drag-ghost {
+  opacity: 0.6;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   border: 2px dashed #2196f3;
+  border-radius: 8px;
+  transform: rotate(2deg);
+  box-shadow: 0 8px 25px rgba(33, 150, 243, 0.3);
 }
 
-.chosen {
-  transform: rotate(5deg);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+.drag-chosen {
+  transform: scale(1.02) rotate(1deg);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  border: 2px solid #2196f3;
 }
 
-.drag {
-  transform: rotate(5deg);
-  opacity: 0.8;
+.drag-active {
+  opacity: 0.9;
+  transform: rotate(3deg);
+  cursor: grabbing !important;
+}
+
+.drag-item-dragging {
+  background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%) !important;
+  border-color: #9c27b0 !important;
+  box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3) !important;
+}
+
+/* Handles de drag améliorés */
+.type-drag-handle:hover {
+  background-color: #f5f5f5 !important;
+  transform: scale(1.1);
+}
+
+.detail-drag-handle:hover {
+  background-color: #f5f5f5 !important;
+  transform: scale(1.1);
+}
+
+.type-drag-handle:active,
+.detail-drag-handle:active {
+  cursor: grabbing !important;
+}
+
+/* Transitions fluides */
+.q-expansion-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.q-expansion-item:hover {
+  transform: translateY(-1px);
+}
+
+.q-item {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.q-item:hover {
+  transform: translateX(2px);
+}
+
+/* Amélioration des badges de statut */
+.bg-blue-100 {
+  background-color: #dbeafe;
+}
+
+.text-blue-800 {
+  color: #1e40af;
+}
+
+.bg-green-100 {
+  background-color: #dcfce7;
+}
+
+.text-green-800 {
+  color: #166534;
+}
+
+/* Curseurs personnalisés */
+.cursor-move {
+  cursor: grab;
+}
+
+.cursor-move:active {
+  cursor: grabbing;
+}
+
+/* Amélioration des boutons d'action */
+.hover\:bg-green-50:hover {
+  background-color: #f0fdf4;
+}
+
+.hover\:bg-red-50:hover {
+  background-color: #fef2f2;
+}
+
+.hover\:bg-gray-100:hover {
+  background-color: #f3f4f6;
+}
+
+/* Animation pour les accordéons */
+.q-expansion-item__content {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive design amélioré */
+@media (max-width: 768px) {
+  .grid-cols-4 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .space-x-3 > * + * {
+    margin-left: 0;
+    margin-top: 0.75rem;
+  }
 }
 </style>
