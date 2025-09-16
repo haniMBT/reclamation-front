@@ -90,17 +90,8 @@
                   >
                     <q-tooltip>Modifier</q-tooltip>
                   </q-btn>
-                  <q-btn
-                    icon="add"
-                    size="sm"
-                    flat
-                    round
-                    color="green-6"
-                    @click.stop="openAddTypeDetail(ticket)"
-                  >
-                    <q-tooltip>Ajouter un type et ses détails</q-tooltip>
-                  </q-btn>
-                  <q-btn
+
+                  <!-- <q-btn
                     icon="rule"
                     size="sm"
                     flat
@@ -109,7 +100,7 @@
                     @click.stop="openGlobalEdit(ticket)"
                   >
                     <q-tooltip>Modification globale des types et détails</q-tooltip>
-                  </q-btn>
+                  </q-btn> -->
                 </div>
               </div>
             </template>
@@ -186,18 +177,7 @@
                             class="text-xs"
                           />
                         </div>
-                        <div class="flex space-x-1">
-                          <q-btn
-                            icon="edit"
-                            size="sm"
-                            flat
-                            round
-                            color="primary"
-                            @click="openEditType(type, ticket)"
-                          >
-                            <q-tooltip>Modifier ce type</q-tooltip>
-                          </q-btn>
-                        </div>
+
                       </div>
                     </q-card-section>
 
@@ -710,26 +690,7 @@
       </q-dialog>
     </div>
   </div>
-  <!-- Type Detail Dialog -->
-  <TypeDetail
-    v-model:show="showTypeDetail"
-    :ticket-id="selectedTicket?.id"
-    :ticket-libelle="selectedTicket?.libelle"
-    :directions="directions"
-    @saved="onTypeSaved"
-  />
 
-  <!-- Edit Type Detail Dialog -->
-  <EditTypeDetail
-    v-model:show="showEditTypeDetail"
-    :type-id="selectedType?.id"
-    :type-data="selectedType"
-    :ticket-id="selectedTicket?.id"
-    :ticket-libelle="selectedTicket?.libelle"
-    :directions="directions"
-    :is-edit-mode="true"
-    @saved="onEditTypeSaved"
-  />
 
   <!-- Global Edit Dialog -->
   <q-dialog v-model="globalEditDialog" persistent>
@@ -1056,8 +1017,7 @@ import { ref, onMounted, computed, watch } from 'vue';
 import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
 import ErrorValidation from 'src/components/ErrorValidation.vue';
-import TypeDetail from './TypeDetail.vue';
-import EditTypeDetail from './EditTypeDetail.vue';
+
 import draggable from 'vuedraggable';
 
 // Reactive variables
@@ -1067,8 +1027,7 @@ const searchTickets = ref('');
 const addTicket = ref(false);
 const editTicket = ref(false);
 const deleteTicket = ref(false);
-const showTypeDetail = ref(false);
-const showEditTypeDetail = ref(false);
+
 const selectedTicket = ref(null);
 const selectedType = ref(null);
 const loading = ref(false);
@@ -1445,60 +1404,7 @@ const filteredTickets = computed(() => {
   );
 });
 
-// Méthode pour ouvrir le dialog d'ajout de type et détails
-const openAddTypeDetail = (ticket) => {
-  if (!ticket || !ticket.id) {
-    $q.notify({
-      type: 'negative',
-      message: 'Erreur: Ticket non valide'
-    });
-    return;
-  }
 
-  console.log('Index: Opening TypeDetail for ticket:', ticket.id, ticket.libelle);
-  selectedTicket.value = ticket;
-  showTypeDetail.value = true;
-};
-
-// Méthode pour ouvrir le dialog d'édition de type
-const openEditType = (type, ticket) => {
-  if (!type || !type.id) {
-    $q.notify({
-      type: 'negative',
-      message: 'Erreur: Type non valide'
-    });
-    return;
-  }
-
-  if (!ticket || !ticket.id) {
-    $q.notify({
-      type: 'negative',
-      message: 'Erreur: Ticket non valide'
-    });
-    return;
-  }
-
-  console.log('Index: Opening EditTypeDetail for type:', type.id, type.libelle);
-  selectedType.value = type;
-  selectedTicket.value = ticket;
-  showEditTypeDetail.value = true;
-};
-
-// Méthode appelée après l'enregistrement d'un type et ses détails
-const onTypeSaved = (data) => {
-  // Vous pouvez ajouter ici une logique supplémentaire si nécessaire
-  // Par exemple, rafraîchir les données
-  fetchData();
-};
-
-const onEditTypeSaved = (data) => {
-  console.log('Type updated:', data);
-  showEditTypeDetail.value = false;
-  selectedType.value = null;
-  selectedTicket.value = null;
-  // Refresh data
-  fetchData();
-};
 
 // Méthode pour obtenir la couleur du statut
 const getStatutColor = (statut) => {
@@ -1670,7 +1576,7 @@ const saveGlobalEdit = async () => {
   };
 
   try {
-    const response = await api.put(`/api/rec/ticket/${selectedTicket.value.id}/types`, data);
+    const response = await api.put(`/api/rec/type/global/${selectedTicket.value.id}`, data);
     message.value = response.data.message || 'Types et détails modifiés avec succès';
     $q.notify({
       type: 'positive',
