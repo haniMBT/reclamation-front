@@ -131,6 +131,8 @@
                     <q-icon name="edit" class="text-blue-600" />
                   </template>
                 </q-input>
+                {{ validationErrors[info.libelle] }}
+                <ErrorValidation v-if="validationErrors[info.libelle]" :myerrors="validationErrors[info.libelle]" />
               </div>
 
               <!-- Champ description supplémentaire -->
@@ -151,6 +153,8 @@
                     <q-icon name="description" class="text-blue-600" />
                   </template>
                 </q-input>
+                {{ validationErrors.description }}asdsa
+                <ErrorValidation v-if="validationErrors.description" :myerrors="validationErrors.description" />
               </div>
             </div>
           </form>
@@ -182,6 +186,75 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Modal d'alerte pour les doublons -->
+    <q-dialog v-model="showDuplicateModal" persistent>
+      <q-card class="w-full" style="min-width: 500px; max-width: 600px;">
+        <q-card-section class="flex items-center bg-amber-50">
+          <q-icon name="warning" class="text-amber-600 mr-3" size="2.5rem" />
+          <div>
+            <div class="text-xl font-semibold text-amber-900">Réclamation similaire détectée</div>
+            <div class="text-sm text-amber-700">Une vérification est nécessaire avant de continuer</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg">
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+            <div class="flex items-start">
+              <q-icon name="info" class="text-amber-600 mr-3 mt-1" size="1.2rem" />
+              <div>
+                <h4 class="font-medium text-amber-900 mb-2">Information importante</h4>
+                <p class="text-amber-800 text-sm leading-relaxed">
+                  {{ duplicateMessage }}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-gray-50 rounded-lg p-4">
+            <h5 class="font-medium text-gray-900 mb-2">Que souhaitez-vous faire ?</h5>
+            <ul class="text-sm text-gray-700 space-y-1">
+              <li class="flex items-center">
+                <q-icon name="visibility" class="text-blue-500 mr-2" size="sm" />
+                <strong>Suivre :</strong> Consulter la réclamation existante
+              </li>
+              <li class="flex items-center">
+                <q-icon name="cancel" class="text-gray-500 mr-2" size="sm" />
+                <strong>Annuler :</strong> Revenir au formulaire pour modifier vos informations
+              </li>
+            </ul>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn
+            @click="closeDuplicateModal"
+            color="grey-6"
+            outline
+            no-caps
+            class="px-6"
+            icon="cancel"
+          >
+            Annuler
+          </q-btn>
+          <q-btn
+            @click="proceedWithDuplicate"
+            color="blue-6"
+            no-caps
+            unelevated
+            class="px-6 ml-3"
+            icon="visibility"
+          >
+            Suivre
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -189,6 +262,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'src/boot/axios'
+import ErrorValidation from 'src/components/ErrorValidation.vue'
 
 // Composables
 const $q = useQuasar()
@@ -201,6 +275,9 @@ const showModal = ref(false)
 const selectedTicket = ref(null)
 const submitting = ref(false)
 const formData = reactive({})
+const showDuplicateModal = ref(false)
+const duplicateMessage = ref('')
+const validationErrors = ref({})
 
 // Methods
 const fetchTickets = async () => {
@@ -252,7 +329,12 @@ const closeModal = () => {
   Object.keys(formData).forEach(key => delete formData[key])
 }
 
+
+
 const submitForm = async () => {
+  // Réinitialiser les erreurs de validation
+  validationErrors.value = {}
+
   // Validation des champs requis
   const requiredFields = selectedTicket.value?.infos_generales?.filter(info => info.key_attirubut) || []
 
@@ -277,32 +359,76 @@ const submitForm = async () => {
   submitting.value = true
 
   try {
-    // Ici vous pouvez ajouter l'appel API pour soumettre la réclamation
-    // const response = await api.post('/api/rec/reclamations', {
-    //   ticket_id: selectedTicket.value.id,
-    //   data: formData
-    // })
+    // Préparer les données pour l'API
+    const info_general_data = selectedTicket.value?.infos_generales?.map(info => ({
+      info_general_id: info.id,
+      value: formData[info.libelle] || '',
+      key_attribut: info.key_attirubut || false
+    })) || []
 
-    // Simulation d'une soumission réussie
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const payload = {
+       bticket_id: selectedTicket.value.id,
+       user_id: 1, // À remplacer par l'ID de l'utilisateur connecté
+       direction: 'ENTRANT', // À adapter selon vos besoins
+       status: 'OUVERT',
+       description: formData.description,
+       info_general_data: info_general_data
+     }
 
+    // Appeler l'API de vérification de doublons
+    const response = await api.post('/api/rec/tickets/check-duplicate', payload)
+
+    if (response.data.duplicate_found) {
+      duplicateMessage.value = response.data.message
+      showDuplicateModal.value = true
+      submitting.value = false
+      return
+    }
+
+    // Succès - réclamation créée
     $q.notify({
       type: 'positive',
-      message: 'Réclamation soumise avec succès',
+      message: 'Réclamation créée avec succès',
       caption: 'Votre demande sera traitée dans les meilleurs délais'
     })
 
     closeModal()
   } catch (err) {
     console.error('Erreur lors de la soumission:', err)
-    $q.notify({
-      type: 'negative',
-      message: 'Erreur lors de la soumission',
-      caption: err.response?.data?.message || err.message
-    })
+
+    // Gestion des erreurs de validation (422)
+    if (err.response?.status === 422) {
+      validationErrors.value = err.response.data.errors || {}
+      $q.notify({
+        type: 'negative',
+        message: 'Erreurs de validation',
+        caption: 'Veuillez corriger les erreurs ci-dessous'
+      })
+    } else {
+      $q.notify({
+        type: 'negative',
+        message: 'Erreur lors de la soumission',
+        caption: err.response?.data?.message || err.message
+      })
+    }
   } finally {
     submitting.value = false
   }
+}
+
+const closeDuplicateModal = () => {
+  showDuplicateModal.value = false
+  duplicateMessage.value = ''
+}
+
+const proceedWithDuplicate = () => {
+  // Pour l'instant, ne fait rien comme demandé
+  closeDuplicateModal()
+  $q.notify({
+    type: 'info',
+    message: 'Fonctionnalité en cours de développement',
+    caption: 'Le suivi des doublons sera bientôt disponible'
+  })
 }
 
 // Lifecycle
