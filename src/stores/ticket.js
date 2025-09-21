@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { LocalStorage } from 'quasar'
+import { api } from 'boot/axios'
 
 export const useTicketStore = defineStore('ticket', {
 
@@ -133,6 +134,79 @@ export const useTicketStore = defineStore('ticket', {
       } catch (error) {
         console.error('Erreur lors de la mise à jour des données du ticket:', error);
         return { success: false, error: error.message };
+      }
+    },
+
+    /**
+     * Récupère les données complètes d'un ticket avec ses types et détails
+     * @param {number} ticketId - ID du ticket à récupérer
+     * @returns {Promise<Object>} - Données complètes du ticket
+     */
+    async getCompleteTicketData(ticketId) {
+      try {
+        const response = await api.get(`/api/rec/tickets/${ticketId}/complete-data`);
+        
+        if (response.data.success) {
+          console.log('Données complètes du ticket récupérées:', response.data.data);
+          return {
+            success: true,
+            data: response.data.data
+          };
+        } else {
+          console.error('Erreur API:', response.data.message);
+          return {
+            success: false,
+            error: response.data.message
+          };
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données complètes du ticket:', error);
+        return {
+          success: false,
+          error: error.response?.data?.message || error.message
+        };
+      }
+    },
+
+    /**
+     * Finalise une réclamation avec les informations complémentaires
+     * @param {Object} formData - Données du formulaire de finalisation
+     * @returns {Promise<Object>} - Résultat de la finalisation
+     */
+    async completeTicket(formData) {
+      try {
+        const response = await api.post('/api/rec/tickets/complete', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+        
+        if (response.data.success) {
+          console.log('Réclamation finalisée avec succès:', response.data.data);
+          
+          // Nettoyer les données du ticket après finalisation
+          this.clearTicket();
+          
+          return {
+            success: true,
+            data: response.data.data,
+            message: response.data.message
+          };
+        } else {
+          console.error('Erreur lors de la finalisation:', response.data.message);
+          return {
+            success: false,
+            error: response.data.message,
+            errors: response.data.errors
+          };
+        }
+      } catch (error) {
+        console.error('Erreur lors de la finalisation de la réclamation:', error);
+        return {
+          success: false,
+          error: error.response?.data?.message || error.message,
+          errors: error.response?.data?.errors
+        };
       }
     }
   }
