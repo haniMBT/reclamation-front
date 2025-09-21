@@ -286,11 +286,15 @@
 <script setup>
 import { ref, onMounted, reactive } from 'vue'
 import { useQuasar } from 'quasar'
+import { useRouter } from 'vue-router'
 import { api } from 'src/boot/axios'
+import { useTicketStore } from 'src/stores/ticket'
 
 
 // Composables
 const $q = useQuasar()
+const router = useRouter()
+const ticketStore = useTicketStore()
 
 // State
 const tickets = ref([])
@@ -442,14 +446,39 @@ const submitForm = async () => {
       return
     }
 
-    // Succès - réclamation créée
-    $q.notify({
-      type: 'positive',
-      message: 'Réclamation créée avec succès',
-      caption: 'Votre demande sera traitée dans les meilleurs délais'
-    })
+    // Succès - réclamation créée (statut 201)
+    if (response.status === 201 && response.data.success) {
+      // Sauvegarder les données dans le store
+      const saveResult = ticketStore.saveTicket(response.data.data)
+      
+      if (saveResult.success) {
+        $q.notify({
+          type: 'positive',
+          message: 'Réclamation créée avec succès',
+          caption: 'Redirection vers la suite du processus...'
+        })
 
-    closeModal()
+        closeModal()
+        
+        // Rediriger vers create2.vue
+         setTimeout(() => {
+           router.push('/reclamations/ticket2')
+         }, 1000)
+      } else {
+        $q.notify({
+          type: 'negative',
+          message: 'Erreur lors de la sauvegarde',
+          caption: saveResult.error
+        })
+      }
+    } else {
+      $q.notify({
+        type: 'positive',
+        message: 'Réclamation créée avec succès',
+        caption: 'Votre demande sera traitée dans les meilleurs délais'
+      })
+      closeModal()
+    }
   } catch (error) {
     console.error('Erreur lors de la soumission:', error)
     console.log('Response data:', error.response?.data)
