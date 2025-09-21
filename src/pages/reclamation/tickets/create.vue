@@ -107,11 +107,22 @@
         <q-separator />
 
         <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <!-- Bannière d'erreurs de validation -->
+          <q-banner v-if="Object.keys(validationErrors).length > 0" class="bg-red-50 text-red-800 mb-6" rounded>
+            <template #avatar>
+              <q-icon name="error" color="red" />
+            </template>
+            <div class="font-medium mb-2">Erreurs de validation détectées</div>
+            <div class="text-sm">
+              Veuillez corriger les erreurs ci-dessous avant de soumettre le formulaire.
+            </div>
+          </q-banner>
+
           <form @submit.prevent="submitForm" class="space-y-6">
             <div class="grid grid-cols-1 gap-6">
               <!-- Champs dynamiques basés sur les infos générales -->
               <div
-                v-for="info in selectedTicket?.infos_generales"
+                v-for="(info, index) in selectedTicket?.infos_generales"
                 :key="info.id"
                 class="space-y-2"
               >
@@ -126,13 +137,20 @@
                   dense
                   :placeholder="`Entrez ${info.libelle.toLowerCase()}`"
                   :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
+                  :error="!!validationErrors[info.libelle]"
+                  @input="clearFieldError(info.libelle)"
                 >
                   <template #prepend>
                     <q-icon name="edit" class="text-blue-600" />
                   </template>
                 </q-input>
-                {{ validationErrors[info.libelle] }}
-                <ErrorValidation v-if="validationErrors[info.libelle]" :myerrors="validationErrors[info.libelle]" />
+                <!-- Erreurs pour les champs dynamiques -->
+                <div v-if="validationErrors[`info_general_data.${index}.value`] || validationErrors[info.libelle]" class="text-red-600 text-xs mt-1">
+                  <div v-for="error in getFieldErrors(`info_general_data.${index}.value`, info.libelle)" :key="error" class="flex items-start mb-1">
+                    <q-icon name="error_outline" size="12px" class="mr-1 mt-0.5 flex-shrink-0" />
+                    <span>{{ error }}</span>
+                  </div>
+                </div>
               </div>
 
               <!-- Champ description supplémentaire -->
@@ -148,13 +166,20 @@
                   rows="4"
                   placeholder="Décrivez votre réclamation en détail..."
                   :rules="[val => !!val || 'La description est requise']"
+                  :error="!!validationErrors.description"
+                  @input="clearFieldError('description')"
                 >
                   <template #prepend>
                     <q-icon name="description" class="text-blue-600" />
                   </template>
                 </q-input>
-                {{ validationErrors.description }}asdsa
-                <ErrorValidation v-if="validationErrors.description" :myerrors="validationErrors.description" />
+                <!-- Erreurs pour le champ description -->
+                <div v-if="validationErrors.description" class="text-red-600 text-xs mt-1">
+                  <div v-for="error in Array.isArray(validationErrors.description) ? validationErrors.description : [validationErrors.description]" :key="error" class="flex items-start mb-1">
+                    <q-icon name="error_outline" size="12px" class="mr-1 mt-0.5 flex-shrink-0" />
+                    <span>{{ error }}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </form>
@@ -262,7 +287,7 @@
 import { ref, onMounted, reactive } from 'vue'
 import { useQuasar } from 'quasar'
 import { api } from 'src/boot/axios'
-import ErrorValidation from 'src/components/ErrorValidation.vue'
+
 
 // Composables
 const $q = useQuasar()
@@ -320,6 +345,9 @@ const selectTicket = (ticket) => {
   // Ajouter le champ description
   formData.description = ''
 
+  // Réinitialiser les erreurs de validation à l'ouverture du modal
+  validationErrors.value = {}
+
   showModal.value = true
 }
 
@@ -327,6 +355,35 @@ const closeModal = () => {
   showModal.value = false
   selectedTicket.value = null
   Object.keys(formData).forEach(key => delete formData[key])
+  validationErrors.value = {}
+}
+
+const clearFieldError = (fieldName) => {
+  if (validationErrors.value[fieldName]) {
+    delete validationErrors.value[fieldName]
+  }
+}
+
+const getFieldErrors = (backendFieldName, frontendFieldName) => {
+  const errors = []
+
+  // Vérifier les erreurs avec le nom du backend
+  if (validationErrors.value[backendFieldName]) {
+    const backendErrors = Array.isArray(validationErrors.value[backendFieldName])
+      ? validationErrors.value[backendFieldName]
+      : [validationErrors.value[backendFieldName]]
+    errors.push(...backendErrors)
+  }
+
+  // Vérifier les erreurs avec le nom du frontend
+  if (validationErrors.value[frontendFieldName]) {
+    const frontendErrors = Array.isArray(validationErrors.value[frontendFieldName])
+      ? validationErrors.value[frontendFieldName]
+      : [validationErrors.value[frontendFieldName]]
+    errors.push(...frontendErrors)
+  }
+
+  return errors
 }
 
 
@@ -393,22 +450,35 @@ const submitForm = async () => {
     })
 
     closeModal()
-  } catch (err) {
-    console.error('Erreur lors de la soumission:', err)
+  } catch (error) {
+    console.error('Erreur lors de la soumission:', error)
+    console.log('Response data:', error.response?.data)
+    console.log('Response status:', error.response?.status)
 
     // Gestion des erreurs de validation (422)
-    if (err.response?.status === 422) {
-      validationErrors.value = err.response.data.errors || {}
+    if (error.response && error.response.status === 422) {
+      // Laravel renvoie les erreurs dans response.data.errors
+      validationErrors.value = error.response.data.errors || {}
+
+      console.log('Erreurs de validation extraites:', validationErrors.value)
+
+      // Compter le nombre total d'erreurs
+      const errorCount = Object.keys(validationErrors.value).length
+
       $q.notify({
         type: 'negative',
-        message: 'Erreurs de validation',
-        caption: 'Veuillez corriger les erreurs ci-dessous'
+        message: `${errorCount} erreur${errorCount > 1 ? 's' : ''} de validation détectée${errorCount > 1 ? 's' : ''}`,
+        caption: 'Veuillez corriger les erreurs affichées dans le formulaire',
+        timeout: 5000
       })
     } else {
+      // Réinitialiser les erreurs de validation pour les autres types d'erreurs
+      validationErrors.value = {}
+
       $q.notify({
         type: 'negative',
         message: 'Erreur lors de la soumission',
-        caption: err.response?.data?.message || err.message
+        caption: error.response?.data?.message || error.message
       })
     }
   } finally {
