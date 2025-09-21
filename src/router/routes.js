@@ -33,9 +33,17 @@ const routes = [
       { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },
       { path: 'edit', component: () => import('src/pages/reclamation/Edit.vue') },
       { path: 'nature', component: () => import('src/pages/reclamation/nature/index.vue') },
+      { path: 'ticket', name: 'tickets-create', component: () => import('src/pages/reclamation/tickets/create.vue') },
       { path: 'parametrage', component: () => import('src/pages/reclamation/parametrage/Index.vue') }
     ]
   },
+  // {
+  //   path: '/tickets/',
+  //   component: () => import('layouts/MainLayout.vue'),
+  //   children: [
+  //     { path: 'create', name: 'tickets-create', component: () => import('src/pages/tickets/create.vue') }
+  //   ]
+  // },
   {
     path: '/profile',
     component: () => import('layouts/MainLayout.vue'),
