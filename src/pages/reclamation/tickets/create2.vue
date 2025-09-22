@@ -55,44 +55,76 @@
       <div v-else class="bg-white rounded-lg shadow-sm p-6">
         <q-form @submit="submitForm" class="q-gutter-md">
           <!-- Types et détails sous forme de checkboxes -->
-          <div v-if="ticketTypes.length > 0" class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-4">
-              Types de réclamation *
-            </label>
-            
-            <div class="space-y-6">
-              <div v-for="type in ticketTypes" :key="type.id" class="border border-gray-200 rounded-lg p-4">
-                <!-- Checkbox pour le type -->
-                <div class="flex items-start mb-4">
-                  <q-checkbox
-                    v-model="form.selectedTypes[type.id]"
-                    :label="type.name"
-                    color="blue-6"
-                    class="font-medium"
-                  />
-                </div>
-                
-                <div v-if="type.description" class="text-sm text-gray-600 mb-4 ml-6">
-                  {{ type.description }}
-                </div>
-                
-                <!-- Détails conditionnels quand le type est sélectionné -->
-                <div v-if="form.selectedTypes[type.id] && type.details && type.details.length > 0" class="ml-6 mt-4">
-                  <div class="text-sm font-medium text-gray-700 mb-2">Détails :</div>
-                  <div class="space-y-2 ml-4">
-                    <q-checkbox
-                      v-for="detail in type.details"
-                      :key="detail.id"
-                      v-model="form.selectedDetails[detail.id]"
-                      :label="detail.label"
-                      color="blue-5"
-                      class="text-sm"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+           <div v-if="ticketTypes.length > 0" class="mb-6">
+             <label class="block text-sm font-medium text-gray-700 mb-2">
+               Type(s) de réclamation *
+             </label>
+             
+             <div class="space-y-4">
+               <div v-for="type in ticketTypes" :key="type.id" class="border border-gray-200 rounded-lg p-4">
+                 <div class="flex items-start space-x-3">
+                   <q-checkbox
+                     v-model="form.selectedTypes[type.id]"
+                     color="blue-6"
+                     class="mt-1"
+                   />
+                   <div class="flex-1">
+                     <label class="font-medium text-gray-800 cursor-pointer" @click="form.selectedTypes[type.id] = !form.selectedTypes[type.id]">
+                       {{ type.name }}
+                     </label>
+                     
+                     <div v-if="type.description" class="text-sm text-gray-600 mt-1">
+                       {{ type.description }}
+                     </div>
+                     
+                     <!-- Détails conditionnels quand le type est sélectionné -->
+                     <div v-if="form.selectedTypes[type.id]" class="mt-3 ml-4 space-y-2">
+                       <!-- Détails sous forme de checkboxes -->
+                       <div v-if="type.details && type.details.length > 0">
+                         <div class="text-sm font-medium text-gray-600 mb-2">Détails :</div>
+                         <div v-for="detail in type.details" :key="detail.id" class="flex items-center space-x-2">
+                           <q-checkbox
+                             :model-value="form.typeDetails[type.id]?.details?.includes(detail.id) || false"
+                             @update:model-value="toggleDetail(type.id, detail.id, $event)"
+                             color="green-6"
+                             size="sm"
+                           />
+                           <label class="text-sm text-gray-700 cursor-pointer" @click="toggleDetail(type.id, detail.id, !form.typeDetails[type.id]?.details?.includes(detail.id))">
+                             {{ detail.label }}
+                           </label>
+                         </div>
+                       </div>
+                       
+                       <!-- Champ "Autre (précisez)" -->
+                       <div class="mt-3">
+                         <label class="block text-sm font-medium text-gray-600 mb-2">
+                           Autre (précisez) :
+                         </label>
+                         <q-input
+                           v-model="form.typeDetails[type.id].autre"
+                           type="textarea"
+                           outlined
+                           dense
+                           rows="2"
+                           placeholder="Précisez votre demande..."
+                           class="w-full"
+                         >
+                           <template v-slot:prepend>
+                             <q-icon name="edit_note" class="text-purple-600" />
+                           </template>
+                         </q-input>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+             
+             <!-- Validation error pour les types -->
+             <div v-if="errors.types" class="text-red-600 text-xs mt-1">
+               {{ errors.types }}
+             </div>
+           </div>
 
           <!-- Description détaillée -->
           <div class="mb-6">
@@ -260,7 +292,7 @@ const errors = ref({})
 const form = ref({
   description: '',
   selectedTypes: {}, // Types sélectionnés (id => boolean)
-  selectedDetails: {}, // Détails sélectionnés (id => boolean)
+  typeDetails: {}, // Structure: { type_id: { details: [detail_ids], autre: 'texte' } }
   files: []
 })
 
@@ -276,6 +308,15 @@ const ticketInfo = computed(() => {
 const documentAFournir = computed(() => {
   return ticketData.value?.documentAFournir || ''
 })
+
+// Watcher pour initialiser typeDetails quand selectedTypes change
+watch(() => form.value.selectedTypes, (newSelectedTypes) => {
+  Object.keys(newSelectedTypes).forEach(typeId => {
+    if (newSelectedTypes[typeId] && !form.value.typeDetails[typeId]) {
+      form.value.typeDetails[typeId] = { details: [], autre: '' }
+    }
+  })
+}, { deep: true })
 
 const isFormValid = computed(() => {
   // Vérifier que la description est remplie
@@ -346,19 +387,35 @@ const loadCompleteTicketData = async () => {
 const initializeFormFromTicketData = () => {
   if (!ticketData.value) return
   
-  // Initialiser les types et détails sélectionnés
+  // Initialiser les types sélectionnés et leurs structures de données
   ticketTypes.value.forEach(type => {
     if (!form.value.selectedTypes.hasOwnProperty(type.id)) {
       form.value.selectedTypes[type.id] = false
     }
-    if (type.details) {
-      type.details.forEach(detail => {
-        if (!form.value.selectedDetails.hasOwnProperty(detail.id)) {
-          form.value.selectedDetails[detail.id] = false
-        }
-      })
+    if (!form.value.typeDetails[type.id]) {
+      form.value.typeDetails[type.id] = {
+        details: [],
+        autre: ''
+      }
     }
   })
+}
+
+// Fonction pour gérer la sélection/désélection des détails
+const toggleDetail = (typeId, detailId, isSelected) => {
+  // S'assurer que la structure existe
+  if (!form.value.typeDetails[typeId]) {
+    form.value.typeDetails[typeId] = { details: [], autre: '' }
+  }
+  
+  const details = form.value.typeDetails[typeId].details
+  const index = details.indexOf(detailId)
+  
+  if (isSelected && index === -1) {
+    details.push(detailId)
+  } else if (!isSelected && index > -1) {
+    details.splice(index, 1)
+  }
 }
 
 const loadTicketData = async () => {
@@ -376,19 +433,18 @@ const loadTicketData = async () => {
       ticketData.value = response.data.data.ticket
       ticketTypes.value = response.data.data.types || []
       
-      // Initialiser les types et détails sélectionnés
-      ticketTypes.value.forEach(type => {
-        if (!form.value.selectedTypes.hasOwnProperty(type.id)) {
-          form.value.selectedTypes[type.id] = false
-        }
-        if (type.details) {
-          type.details.forEach(detail => {
-            if (!form.value.selectedDetails.hasOwnProperty(detail.id)) {
-              form.value.selectedDetails[detail.id] = false
-            }
-          })
-        }
-      })
+      // Initialiser les types sélectionnés et leurs structures de données
+       ticketTypes.value.forEach(type => {
+         if (!form.value.selectedTypes.hasOwnProperty(type.id)) {
+           form.value.selectedTypes[type.id] = false
+         }
+         if (!form.value.typeDetails[type.id]) {
+           form.value.typeDetails[type.id] = {
+             details: [],
+             autre: ''
+           }
+         }
+       })
     } else {
       throw new Error(response.data.message || 'Erreur lors du chargement des données')
     }
@@ -438,11 +494,11 @@ const submitForm = async () => {
     formData.append('description', form.value.description)
     
     // Préparer les données des types et détails sélectionnés
-    const selectedData = {
-      types: form.value.selectedTypes,
-      details: form.value.selectedDetails
-    }
-    formData.append('selected_data', JSON.stringify(selectedData))
+     const selectedData = {
+       types: form.value.selectedTypes,
+       typeDetails: form.value.typeDetails
+     }
+     formData.append('selected_data', JSON.stringify(selectedData))
     
     // Ajouter les fichiers
     form.value.files.forEach((file, index) => {
