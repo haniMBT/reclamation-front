@@ -33,6 +33,7 @@ const routes = [
       { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },
       { path: 'edit', component: () => import('src/pages/reclamation/Edit.vue') },
       { path: 'nature', component: () => import('src/pages/reclamation/nature/index.vue') },
+      { path: 'allTicket', name: 'tickets-all', component: () => import('src/pages/reclamation/tickets/index.vue') },
       { path: 'ticket', name: 'tickets-create', component: () => import('src/pages/reclamation/tickets/create.vue') },
       { path: 'ticket2', name: 'tickets-create2', component: () => import('src/pages/reclamation/tickets/create2.vue') },
       { path: 'parametrage', component: () => import('src/pages/reclamation/parametrage/Index.vue') }

@@ -489,23 +489,69 @@ const submitForm = async () => {
   try {
     const formData = new FormData()
     
-    // Ajouter les données du formulaire
-    formData.append('ticket_id', ticketInfo.value.t_rec_ticket_id)
-    formData.append('description', form.value.description)
+    // Préparer le payload standardisé selon le format demandé
+    const typeSelection = []
     
-    // Préparer les données des types et détails sélectionnés
-     const selectedData = {
-       types: form.value.selectedTypes,
-       typeDetails: form.value.typeDetails
-     }
-     formData.append('selected_data', JSON.stringify(selectedData))
+    // Parcourir les types sélectionnés
+    Object.keys(form.value.selectedTypes).forEach(typeId => {
+      if (form.value.selectedTypes[typeId]) {
+        const type = ticketTypes.value.find(t => t.id == typeId)
+        const typeDetails = form.value.typeDetails[typeId] || { details: [], autre: '' }
+        
+        const typeData = {
+          b_rec_type_id: parseInt(typeId),
+          libelle: type ? type.name : '',
+          details: []
+        }
+        
+        // Ajouter les détails sélectionnés
+        if (typeDetails.details && typeDetails.details.length > 0) {
+          typeDetails.details.forEach(detailId => {
+            const detail = type?.details?.find(d => d.id == detailId)
+            if (detail) {
+              typeData.details.push({
+                b_rec_detail_id: parseInt(detailId),
+                libelle: detail.label
+              })
+            }
+          })
+        }
+        
+        // Ajouter le champ "autre" si rempli
+        if (typeDetails.autre && typeDetails.autre.trim() !== '') {
+          typeData.details.push({
+            b_rec_detail_id: null,
+            libelle: typeDetails.autre.trim()
+          })
+        }
+        
+        typeSelection.push(typeData)
+      }
+    })
+    
+    // Construire le payload standardisé
+    const payload = {
+      tticket_id: ticketInfo.value.t_rec_ticket_id,
+      b_rec_ticket_id: ticketInfo.value.b_rec_ticket_id,
+      description: form.value.description,
+      type_selection: typeSelection
+    }
+    
+    // Ajouter les données JSON au FormData
+    Object.keys(payload).forEach(key => {
+      if (key === 'type_selection') {
+        formData.append(key, JSON.stringify(payload[key]))
+      } else {
+        formData.append(key, payload[key])
+      }
+    })
     
     // Ajouter les fichiers
     form.value.files.forEach((file, index) => {
       formData.append(`files[${index}]`, file)
     })
     
-    const response = await api.post('/api/rec/tickets/complete', formData, {
+    const response = await api.post('/api/rec/tickets/save-complete', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
