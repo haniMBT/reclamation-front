@@ -59,7 +59,7 @@
              <label class="block text-sm font-medium text-gray-700 mb-2">
                Type(s) de réclamation *
              </label>
-             
+
              <div class="space-y-4">
                <div v-for="type in ticketTypes" :key="type.id" class="border border-gray-200 rounded-lg p-4">
                  <div class="flex items-start space-x-3">
@@ -72,11 +72,11 @@
                      <label class="font-medium text-gray-800 cursor-pointer" @click="form.selectedTypes[type.id] = !form.selectedTypes[type.id]">
                        {{ type.name }}
                      </label>
-                     
+
                      <div v-if="type.description" class="text-sm text-gray-600 mt-1">
                        {{ type.description }}
                      </div>
-                     
+
                      <!-- Détails conditionnels quand le type est sélectionné -->
                      <div v-if="form.selectedTypes[type.id]" class="mt-3 ml-4 space-y-2">
                        <!-- Détails sous forme de checkboxes -->
@@ -94,7 +94,7 @@
                            </label>
                          </div>
                        </div>
-                       
+
                        <!-- Champ "Autre (précisez)" -->
                        <div class="mt-3">
                          <label class="block text-sm font-medium text-gray-600 mb-2">
@@ -119,7 +119,7 @@
                  </div>
                </div>
              </div>
-             
+
              <!-- Validation error pour les types -->
              <div v-if="errors.types" class="text-red-600 text-xs mt-1">
                {{ errors.types }}
@@ -323,13 +323,13 @@ const isFormValid = computed(() => {
   if (!form.value.description || form.value.description.trim() === '') {
     return false
   }
-  
+
   // Vérifier qu'au moins un type est sélectionné
   const hasSelectedType = Object.values(form.value.selectedTypes).some(selected => selected)
   if (!hasSelectedType) {
     return false
   }
-  
+
   return true
 })
 
@@ -355,14 +355,14 @@ const loadCompleteTicketData = async () => {
   loadingTicketData.value = true
   try {
     const result = await ticketStore.getCompleteTicketData(ticketInfo.value.b_rec_ticket_id)
-    
+
     if (result.success) {
       ticketData.value = result.data.ticket
       ticketTypes.value = result.data.types
-      
+
       // Initialiser les champs du formulaire avec les données du ticket
       initializeFormFromTicketData()
-      
+
       console.log('Données complètes du ticket chargées:', result.data)
     } else {
       $q.notify({
@@ -386,7 +386,7 @@ const loadCompleteTicketData = async () => {
 // Initialiser le formulaire avec les données du ticket
 const initializeFormFromTicketData = () => {
   if (!ticketData.value) return
-  
+
   // Initialiser les types sélectionnés et leurs structures de données
   ticketTypes.value.forEach(type => {
     if (!form.value.selectedTypes.hasOwnProperty(type.id)) {
@@ -407,10 +407,10 @@ const toggleDetail = (typeId, detailId, isSelected) => {
   if (!form.value.typeDetails[typeId]) {
     form.value.typeDetails[typeId] = { details: [], autre: '' }
   }
-  
+
   const details = form.value.typeDetails[typeId].details
   const index = details.indexOf(detailId)
-  
+
   if (isSelected && index === -1) {
     details.push(detailId)
   } else if (!isSelected && index > -1) {
@@ -423,16 +423,16 @@ const loadTicketData = async () => {
     if (!hasValidTicket.value) {
       return
     }
-    
+
     const ticketId = ticketInfo.value.b_rec_ticket_id
-    
+
     // Appel API pour récupérer les données complètes du ticket
     const response = await api.get(`/api/rec/tickets/${ticketId}/complete`)
-    
+
     if (response.data.success) {
       ticketData.value = response.data.data.ticket
       ticketTypes.value = response.data.data.types || []
-      
+
       // Initialiser les types sélectionnés et leurs structures de données
        ticketTypes.value.forEach(type => {
          if (!form.value.selectedTypes.hasOwnProperty(type.id)) {
@@ -460,18 +460,18 @@ const loadTicketData = async () => {
 
 const validateForm = () => {
   errors.value = {}
-  
+
   // Validation de la description
   if (!form.value.description || form.value.description.trim() === '') {
     errors.value.description = 'La description détaillée est requise'
   }
-  
+
   // Validation : au moins un type doit être sélectionné
   const hasSelectedType = Object.values(form.value.selectedTypes).some(selected => selected)
   if (!hasSelectedType) {
     errors.value.types = 'Veuillez sélectionner au moins un type de réclamation'
   }
-  
+
   return Object.keys(errors.value).length === 0
 }
 
@@ -483,27 +483,27 @@ const submitForm = async () => {
     })
     return
   }
-  
+
   isSubmitting.value = true
-  
+
   try {
     const formData = new FormData()
-    
+
     // Préparer le payload standardisé selon le format demandé
     const typeSelection = []
-    
+
     // Parcourir les types sélectionnés
     Object.keys(form.value.selectedTypes).forEach(typeId => {
       if (form.value.selectedTypes[typeId]) {
         const type = ticketTypes.value.find(t => t.id == typeId)
         const typeDetails = form.value.typeDetails[typeId] || { details: [], autre: '' }
-        
+
         const typeData = {
           b_rec_type_id: parseInt(typeId),
           libelle: type ? type.name : '',
           details: []
         }
-        
+
         // Ajouter les détails sélectionnés
         if (typeDetails.details && typeDetails.details.length > 0) {
           typeDetails.details.forEach(detailId => {
@@ -516,7 +516,7 @@ const submitForm = async () => {
             }
           })
         }
-        
+
         // Ajouter le champ "autre" si rempli
         if (typeDetails.autre && typeDetails.autre.trim() !== '') {
           typeData.details.push({
@@ -524,11 +524,11 @@ const submitForm = async () => {
             libelle: typeDetails.autre.trim()
           })
         }
-        
+
         typeSelection.push(typeData)
       }
     })
-    
+
     // Construire le payload standardisé
     const payload = {
       tticket_id: ticketInfo.value.t_rec_ticket_id,
@@ -536,7 +536,7 @@ const submitForm = async () => {
       description: form.value.description,
       type_selection: typeSelection
     }
-    
+
     // Ajouter les données JSON au FormData
     Object.keys(payload).forEach(key => {
       if (key === 'type_selection') {
@@ -545,31 +545,28 @@ const submitForm = async () => {
         formData.append(key, payload[key])
       }
     })
-    
+
     // Ajouter les fichiers
     form.value.files.forEach((file, index) => {
       formData.append(`files[${index}]`, file)
     })
-    
+
     const response = await api.post('/api/rec/tickets/save-complete', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
-    
+
     if (response.data.success) {
       $q.notify({
         type: 'positive',
         message: 'Réclamation finalisée avec succès',
         caption: 'Votre réclamation a été enregistrée'
       })
-      
+
       // Nettoyer le store et rediriger
       ticketStore.clearTicket()
-      
-      setTimeout(() => {
-        router.push('/reclamations/client')
-      }, 1500)
+
     } else {
       throw new Error(response.data.message || 'Erreur lors de la finalisation')
     }
@@ -628,15 +625,15 @@ const formatFileSize = (bytes) => {
 
 const initializePage = async () => {
   loading.value = true
-  
+
   try {
     // Initialiser les données depuis le LocalStorage
     const initResult = ticketStore.initializeFromStorage()
-    
+
     if (!initResult.success) {
       console.error('Erreur lors de l\'initialisation:', initResult.error)
     }
-    
+
     // Vérifier si nous avons un ticket valide
     if (!hasValidTicket.value) {
       console.log('Aucun ticket trouvé, redirection nécessaire')
@@ -644,7 +641,7 @@ const initializePage = async () => {
       console.log('Ticket trouvé:', ticketInfo.value)
       await loadCompleteTicketData()
     }
-    
+
   } catch (error) {
     console.error('Erreur lors de l\'initialisation de la page:', error)
     $q.notify({
@@ -663,7 +660,7 @@ const redirectToCreate = () => {
     message: 'Redirection vers la création de réclamation',
     caption: 'Vous allez être redirigé...'
   })
-  
+
   setTimeout(() => {
     router.push('/reclamations/ticket')
   }, 1000)
