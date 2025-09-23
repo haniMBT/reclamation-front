@@ -17,7 +17,7 @@
             unelevated
             icon="add"
             class="px-6"
-            @click="$router.push('/reclamation/tickets/create')"
+            @click="$router.push('/reclamations/ticket')"
           >
             Nouvelle réclamation
           </q-btn>
@@ -75,7 +75,7 @@
                   ID: {{ ticket.id }}
                 </p>
               </div>
-              <q-badge 
+              <q-badge
                 :color="getStatusColor(ticket.status)"
                 :label="ticket.status || 'OUVERT'"
                 class="text-xs"
@@ -203,8 +203,8 @@
       <div v-if="!loading && tickets.length" class="bg-white rounded-lg shadow-sm p-6 mt-6">
         <div class="flex items-center justify-between">
           <div class="text-sm text-gray-600">
-            Affichage de {{ (pagination.page - 1) * pagination.rowsPerPage + 1 }} à 
-            {{ Math.min(pagination.page * pagination.rowsPerPage, pagination.rowsNumber) }} 
+            Affichage de {{ (pagination.page - 1) * pagination.rowsPerPage + 1 }} à
+            {{ Math.min(pagination.page * pagination.rowsPerPage, pagination.rowsNumber) }}
             sur {{ pagination.rowsNumber }} tickets
           </div>
           <q-pagination
