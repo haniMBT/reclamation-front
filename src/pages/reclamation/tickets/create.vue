@@ -44,8 +44,7 @@
         <q-card
           v-for="ticket in tickets"
           :key="ticket.id"
-          class="bg-white shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-          @click="selectTicket(ticket)"
+          class="bg-white shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
         >
           <q-card-section class="p-6">
             <div class="flex items-start justify-between mb-4">
@@ -60,10 +59,25 @@
             </div>
 
             <div class="bg-gray-50 rounded-lg p-4 mb-4">
-              <p class="text-gray-700 text-sm leading-relaxed">
-                Ce type de réclamation vous permet de signaler et suivre vos demandes concernant {{ ticket.libelle.toLowerCase() }}.
-                Notre équipe traitera votre demande dans les meilleurs délais selon les procédures établies.
-              </p>
+              <div class="text-gray-700 text-sm leading-relaxed">
+                <div v-if="ticket.definition && ticket.definition.length <= 200" v-html="ticket.definition"></div>
+                <div v-else-if="ticket.definition">
+                  <div v-html="ticket.definition.substring(0, 200) + '...'"></div>
+                  <q-btn
+                    @click.stop="showDefinitionModal(ticket)"
+                    color="blue-6"
+                    flat
+                    no-caps
+                    size="sm"
+                    class="mt-2 p-0"
+                  >
+                    Voir plus
+                  </q-btn>
+                </div>
+                <div v-else class="text-gray-500 italic">
+                  Aucune définition disponible pour ce type de réclamation.
+                </div>
+              </div>
             </div>
 
             <div class="flex items-center justify-between">
@@ -72,6 +86,7 @@
                 <span>{{ ticket.infos_generales?.length || 0 }} champ(s) requis</span>
               </div>
               <q-btn
+                @click="selectTicket(ticket)"
                 color="blue-6"
                 no-caps
                 unelevated
@@ -153,34 +168,7 @@
                 </div>
               </div>
 
-              <!-- Champ description supplémentaire -->
-              <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-700">
-                  Description détaillée
-                  <span class="text-red-500">*</span>
-                </label>
-                <q-input
-                  v-model="formData.description"
-                  outlined
-                  type="textarea"
-                  rows="4"
-                  placeholder="Décrivez votre réclamation en détail..."
-                  :rules="[val => !!val || 'La description est requise']"
-                  :error="!!validationErrors.description"
-                  @input="clearFieldError('description')"
-                >
-                  <template #prepend>
-                    <q-icon name="description" class="text-blue-600" />
-                  </template>
-                </q-input>
-                <!-- Erreurs pour le champ description -->
-                <div v-if="validationErrors.description" class="text-red-600 text-xs mt-1">
-                  <div v-for="error in Array.isArray(validationErrors.description) ? validationErrors.description : [validationErrors.description]" :key="error" class="flex items-start mb-1">
-                    <q-icon name="error_outline" size="12px" class="mr-1 mt-0.5 flex-shrink-0" />
-                    <span>{{ error }}</span>
-                  </div>
-                </div>
-              </div>
+
             </div>
           </form>
         </q-card-section>
@@ -280,6 +268,40 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Modal de définition complète -->
+    <q-dialog v-model="showDefinitionModalRef" persistent>
+      <q-card class="w-full" style="min-width: 60vw; max-width: 80vw; max-height: 80vh;">
+        <q-card-section class="flex items-center bg-blue-50">
+          <q-icon name="info" class="text-blue-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-blue-900">{{ selectedDefinitionTicket?.libelle }}</div>
+            <div class="text-sm text-blue-700">Définition complète</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div class="text-gray-700 leading-relaxed" v-html="selectedDefinitionTicket?.definition"></div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn
+            @click="closeDefinitionModal"
+            color="blue-6"
+            no-caps
+            unelevated
+            class="px-6"
+          >
+            Fermer
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
   </div>
 </template>
 
@@ -307,6 +329,8 @@ const formData = reactive({})
 const showDuplicateModal = ref(false)
 const duplicateMessage = ref('')
 const validationErrors = ref({})
+const showDefinitionModalRef = ref(false)
+const selectedDefinitionTicket = ref(null)
 
 // Methods
 const fetchTickets = async () => {
@@ -345,9 +369,6 @@ const selectTicket = (ticket) => {
   ticket.infos_generales?.forEach(info => {
     formData[info.libelle] = ''
   })
-
-  // Ajouter le champ description
-  formData.description = ''
 
   // Réinitialiser les erreurs de validation à l'ouverture du modal
   validationErrors.value = {}
@@ -409,13 +430,7 @@ const submitForm = async () => {
     }
   }
 
-  if (!formData.description) {
-    $q.notify({
-      type: 'negative',
-      message: 'La description est requise'
-    })
-    return
-  }
+
 
   submitting.value = true
 
@@ -432,7 +447,6 @@ const submitForm = async () => {
        user_id: 1, // À remplacer par l'ID de l'utilisateur connecté
        direction: 'ENTRANT', // À adapter selon vos besoins
        status: 'OUVERT',
-       description: formData.description,
        info_general_data: info_general_data
      }
 
@@ -528,6 +542,16 @@ const proceedWithDuplicate = () => {
     message: 'Fonctionnalité en cours de développement',
     caption: 'Le suivi des doublons sera bientôt disponible'
   })
+}
+
+const showDefinitionModal = (ticket) => {
+  selectedDefinitionTicket.value = ticket
+  showDefinitionModalRef.value = true
+}
+
+const closeDefinitionModal = () => {
+  showDefinitionModalRef.value = false
+  selectedDefinitionTicket.value = null
 }
 
 // Lifecycle
