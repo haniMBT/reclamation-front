@@ -115,6 +115,15 @@
                 <div class="bg-white p-3 rounded border text-sm" v-html="ticket.documentAfornir"></div>
               </div>
 
+              <!-- Définition -->
+              <div v-if="ticket.definition" class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <q-icon name="article" class="mr-2 text-purple-500" />
+                  Définition
+                </h4>
+                <div class="bg-white p-3 rounded border text-sm" v-html="ticket.definition"></div>
+              </div>
+
               <!-- Section Infos générales -->
               <div class="mb-6">
                 <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
@@ -300,6 +309,24 @@
                       ]"
                     />
                     <ErrorValidation v-if="myerrors?.documentAfornir" :myerrors="myerrors?.documentAfornir" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Définition
+                    </label>
+                    <q-editor
+                      v-model="form.definition"
+                      label="Définition"
+                      min-height="150px"
+                      class="q-mt-md"
+                      :toolbar="[
+                        ['bold', 'italic', 'underline'],
+                        ['unordered', 'ordered'],
+                        ['undo', 'redo']
+                      ]"
+                    />
+                    <ErrorValidation v-if="myerrors?.definition" :myerrors="myerrors?.definition" />
                   </div>
 
                   <!-- Nouvelle section : Infos générales -->
@@ -495,6 +522,24 @@
                       ]"
                     />
                     <ErrorValidation v-if="myerrors?.documentAfornir" :myerrors="myerrors?.documentAfornir" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Définition
+                    </label>
+                    <q-editor
+                      v-model="form.definition"
+                      label="Définition"
+                      min-height="150px"
+                      class="q-mt-md"
+                      :toolbar="[
+                        ['bold', 'italic', 'underline'],
+                        ['unordered', 'ordered'],
+                        ['undo', 'redo']
+                      ]"
+                    />
+                    <ErrorValidation v-if="myerrors?.definition" :myerrors="myerrors?.definition" />
                   </div>
 
                   <!-- Section Infos générales -->
@@ -1141,6 +1186,14 @@ const ticketsCols = ref([
     format: val => `${val}`,
     sortable: true,
   },
+  {
+    name: 'definition',
+    label: 'Définition',
+    align: 'left',
+    field: row => row.definition,
+    format: val => `${val || ''}`,
+    sortable: true,
+  },
 ]);
 
 const initialPagination = ref({
@@ -1172,6 +1225,7 @@ const openAddTicket = () => {
     libelle: '',
     direction: '',
     documentAfornir: '',
+    definition: '',
     infos_generales: []
   };
   myerrors.value = null;
@@ -1184,6 +1238,7 @@ const closeAddTicket = () => {
     libelle: '',
     direction: '',
     documentAfornir: '',
+    definition: '',
     infos_generales: []
   };
   myerrors.value = null;
@@ -1206,6 +1261,7 @@ const openEditTicket = (ticket) => {
     libelle: ticket.libelle,
     direction: ticket.direction,
     documentAfornir: ticket.documentAfornir || '',
+    definition: ticket.definition || '',
     infos_generales: ticket.infos_generales.map(info => ({
       id: info.id || Date.now() + Math.random(),
       libelle: info.libelle,
@@ -1223,6 +1279,7 @@ const closeEditTicket = () => {
     libelle: '',
     direction: '',
     documentAfornir: '',
+    definition: '',
     infos_generales: []
   };
   myerrors.value = null;
@@ -1240,6 +1297,7 @@ const sendData = async () => {
     libelle: form.value.libelle,
     direction: form.value.direction,
     documentAfornir: form.value.documentAfornir,
+    definition: form.value.definition,
     infos_generales: form.value.infos_generales
   };
 
@@ -1283,6 +1341,7 @@ const updateData = async () => {
     libelle: form.value.libelle,
     direction: form.value.direction,
     documentAfornir: form.value.documentAfornir,
+    definition: form.value.definition,
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut
