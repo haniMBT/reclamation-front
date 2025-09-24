@@ -63,8 +63,7 @@
         <q-card
           v-for="ticket in tickets"
           :key="ticket.id"
-          class="bg-white shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
-          @click="viewTicket(ticket)"
+          class="bg-white shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
         >
           <q-card-section class="p-6">
             <div class="flex items-start justify-between mb-4">
@@ -82,118 +81,36 @@
               />
             </div>
 
-            <div class="bg-gray-50 rounded-lg p-4 mb-4">
-              <div class="space-y-2">
-                <div class="text-sm">
-                  <span class="font-medium text-gray-700">Description:</span>
-                  <span class="text-gray-600 ml-2" v-html="ticket.description|| 'N/A'"></span>
-                </div>
-                <div class="text-sm">
-                  <span class="font-medium text-gray-700">Direction:</span>
-                  <span class="text-gray-600 ml-2">{{ ticket.direction || 'N/A' }}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Types de réclamation -->
-            <div v-if="ticket.types && ticket.types.length" class="mb-4">
-              <div class="text-sm font-medium text-gray-700 mb-2">Types de réclamation:</div>
-              <div class="flex flex-wrap gap-1">
-                <q-chip
-                  v-for="type in ticket.types"
-                  :key="type.id"
-                  color="blue-1"
-                  text-color="blue-8"
-                  size="sm"
-                  class="text-xs"
-                >
-                  {{ type.b_rec_type?.libelle || 'Type inconnu' }}
-                </q-chip>
-              </div>
-            </div>
-
-            <!-- Détails -->
-            <div v-if="ticket.types && ticket.types.some(t => t.details && t.details.length)" class="mb-4">
-              <div class="text-sm font-medium text-gray-700 mb-2">Détails:</div>
-              <div class="flex flex-wrap gap-1">
-                <template v-for="type in ticket.types" :key="'details-' + type.id">
-                  <q-chip
-                    v-for="detail in type.details || []"
-                    :key="detail.id"
-                    color="green-1"
-                    text-color="green-8"
-                    size="sm"
-                    class="text-xs"
-                  >
-                    {{ detail.b_rec_detail?.libelle || 'Détail inconnu' }}
-                  </q-chip>
-                </template>
-              </div>
-            </div>
-
-            <!-- Informations générales -->
-            <div v-if="ticket.infos_generales && ticket.infos_generales.length" class="mb-4">
-              <div class="text-sm font-medium text-gray-700 mb-2">Informations générales:</div>
-              <div class="flex flex-wrap gap-1">
-                <q-chip
-                  v-for="info in ticket.infos_generales"
-                  :key="info.id"
-                  color="purple-1"
-                  text-color="purple-8"
-                  size="sm"
-                  class="text-xs"
-                >
-                  {{ info.libelle || 'Info sans libellé' }}
-                </q-chip>
-              </div>
-            </div>
-
-            <!-- Dates -->
+            <!-- Date de création uniquement -->
             <div class="bg-gray-50 rounded-lg p-3 mb-4">
-              <div class="space-y-1">
-                <div class="text-xs text-gray-600">
-                  <q-icon name="schedule" size="xs" class="mr-1" />
-                  Créé le {{ formatDate(ticket.created_at) }}
-                </div>
-                <div class="text-xs text-gray-600">
-                  <q-icon name="update" size="xs" class="mr-1" />
-                  Mis à jour le {{ formatDate(ticket.updated_at) }}
-                </div>
-                <div v-if="ticket.closed_at" class="text-xs text-gray-600">
-                  <q-icon name="check_circle" size="xs" class="mr-1" />
-                  Fermé le {{ formatDate(ticket.closed_at) }}
-                </div>
+              <div class="text-xs text-gray-600">
+                <q-icon name="schedule" size="xs" class="mr-1" />
+                Créé le {{ formatDate(ticket.created_at) }}
               </div>
             </div>
 
-            <!-- Actions -->
-            <div class="flex items-center justify-between">
-              <div class="flex items-center text-sm text-gray-500">
-                <q-icon name="info" size="sm" class="mr-1" />
-                <span>{{ ticket.types?.length || 0 }} type(s)</span>
-              </div>
-              <div class="flex space-x-2">
-                <q-btn
-                  flat
-                  round
-                  color="blue-6"
-                  icon="visibility"
-                  size="sm"
-                  @click.stop="viewTicket(ticket)"
-                >
-                  <q-tooltip>Voir le détail</q-tooltip>
-                </q-btn>
-                <q-btn
-                  flat
-                  round
-                  color="orange-6"
-                  icon="edit"
-                  size="sm"
-                  @click.stop="editTicket(ticket)"
-                >
-                  <q-tooltip>Modifier</q-tooltip>
-                </q-btn>
-              </div>
+            <!-- Actions - Modifier et Supprimer -->
+            <div class="flex justify-end space-x-2">
+              <q-btn
+                flat
+                round
+                color="orange-6"
+                icon="edit"
+                size="sm"
+                @click.stop="editTicket(ticket)"
+              >
+                <q-tooltip>Modifier</q-tooltip>
+              </q-btn>
+              <q-btn
+                flat
+                round
+                color="red-6"
+                icon="delete"
+                size="sm"
+                @click.stop="deleteTicket(ticket)"
+              >
+                <q-tooltip>Supprimer</q-tooltip>
+              </q-btn>
             </div>
           </q-card-section>
         </q-card>
@@ -316,6 +233,42 @@ const viewTicket = (ticket) => {
 const editTicket = (ticket) => {
   // Rediriger vers edit2.vue avec l'ID du ticket
   router.push(`/reclamations/tickets/edit/${ticket.id}`)
+}
+
+const deleteTicket = (ticket) => {
+  $q.dialog({
+    title: 'Confirmation de suppression',
+    message: `Êtes-vous sûr de vouloir supprimer le ticket "${ticket.libelle || 'Ticket sans libellé'}" (ID: ${ticket.id}) ?\n\nCette action supprimera définitivement le ticket et toutes ses dépendances (types, détails, informations générales, fichiers, etc.).`,
+    cancel: true,
+    persistent: true,
+    color: 'negative'
+  }).onOk(async () => {
+    try {
+      loading.value = true
+      const response = await api.delete(`/api/rec/tickets/${ticket.id}`)
+
+      if (response.data.success) {
+        $q.notify({
+          type: 'positive',
+          message: 'Ticket supprimé avec succès',
+          position: 'top'
+        })
+        // Recharger la liste des tickets
+        await fetchTickets({ pagination })
+      } else {
+        throw new Error(response.data.message || 'Erreur lors de la suppression')
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression du ticket:', error)
+      $q.notify({
+        type: 'negative',
+        message: error.response?.data?.message || 'Erreur lors de la suppression du ticket',
+        position: 'top'
+      })
+    } finally {
+      loading.value = false
+    }
+  })
 }
 
 // Watchers
