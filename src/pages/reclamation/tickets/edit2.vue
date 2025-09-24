@@ -639,6 +639,7 @@ const submitForm = async () => {
         .filter(info => info.value && info.value.trim() !== '')
         .map(info => ({
           id: info.info_general_id,
+          libelle: info.libelle,
           valeur: info.value
         }))
 

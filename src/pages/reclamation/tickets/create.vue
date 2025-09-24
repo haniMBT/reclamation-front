@@ -438,6 +438,7 @@ const submitForm = async () => {
     // Préparer les données pour l'API
     const info_general_data = selectedTicket.value?.infos_generales?.map(info => ({
       info_general_id: info.id,
+      libelle: info.libelle,
       value: formData[info.libelle] || '',
       key_attribut: info.key_attirubut || false
     })) || []
