@@ -567,6 +567,9 @@ const submitForm = async () => {
       // Nettoyer le store et rediriger
       ticketStore.clearTicket()
 
+      router.push("/reclamations/allTicket");
+
+
     } else {
       throw new Error(response.data.message || 'Erreur lors de la finalisation')
     }
