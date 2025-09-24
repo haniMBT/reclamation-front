@@ -29,14 +29,30 @@ export const useTicketStore = defineStore('ticket', {
   actions: {
     /**
      * Sauvegarde l'ID du ticket, l'ID de b_rec_tickets et les données envoyées
-     * @param {Object} data - Les données de réponse de l'API
+     * @param {Object} data - Les données de réponse de l'API ou données complètes du ticket
      */
     saveTicket(data) {
       try {
-        // Extraire les données de la réponse API
-        this.t_rec_ticket_id = data.t_rec_ticket_id;
-        this.b_rec_ticket_id = data.b_rec_ticket_id;
-        this.ticketData = data.ticket_data;
+        // Extraire les données selon le format (création ou édition)
+        if (data.t_rec_ticket_id && data.b_rec_ticket_id) {
+          // Format de création
+          this.t_rec_ticket_id = data.t_rec_ticket_id;
+          this.b_rec_ticket_id = data.b_rec_ticket_id;
+          this.ticketData = data.ticket_data || data;
+        } else {
+          // Format d'édition - données complètes du ticket
+          this.t_rec_ticket_id = data.t_rec_ticket_id;
+          this.b_rec_ticket_id = data.id || data.b_rec_ticket_id;
+          this.ticketData = {
+            description: data.description,
+            definition: data.libelle,
+            documentAfornir: data.documentAFournir,
+            types: data.types || [],
+            direction: data.direction,
+            ...data
+          };
+        }
+        
         this.isTicketCreated = true;
 
         // Persister dans LocalStorage

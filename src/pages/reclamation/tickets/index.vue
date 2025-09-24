@@ -313,35 +313,9 @@ const viewTicket = (ticket) => {
   router.push(`/reclamation/tickets/${ticket.id}`)
 }
 
-const editTicket = async (ticket) => {
-  try {
-    // Sauvegarder les données du ticket dans le store Pinia
-    await ticketStore.saveTicket({
-      t_rec_ticket_id: ticket.id,
-      b_rec_ticket_id: ticket.bticket_id,
-      ticketData: {
-        bticket_id: ticket.bticket_id,
-        user_id: ticket.user_id,
-        direction: ticket.direction,
-        status: ticket.status,
-        libelle: ticket.libelle,
-        definition: ticket.definition,
-        documentAfornir: ticket.documentAfornir,
-        infos_generales: ticket.infos_generales || [],
-        types: ticket.types || []
-      }
-    })
-    
-    // Rediriger vers create2.vue
-    router.push('/reclamations/ticket2')
-  } catch (error) {
-    console.error('Erreur lors de la sauvegarde du ticket:', error)
-    $q.notify({
-      type: 'negative',
-      message: 'Erreur lors du chargement du ticket pour modification',
-      position: 'top'
-    })
-  }
+const editTicket = (ticket) => {
+  // Rediriger vers edit2.vue avec l'ID du ticket
+  router.push(`/reclamations/tickets/edit/${ticket.id}`)
 }
 
 // Watchers
