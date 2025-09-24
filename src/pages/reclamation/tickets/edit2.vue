@@ -374,9 +374,34 @@ const form = ref({
   description: '',
   selectedTypes: {}, // Types sélectionnés (id => boolean)
   typeDetails: {}, // Structure: { type_id: { details: [detail_ids], autre: 'texte' } }
-  infosGenerales: {}, // Structure: { info_id: 'valeur' }
+  infosGenerales: {}, // Structure: { key_attribut: 'valeur' } - pour compatibilité
+  info_generales: [], // Structure complète: [{ info_general_id, libelle, value, key_attribut }]
   files: [] // Nouveaux fichiers
 })
+
+// Fonction de synchronisation bidirectionnelle
+const syncInfoGenerales = () => {
+  // Synchroniser de infosGenerales vers info_generales
+  if (form.value.info_generales && form.value.info_generales.length > 0) {
+    form.value.info_generales.forEach(info => {
+      if (form.value.infosGenerales[info.key_attribut] !== undefined) {
+        info.value = form.value.infosGenerales[info.key_attribut]
+      }
+    })
+  }
+  
+  // Synchroniser de info_generales vers infosGenerales
+  if (form.value.info_generales && form.value.info_generales.length > 0) {
+    form.value.info_generales.forEach(info => {
+      form.value.infosGenerales[info.key_attribut] = info.value
+    })
+  }
+}
+
+// Watcher pour synchroniser automatiquement
+watch(() => form.value.infosGenerales, () => {
+  syncInfoGenerales()
+}, { deep: true })
 
 // Computed
 const isFormValid = computed(() => {
@@ -501,22 +526,41 @@ const initializeFormFromTicketData = (data) => {
     }
   })
 
-  // Informations générales - pré-remplir avec les valeurs du ticket créé
+  // Informations générales - créer des objets complets avec tous les champs
+  form.value.info_generales = []
+  
   if (ticketInfosGenerales.value && ticketInfosGenerales.value.length > 0) {
     // Pré-remplir avec les valeurs existantes du ticket
     ticketInfosGenerales.value.forEach(ticketInfo => {
       // Trouver l'info générale correspondante dans la définition du ticket de base
       const baseInfo = infosGenerales.value.find(info => info.id === ticketInfo.info_general_id)
       if (baseInfo) {
+        form.value.info_generales.push({
+          info_general_id: ticketInfo.info_general_id,
+          libelle: baseInfo.libelle,
+          value: ticketInfo.value || '',
+          key_attribut: baseInfo.key_attribut
+        })
+        // Maintenir la compatibilité avec l'ancien format
         form.value.infosGenerales[baseInfo.key_attribut] = ticketInfo.value || ''
       }
     })
   } else {
     // Initialiser avec des valeurs vides si pas de données existantes
     infosGenerales.value.forEach(info => {
+      form.value.info_generales.push({
+        info_general_id: info.id,
+        libelle: info.libelle,
+        value: '',
+        key_attribut: info.key_attribut
+      })
+      // Maintenir la compatibilité avec l'ancien format
       form.value.infosGenerales[info.key_attribut] = ''
     })
   }
+  
+  // Synchroniser les structures après l'initialisation
+  syncInfoGenerales()
 }
 
 const toggleDetail = (typeId, detailId, isSelected) => {
@@ -586,20 +630,22 @@ const submitForm = async () => {
     // Ajouter la sélection des types
     formData.append('type_selection', JSON.stringify(typeSelection))
 
+    // Synchroniser avant l'envoi
+    syncInfoGenerales()
+
     // Ajouter les informations générales si présentes
-    if (Object.keys(form.value.infosGenerales).length > 0) {
-      const infosGeneralesData = Object.keys(form.value.infosGenerales)
-        .filter(keyAttribut => form.value.infosGenerales[keyAttribut] && form.value.infosGenerales[keyAttribut].trim() !== '')
-        .map(keyAttribut => {
-          // Trouver l'info générale correspondante par key_attribut
-          const baseInfo = infosGenerales.value.find(info => info.key_attribut === keyAttribut)
-          return {
-            id: baseInfo ? baseInfo.id : null,
-            valeur: form.value.infosGenerales[keyAttribut]
-          }
-        })
-        .filter(info => info.id !== null) // Filtrer les infos sans ID valide
-      
+    if (form.value.info_generales && form.value.info_generales.length > 0) {
+      const infosGeneralesData = form.value.info_generales
+        .filter(info => info.value && info.value.trim() !== '')
+        .map(info => ({
+          id: info.info_general_id,
+          valeur: info.value
+        }))
+
+      console.log('form.value.info_generales:', form.value.info_generales);
+      console.log('infosGeneralesData to send:', infosGeneralesData);
+
+
       if (infosGeneralesData.length > 0) {
         formData.append('infos_generales', JSON.stringify(infosGeneralesData))
       }
@@ -615,8 +661,16 @@ const submitForm = async () => {
       formData.append('files_to_delete', JSON.stringify(filesToDelete.value))
     }
 
+
+
+    // for (let [key, value] of formData.entries()) {
+    //   console.log(key, value);
+    // }
+    // Ajouter _method pour Laravel
+    formData.append('_method', 'PUT')
+
     // Envoyer la requête de mise à jour
-    const response = await api.put(`/api/rec/tickets/${route.params.id}`, formData, {
+    const response = await api.post(`/api/rec/tickets/${route.params.id}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
