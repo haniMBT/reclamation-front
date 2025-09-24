@@ -588,7 +588,7 @@ const submitForm = async () => {
 
     // Ajouter les informations générales si présentes
     if (Object.keys(form.value.infosGenerales).length > 0) {
-      const infosGenerales = Object.keys(form.value.infosGenerales)
+      const infosGeneralesData = Object.keys(form.value.infosGenerales)
         .filter(keyAttribut => form.value.infosGenerales[keyAttribut] && form.value.infosGenerales[keyAttribut].trim() !== '')
         .map(keyAttribut => {
           // Trouver l'info générale correspondante par key_attribut
@@ -600,8 +600,8 @@ const submitForm = async () => {
         })
         .filter(info => info.id !== null) // Filtrer les infos sans ID valide
       
-      if (infosGenerales.length > 0) {
-        formData.append('infos_generales', JSON.stringify(infosGenerales))
+      if (infosGeneralesData.length > 0) {
+        formData.append('infos_generales', JSON.stringify(infosGeneralesData))
       }
     }
 
