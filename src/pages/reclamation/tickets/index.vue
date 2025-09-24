@@ -86,7 +86,7 @@
               <div class="space-y-2">
                 <div class="text-sm">
                   <span class="font-medium text-gray-700">Description:</span>
-                  <span class="text-gray-600 ml-2">{{ ticket.description || 'N/A' }}</span>
+                  <span class="text-gray-600 ml-2" v-html="ticket.description|| 'N/A'"></span>
                 </div>
                 <div class="text-sm">
                   <span class="font-medium text-gray-700">Direction:</span>
