@@ -54,6 +54,28 @@
       <!-- Main Form -->
       <div v-else class="bg-white rounded-lg shadow-sm p-6">
         <q-form @submit="submitForm" class="q-gutter-md">
+          <!-- Objet de la réclamation -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Objet de la réclamation *
+            </label>
+            <q-input
+              v-model="form.objet"
+              outlined
+              dense
+              placeholder="Saisissez l'objet de votre réclamation..."
+              class="w-full"
+              :rules="[val => !!val || 'L\'objet est obligatoire']"
+            >
+              <template v-slot:prepend>
+                <q-icon name="subject" class="text-blue-600" />
+              </template>
+            </q-input>
+            <div v-if="errors.objet" class="text-red-600 text-xs mt-1">
+              {{ errors.objet }}
+            </div>
+          </div>
+
           <!-- Types et détails sous forme de checkboxes -->
            <div v-if="ticketTypes.length > 0" class="mb-6">
              <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -290,6 +312,7 @@ const errors = ref({})
 
 // Form data
 const form = ref({
+  objet: '',
   description: '',
   selectedTypes: {}, // Types sélectionnés (id => boolean)
   typeDetails: {}, // Structure: { type_id: { details: [detail_ids], autre: 'texte' } }
@@ -319,6 +342,11 @@ watch(() => form.value.selectedTypes, (newSelectedTypes) => {
 }, { deep: true })
 
 const isFormValid = computed(() => {
+  // Vérifier que l'objet est rempli
+  if (!form.value.objet || form.value.objet.trim() === '') {
+    return false
+  }
+
   // Vérifier que la description est remplie
   if (!form.value.description || form.value.description.trim() === '') {
     return false
@@ -533,6 +561,7 @@ const submitForm = async () => {
     const payload = {
       tticket_id: ticketInfo.value.t_rec_ticket_id,
       b_rec_ticket_id: ticketInfo.value.b_rec_ticket_id,
+      objet: form.value.objet,
       description: form.value.description,
       type_selection: typeSelection
     }

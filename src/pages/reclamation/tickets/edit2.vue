@@ -81,6 +81,28 @@
       <!-- Main Form -->
       <div v-else class="bg-white rounded-lg shadow-sm p-6">
         <q-form @submit="submitForm" class="q-gutter-md">
+          <!-- Objet de la réclamation -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-2">
+              Objet de la réclamation *
+            </label>
+            <q-input
+              v-model="form.objet"
+              outlined
+              dense
+              placeholder="Saisissez l'objet de votre réclamation..."
+              class="w-full"
+              :rules="[val => !!val || 'L\'objet est obligatoire']"
+            >
+              <template v-slot:prepend>
+                <q-icon name="subject" class="text-orange-600" />
+              </template>
+            </q-input>
+            <div v-if="errors.objet" class="text-red-600 text-xs mt-1">
+              {{ errors.objet }}
+            </div>
+          </div>
+
           <!-- Types et détails sous forme de checkboxes -->
           <div v-if="ticketTypes.length > 0" class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -398,6 +420,7 @@ const filesToDelete = ref([])
 
 // Form data
 const form = ref({
+  objet: '',
   description: '',
   selectedTypes: {}, // Types sélectionnés (id => boolean)
   typeDetails: {}, // Structure: { type_id: { details: [detail_ids], autre: 'texte' } }
@@ -522,6 +545,9 @@ const loadTicketData = async () => {
 }
 
 const initializeFormFromTicketData = (data) => {
+  // Objet de la réclamation
+  form.value.objet = data.objet || ''
+  
   // Description - les données sont directement dans data, pas dans data.ticket
   form.value.description = data.description || ''
 
@@ -608,6 +634,10 @@ const toggleDetail = (typeId, detailId, isSelected) => {
 const validateForm = () => {
   errors.value = {}
 
+  if (!form.value.objet || form.value.objet.trim() === '') {
+    errors.value.objet = 'L\'objet est obligatoire'
+  }
+
   if (!form.value.description || form.value.description.trim() === '') {
     errors.value.description = 'La description est obligatoire'
   }
@@ -636,6 +666,9 @@ const submitForm = async () => {
     // Créer FormData pour inclure les fichiers
     const formData = new FormData()
 
+    // Ajouter l'objet
+    formData.append('objet', form.value.objet)
+    
     // Ajouter la description
     formData.append('description', form.value.description)
 
