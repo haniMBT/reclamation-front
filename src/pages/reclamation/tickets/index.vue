@@ -26,11 +26,12 @@
 
       <!-- Search Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="flex items-center space-x-4">
-          <div class="flex-1">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Recherche textuelle -->
+          <div class="md:col-span-1">
             <q-input
               v-model="searchQuery"
-              placeholder="Rechercher un ticket..."
+              placeholder="Rechercher dans l'objet ou description..."
               outlined
               dense
               clearable
@@ -42,6 +43,52 @@
               </template>
             </q-input>
           </div>
+          
+          <!-- Filtre date début -->
+          <div class="md:col-span-1">
+            <q-input
+              v-model="dateFrom"
+              type="date"
+              outlined
+              dense
+              label="Date début"
+              class="w-full"
+            >
+              <template v-slot:prepend>
+                <q-icon name="event" class="text-gray-500" />
+              </template>
+            </q-input>
+          </div>
+          
+          <!-- Filtre date fin -->
+          <div class="md:col-span-1">
+            <q-input
+              v-model="dateTo"
+              type="date"
+              outlined
+              dense
+              label="Date fin"
+              class="w-full"
+            >
+              <template v-slot:prepend>
+                <q-icon name="event" class="text-gray-500" />
+              </template>
+            </q-input>
+          </div>
+        </div>
+        
+        <!-- Bouton de réinitialisation des filtres -->
+        <div class="flex justify-end mt-4" v-if="searchQuery || dateFrom || dateTo">
+          <q-btn
+            @click="clearFilters"
+            color="grey-6"
+            outline
+            no-caps
+            icon="clear"
+            size="sm"
+          >
+            Effacer les filtres
+          </q-btn>
         </div>
       </div>
 
@@ -69,9 +116,9 @@
             <div class="flex items-start justify-between mb-4">
               <div class="flex-1">
                 <h3 class="text-xl font-bold text-gray-900 mb-2">{{ ticket.libelle || 'Ticket sans libellé' }}</h3>
-                <p class="text-gray-600 text-sm mb-3">
-                  <q-icon name="tag" size="sm" class="mr-1" />
-                  ID: {{ ticket.id }}
+                <p class="text-gray-600 text-sm mb-3" v-if="ticket.objet">
+                  <q-icon name="subject" size="sm" class="mr-1" />
+                  {{ ticket.objet }}
                 </p>
               </div>
               <q-badge
@@ -81,11 +128,15 @@
               />
             </div>
 
-            <!-- Date de création uniquement -->
+            <!-- Dates de création et mise à jour -->
             <div class="bg-gray-50 rounded-lg p-3 mb-4">
-              <div class="text-xs text-gray-600">
+              <div class="text-xs text-gray-600 mb-1">
                 <q-icon name="schedule" size="xs" class="mr-1" />
                 Créé le {{ formatDate(ticket.created_at) }}
+              </div>
+              <div class="text-xs text-gray-500">
+                <q-icon name="update" size="xs" class="mr-1" />
+                Mis à jour le {{ formatDate(ticket.updated_at) }}
               </div>
             </div>
 
@@ -154,6 +205,8 @@ const ticketStore = useTicketStore()
 const tickets = ref([])
 const loading = ref(false)
 const searchQuery = ref('')
+const dateFrom = ref('')
+const dateTo = ref('')
 
 const pagination = reactive({
   page: 1,
@@ -171,7 +224,9 @@ const fetchTickets = async (props = {}) => {
       params: {
         page,
         per_page: rowsPerPage,
-        q: searchQuery.value
+        q: searchQuery.value,
+        date_from: dateFrom.value,
+        date_to: dateTo.value
       }
     })
 
@@ -271,8 +326,22 @@ const deleteTicket = (ticket) => {
   })
 }
 
+// Fonction pour effacer les filtres
+const clearFilters = () => {
+  searchQuery.value = ''
+  dateFrom.value = ''
+  dateTo.value = ''
+  pagination.page = 1
+  fetchTickets({ pagination })
+}
+
 // Watchers
 watch(searchQuery, () => {
+  pagination.page = 1
+  fetchTickets({ pagination })
+}, { debounce: 500 })
+
+watch([dateFrom, dateTo], () => {
   pagination.page = 1
   fetchTickets({ pagination })
 }, { debounce: 500 })
