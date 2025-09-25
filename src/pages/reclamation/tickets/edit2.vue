@@ -1,7 +1,7 @@
 <template>
   <div class="bg-gray-50 min-h-screen">
     <!-- Message d'alerte fixe en haut -->
-    <div class="fixed top-0 left-0 right-0 bg-red-600 text-white px-4 py-3 z-50 shadow-lg">
+    <div class="fixed top-16 left-20 right-20 bg-red-600 text-white px-4 py-3 z-50 shadow-lg">
       <div class="container mx-auto flex items-center justify-center">
         <q-icon name="warning" class="mr-2" />
         <span class="font-medium">Attention : Vous devez valider votre réclamation pour qu'elle soit traitée</span>
