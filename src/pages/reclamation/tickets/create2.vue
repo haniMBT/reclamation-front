@@ -561,13 +561,17 @@ const submitForm = async () => {
       $q.notify({
         type: 'positive',
         message: 'Réclamation finalisée avec succès',
-        caption: 'Votre réclamation a été enregistrée'
+        caption: 'Redirection vers l\'édition...'
       })
 
-      // Nettoyer le store et rediriger
+      // Récupérer l'ID du ticket créé depuis la réponse
+      const createdTicketId = response.data.data.tticket_id
+      
+      // Nettoyer le store
       ticketStore.clearTicket()
 
-      router.push("/reclamations/allTicket");
+      // Rediriger vers edit2 avec l'ID du ticket créé (même logique que depuis index)
+      router.push(`/reclamations/tickets/edit/${createdTicketId}`)
 
 
     } else {
