@@ -1,6 +1,33 @@
 <template>
   <div class="bg-gray-50 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
+    <!-- Message d'alerte fixe en haut -->
+    <div class="fixed top-0 left-0 right-0 bg-red-600 text-white px-4 py-3 z-50 shadow-lg">
+      <div class="container mx-auto flex items-center justify-center">
+        <q-icon name="warning" class="mr-2" />
+        <span class="font-medium">Attention : Vous devez valider votre réclamation pour qu'elle soit traitée</span>
+      </div>
+    </div>
+
+    <!-- Bouton de validation fixe en haut à droite -->
+    <div class="fixed top-16 right-4 z-40">
+      <q-btn
+        @click="submitForm"
+        color="green-6"
+        :loading="isSubmitting"
+        :disable="!isFormValid || loading"
+        size="lg"
+        round
+        icon="check"
+        class="shadow-lg"
+      >
+        <q-tooltip>Valider la réclamation</q-tooltip>
+        <template v-slot:loading>
+          <q-spinner-facebook />
+        </template>
+      </q-btn>
+    </div>
+
+    <div class="container mx-auto px-4 py-8" style="margin-top: 60px;">
       <!-- Header Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
@@ -389,7 +416,7 @@ const syncInfoGenerales = () => {
       }
     })
   }
-  
+
   // Synchroniser de info_generales vers infosGenerales
   if (form.value.info_generales && form.value.info_generales.length > 0) {
     form.value.info_generales.forEach(info => {
@@ -528,7 +555,7 @@ const initializeFormFromTicketData = (data) => {
 
   // Informations générales - créer des objets complets avec tous les champs
   form.value.info_generales = []
-  
+
   if (ticketInfosGenerales.value && ticketInfosGenerales.value.length > 0) {
     // Pré-remplir avec les valeurs existantes du ticket
     ticketInfosGenerales.value.forEach(ticketInfo => {
@@ -558,7 +585,7 @@ const initializeFormFromTicketData = (data) => {
       form.value.infosGenerales[info.key_attribut] = ''
     })
   }
-  
+
   // Synchroniser les structures après l'initialisation
   syncInfoGenerales()
 }
@@ -685,7 +712,7 @@ const submitForm = async () => {
       })
 
       // Rediriger vers la liste des tickets
-      router.push('/reclamations/allTicket')
+      // router.push('/reclamations/allTicket')
     } else {
       throw new Error(response.data.message || 'Erreur lors de la mise à jour')
     }
@@ -836,5 +863,30 @@ onMounted(async () => {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
+}
+
+/* Styles pour les éléments fixes */
+.fixed {
+  position: fixed !important;
+}
+
+/* Animation pour le bouton de validation */
+.fixed .q-btn {
+  transition: all 0.3s ease;
+}
+
+.fixed .q-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Style pour le message d'alerte */
+.bg-red-600 {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+}
+
+/* Assurer que le contenu ne soit pas masqué par les éléments fixes */
+body {
+  padding-top: 60px;
 }
 </style>
