@@ -11,7 +11,7 @@
     <!-- Bouton de validation fixe en haut à droite -->
     <div class="fixed top-16 right-4 z-40">
       <q-btn
-        @click="submitForm"
+        @click="validateTicket"
         color="green-6"
         :loading="isSubmitting"
         :disable="!isFormValid || loading"
@@ -648,6 +648,68 @@ const validateForm = () => {
   }
 
   return Object.keys(errors.value).length === 0
+}
+
+const validateTicket = async () => {
+  if (!validateForm()) {
+    $q.notify({
+      type: 'negative',
+      message: 'Veuillez corriger les erreurs du formulaire',
+      position: 'top'
+    })
+    return
+  }
+
+  // Afficher le modal de confirmation
+  $q.dialog({
+    title: 'Confirmation de validation',
+    message: 'Êtes-vous sûr de vouloir valider cette réclamation ? Cette action est définitive et changera le statut à "En attente".',
+    cancel: true,
+    persistent: true,
+    color: 'positive'
+  }).onOk(async () => {
+    isSubmitting.value = true
+
+    try {
+      // Appeler l'API de validation
+      const response = await api.post('/api/rec/tickets/validate', {
+        ticket_id: route.params.id
+      })
+
+    if (response.data.success) {
+      $q.notify({
+        type: 'positive',
+        message: 'Réclamation validée avec succès',
+        position: 'top'
+      })
+
+      // Rediriger vers la liste des tickets (allTicket)
+      router.push('/reclamations/allTicket')
+    } else {
+      throw new Error(response.data.message || 'Erreur lors de la validation')
+    }
+
+    } catch (error) {
+      console.error('Erreur lors de la validation:', error)
+
+      let errorMessage = 'Erreur lors de la validation de la réclamation'
+
+      if (error.response?.data?.errors) {
+        const errors = error.response.data.errors
+        errorMessage = Object.values(errors).flat().join(', ')
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message
+      }
+
+      $q.notify({
+        type: 'negative',
+        message: errorMessage,
+        position: 'top'
+      })
+    } finally {
+      isSubmitting.value = false
+    }
+  })
 }
 
 const submitForm = async () => {

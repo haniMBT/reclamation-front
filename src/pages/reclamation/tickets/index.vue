@@ -43,7 +43,7 @@
               </template>
             </q-input>
           </div>
-          
+
           <!-- Filtre date début -->
           <div class="md:col-span-1">
             <q-input
@@ -59,7 +59,7 @@
               </template>
             </q-input>
           </div>
-          
+
           <!-- Filtre date fin -->
           <div class="md:col-span-1">
             <q-input
@@ -76,7 +76,7 @@
             </q-input>
           </div>
         </div>
-        
+
         <!-- Bouton de réinitialisation des filtres -->
         <div class="flex justify-end mt-4" v-if="searchQuery || dateFrom || dateTo">
           <q-btn
@@ -121,11 +121,21 @@
                   {{ ticket.objet }}
                 </p>
               </div>
-              <q-badge
-                :color="getStatusColor(ticket.status)"
-                :label="ticket.status || 'OUVERT'"
-                class="text-xs"
-              />
+              <div class="flex flex-col items-end space-y-1">
+                <q-badge
+                  :color="getStatusColor(ticket.status)"
+                  :label="ticket.status || 'OUVERT'"
+                  class="text-xs"
+                />
+                <q-badge
+                  v-if="isTicketValidated(ticket)"
+                  color="green"
+                  label="VALIDÉ"
+                  class="text-xs"
+                >
+                  <q-icon name="verified" size="xs" class="mr-1" />
+                </q-badge>
+              </div>
             </div>
 
             <!-- Dates de création et mise à jour -->
@@ -145,22 +155,24 @@
               <q-btn
                 flat
                 round
-                color="orange-6"
+                :color="isTicketValidated(ticket) ? 'grey-4' : 'orange-6'"
                 icon="edit"
                 size="sm"
+                :disable="isTicketValidated(ticket)"
                 @click.stop="editTicket(ticket)"
               >
-                <q-tooltip>Modifier</q-tooltip>
+                <q-tooltip>{{ isTicketValidated(ticket) ? 'Ticket validé - Modification impossible' : 'Modifier' }}</q-tooltip>
               </q-btn>
               <q-btn
                 flat
                 round
-                color="red-6"
+                :color="isTicketValidated(ticket) ? 'grey-4' : 'red-6'"
                 icon="delete"
                 size="sm"
+                :disable="isTicketValidated(ticket)"
                 @click.stop="deleteTicket(ticket)"
               >
-                <q-tooltip>Supprimer</q-tooltip>
+                <q-tooltip>{{ isTicketValidated(ticket) ? 'Ticket validé - Suppression impossible' : 'Supprimer' }}</q-tooltip>
               </q-btn>
             </div>
           </q-card-section>
@@ -270,12 +282,13 @@ const formatDate = (dateString) => {
 const getStatusColor = (status) => {
   const statusColors = {
     'OUVERT': 'blue',
+    'En attente': 'grey',
+
     'EN_COURS': 'orange',
     'FERME': 'green',
     'ANNULE': 'red',
     'En cours': 'orange',
     'Terminé': 'green',
-    'En attente': 'blue',
     'Annulé': 'red'
   }
   return statusColors[status] || 'grey'
@@ -333,6 +346,11 @@ const clearFilters = () => {
   dateTo.value = ''
   pagination.page = 1
   fetchTickets({ pagination })
+}
+
+// Fonction pour vérifier si un ticket est validé
+const isTicketValidated = (ticket) => {
+  return ticket.is_creator_validated == 1 || ticket.is_creator_validated == true
 }
 
 // Watchers
