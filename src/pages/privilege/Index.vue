@@ -338,6 +338,9 @@ limitations.value.push({ code: 'L', value: 'L – Visibilité au niveau directio
 limitations.value.push({ code: 'P', value: 'P - Visibilité au niveau individuel' });
 
 const Roles = ref([]);
+Roles.value.push({ code: 'client', value: 'client' });/// pour reclamation clien peut cree les reclamation sont niveau de visisilbilite toujour P
+Roles.value.push({ code: 'employe', value: 'employe' });/// pour reclamation clien peut cree les reclamation avec 3 niveau de visisilbilite
+Roles.value.push({ code: 'employe_Répondeur', value: 'employe_Répondeur' });/// pour reclamation clien peut cree les reclamation avec 3 niveau de visisilbilite et peur repondre recalmaiton concern ca direction
 Roles.value.push({ code: 'Rédacteur', value: 'Rédacteur' });
 Roles.value.push({ code: 'Vérificateur', value: 'Vérificateur' });
 Roles.value.push({ code: 'Consultation', value: 'Consultation' });
