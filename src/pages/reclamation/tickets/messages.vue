@@ -70,69 +70,92 @@
         </q-card-section>
       </q-card>
 
-      <!-- Messages -->
-      <q-card v-if="loading" class="q-mb-md">
-        <q-card-section>
-          <div class="text-center">
-            <q-spinner size="40px" color="primary" />
-            <p class="q-mt-md">Chargement des messages...</p>
-          </div>
-        </q-card-section>
-      </q-card>
+      <!-- Tableau des Messages -->
+      <q-table
+        :rows="filteredMessages"
+        :columns="columns"
+        row-key="id"
+        :loading="loading"
+        :pagination="pagination"
+        @request="onRequest"
+        class="messages-table"
+        flat
+        bordered
+      >
+        <!-- Slot pour le statut -->
+        <template v-slot:body-cell-status="props">
+          <q-td :props="props">
+            <q-chip
+              :color="props.value ? 'green' : 'orange'"
+              :text-color="props.value ? 'white' : 'black'"
+              size="sm"
+            >
+              {{ props.value ? 'Lu' : 'Non lu' }}
+            </q-chip>
+          </q-td>
+        </template>
 
-      <div v-else-if="filteredMessages.length === 0" class="text-center q-pa-xl">
-        <q-icon name="message" size="4rem" color="grey-4" />
-        <p class="text-h6 text-grey-6 q-mt-md">Aucun message trouvé</p>
-        <p class="text-grey-5">Commencez par envoyer le premier message</p>
-      </div>
-
-      <div v-else class="q-gutter-md">
-        <q-card
-          v-for="message in filteredMessages"
-          :key="message.id"
-          class="message-card cursor-pointer transition-all hover:shadow-lg"
-          @click="viewMessageDetail(message)"
-        >
-          <q-card-section>
-            <div class="row items-start justify-between">
-              <div class="col">
-                <div class="text-h6 q-mb-xs">{{ message.subject }}</div>
-                <div class="text-body2 text-grey-6 q-mb-sm">
-                  <q-icon name="person" size="xs" class="q-mr-xs" />
-                  {{ message.sender }}
-                  <span class="q-mx-sm">•</span>
-                  <q-icon name="schedule" size="xs" class="q-mr-xs" />
-                  {{ formatDate(message.date) }}
-                </div>
-                <div class="text-body2 message-preview">
-                  {{ truncateText(message.content, 150) }}
-                </div>
-              </div>
-              <div class="col-auto q-ml-md">
-                <q-chip
-                  :color="message.isRead ? 'green' : 'orange'"
-                  :text-color="message.isRead ? 'white' : 'black'"
-                  size="sm"
-                >
-                  {{ message.isRead ? 'Lu' : 'Non lu' }}
-                </q-chip>
-              </div>
+        <!-- Slot pour le contenu tronqué -->
+        <template v-slot:body-cell-content="props">
+          <q-td :props="props">
+            <div class="message-preview">
+              {{ truncateText(props.value, 100) }}
             </div>
-          </q-card-section>
-        </q-card>
-      </div>
+          </q-td>
+        </template>
 
-      <!-- Pagination -->
-      <div class="flex justify-center q-mt-lg" v-if="totalMessages > messagesPerPage">
-        <q-pagination
-          v-model="currentPage"
-          :max="Math.ceil(totalMessages / messagesPerPage)"
-          :max-pages="6"
-          direction-links
-          boundary-links
-          color="primary"
-        />
-      </div>
+        <!-- Slot pour les actions -->
+        <template v-slot:body-cell-actions="props">
+          <q-td :props="props">
+            <q-btn
+              flat
+              round
+              color="primary"
+              icon="visibility"
+              size="sm"
+              @click="viewMessageDetail(props.row)"
+            >
+              <q-tooltip>Voir le détail</q-tooltip>
+            </q-btn>
+            <q-btn
+              flat
+              round
+              color="blue"
+              icon="reply"
+              size="sm"
+              @click="replyToMessage(props.row)"
+              class="q-ml-xs"
+            >
+              <q-tooltip>Répondre</q-tooltip>
+            </q-btn>
+          </q-td>
+        </template>
+
+        <!-- Slot pour les pièces jointes -->
+        <template v-slot:body-cell-attachments="props">
+          <q-td :props="props">
+            <q-icon
+              v-if="props.value && props.value.length > 0"
+              name="attach_file"
+              color="primary"
+              size="sm"
+            >
+              <q-tooltip>{{ props.value.length }} pièce(s) jointe(s)</q-tooltip>
+            </q-icon>
+            <span v-else class="text-grey-5">-</span>
+          </q-td>
+        </template>
+
+        <!-- Message quand aucune donnée -->
+        <template v-slot:no-data>
+          <div class="full-width row flex-center text-grey-6 q-gutter-sm">
+            <q-icon size="2em" name="message" />
+            <span>Aucun message trouvé</span>
+          </div>
+        </template>
+      </q-table>
+
+
     </div>
 
     <!-- Dialog Nouveau Message -->
@@ -389,8 +412,6 @@ const loading = ref(false)
 const messages = ref([])
 const searchQuery = ref('')
 const statusFilter = ref(null)
-const currentPage = ref(1)
-const messagesPerPage = 10
 const showNewMessageDialog = ref(false)
 const showMessageDetail = ref(false)
 const selectedMessage = ref(null)
@@ -415,6 +436,70 @@ const statusOptions = [
   { label: 'Non lu', value: false }
 ]
 
+// Configuration du tableau
+const columns = [
+  {
+    name: 'subject',
+    required: true,
+    label: 'Sujet',
+    align: 'left',
+    field: 'subject',
+    sortable: true
+  },
+  {
+    name: 'sender',
+    label: 'Expéditeur',
+    align: 'left',
+    field: 'sender',
+    sortable: true
+  },
+  {
+    name: 'content',
+    label: 'Contenu',
+    align: 'left',
+    field: 'content',
+    sortable: false
+  },
+  {
+    name: 'date',
+    label: 'Date',
+    align: 'left',
+    field: 'date',
+    sortable: true,
+    format: (val) => formatDate(val)
+  },
+  {
+    name: 'status',
+    label: 'Statut',
+    align: 'center',
+    field: 'isRead',
+    sortable: true
+  },
+  {
+    name: 'attachments',
+    label: 'Pièces jointes',
+    align: 'center',
+    field: 'attachments',
+    sortable: false
+  },
+  {
+    name: 'actions',
+    label: 'Actions',
+    align: 'center',
+    field: 'actions',
+    sortable: false
+  }
+]
+
+// Configuration de la pagination
+const pagination = ref({
+  sortBy: 'date',
+  descending: true,
+  page: 1,
+  rowsPerPage: 10,
+  rowsNumber: 0
+})
+
 // Computed
 const currentTicketId = computed(() => ticketStore.t_rec_ticket_id)
 
@@ -437,12 +522,23 @@ const filteredMessages = computed(() => {
   return filtered
 })
 
-const totalMessages = computed(() => filteredMessages.value.length)
+
 
 // Méthodes
 const goBack = () => {
   ticketStore.clearCurrentTicketId()
   router.push('/reclamation/tickets')
+}
+
+const onRequest = (props) => {
+  const { page, rowsPerPage, sortBy, descending } = props.pagination
+  
+  pagination.value.page = page
+  pagination.value.rowsPerPage = rowsPerPage
+  pagination.value.sortBy = sortBy
+  pagination.value.descending = descending
+  
+  loadMessages()
 }
 
 const loadMessages = async () => {
@@ -454,8 +550,11 @@ const loadMessages = async () => {
 
     if (response.data.success) {
       messages.value = response.data.data || []
+      // Mettre à jour le nombre total de lignes pour la pagination
+      pagination.value.rowsNumber = messages.value.length
     } else {
       messages.value = []
+      pagination.value.rowsNumber = 0
       $q.notify({
         type: 'warning',
         message: response.data.message || 'Aucun message trouvé'
@@ -463,6 +562,8 @@ const loadMessages = async () => {
     }
   } catch (error) {
     console.error('Erreur lors du chargement des messages:', error)
+    messages.value = []
+    pagination.value.rowsNumber = 0
     $q.notify({
       type: 'negative',
       message: 'Erreur lors du chargement des messages'
@@ -582,10 +683,13 @@ const closeNewMessageDialog = () => {
   newFiles.value = null
 }
 
-const replyToMessage = () => {
-  closeMessageDetail()
-  newMessage.value.subject = `Re: ${selectedMessage.value.subject}`
-  showNewMessageDialog.value = true
+const replyToMessage = (message = null) => {
+  const messageToReply = message || selectedMessage.value
+  if (messageToReply) {
+    closeMessageDetail()
+    newMessage.value.subject = `Re: ${messageToReply.subject}`
+    showNewMessageDialog.value = true
+  }
 }
 
 const downloadAttachment = (attachment) => {
@@ -735,14 +839,21 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.message-card {
-  border-left: 4px solid #1976d2;
+.messages-table {
+  /* Style personnalisé pour le tableau des messages */
+}
+
+.messages-table .q-table__top,
+.messages-table .q-table__bottom,
+.messages-table thead tr:first-child th {
+  background-color: #f5f5f5;
 }
 
 .message-preview {
   line-height: 1.4;
   max-height: 2.8em;
   overflow: hidden;
+  word-break: break-word;
 }
 
 .message-content {
@@ -750,11 +861,13 @@ onMounted(() => {
   line-height: 1.6;
 }
 
-.transition-all {
-  transition: all 0.3s ease;
+/* Style pour les lignes du tableau */
+.messages-table tbody tr:hover {
+  background-color: #f0f8ff;
 }
 
-.hover\:shadow-lg:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+/* Style pour les boutons d'action */
+.messages-table .q-btn {
+  margin: 0 2px;
 }
 </style>
