@@ -56,7 +56,7 @@
                 <q-icon name="search" />
               </template>
             </q-input>
-            
+
             <q-select
               v-model="statusFilter"
               :options="statusOptions"
@@ -344,7 +344,7 @@
           <div class="message-content">
             {{ selectedMessage.content }}
           </div>
-          
+
           <div v-if="selectedMessage.attachments && selectedMessage.attachments.length" class="q-mt-md">
             <div class="text-subtitle2 q-mb-sm">Pièces jointes :</div>
             <q-list>
@@ -420,20 +420,20 @@ const currentTicketId = computed(() => ticketStore.t_rec_ticket_id)
 
 const filteredMessages = computed(() => {
   let filtered = messages.value
-  
+
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(message => 
+    filtered = filtered.filter(message =>
       message.subject.toLowerCase().includes(query) ||
       message.content.toLowerCase().includes(query) ||
       message.sender.toLowerCase().includes(query)
     )
   }
-  
+
   if (statusFilter.value !== null) {
     filtered = filtered.filter(message => message.isRead === statusFilter.value)
   }
-  
+
   return filtered
 })
 
@@ -447,32 +447,20 @@ const goBack = () => {
 
 const loadMessages = async () => {
   if (!currentTicketId.value) return
-  
+
   loading.value = true
   try {
-    // Simulation de données pour l'exemple
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    messages.value = [
-      {
-        id: 1,
-        subject: 'Problème de connexion',
-        content: 'Bonjour, je rencontre des difficultés pour me connecter à mon compte. Pouvez-vous m\'aider ?',
-        sender: 'Client',
-        date: new Date().toISOString(),
-        isRead: false,
-        attachments: []
-      },
-      {
-        id: 2,
-        subject: 'Réponse: Problème de connexion',
-        content: 'Bonjour, nous avons bien reçu votre demande. Pouvez-vous nous préciser le navigateur que vous utilisez ?',
-        sender: 'Support Technique',
-        date: new Date(Date.now() - 3600000).toISOString(),
-        isRead: true,
-        attachments: []
-      }
-    ]
+    const response = await api.get(`/api/rec/tickets/${currentTicketId.value}/messages`)
+
+    if (response.data.success) {
+      messages.value = response.data.data || []
+    } else {
+      messages.value = []
+      $q.notify({
+        type: 'warning',
+        message: response.data.message || 'Aucun message trouvé'
+      })
+    }
   } catch (error) {
     console.error('Erreur lors du chargement des messages:', error)
     $q.notify({
@@ -519,6 +507,8 @@ const closeMessageDetail = () => {
 }
 
 const sendMessage = async () => {
+  console.log('Envoi du message:', newMessage.value);
+
   if (!newMessage.value.subject || !newMessage.value.content) {
     $q.notify({
       type: 'negative',
@@ -526,16 +516,15 @@ const sendMessage = async () => {
     })
     return
   }
-  
+
   sending.value = true
   try {
     // Créer un FormData pour inclure les fichiers
      const formData = new FormData()
-     formData.append('tticket_id', currentTicketId.value)
-     formData.append('titre', newMessage.value.title)
-     formData.append('description', newMessage.value.description)
+     formData.append('titre', newMessage.value.subject)
+     formData.append('description', newMessage.value.content)
      formData.append('directions', JSON.stringify(newMessage.value.directions))
-    
+
     // Ajouter les fichiers au FormData
     newMessage.value.attachments.forEach((attachment, index) => {
       if (attachment.file) {
@@ -543,18 +532,18 @@ const sendMessage = async () => {
       }
     })
 
-    const response = await api.post('/api/rec/messages', formData, {
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
-    
+
     if (response.data.success) {
       $q.notify({
         type: 'positive',
         message: 'Message envoyé avec succès'
       })
-      
+
       // Réinitialiser le formulaire
        newMessage.value = {
          title: '',
@@ -563,10 +552,10 @@ const sendMessage = async () => {
          attachments: []
        }
        newFiles.value = null
-       
+
        // Fermer le dialog
        showNewMessageDialog.value = false
-       
+
        // Recharger les messages
        await loadMessages()
     }
@@ -614,13 +603,13 @@ const onNewFilesSelected = (files) => {
 const addFiles = () => {
   if (newFiles.value && newFiles.value.length > 0) {
     const filesCount = newFiles.value.length
-    
+
     newFiles.value.forEach(file => {
       // Vérifier si le fichier n'est pas déjà dans la liste
-      const exists = newMessage.value.attachments.some(att => 
+      const exists = newMessage.value.attachments.some(att =>
         att.name === file.name && att.size === file.size
       )
-      
+
       if (!exists) {
         newMessage.value.attachments.push({
           name: file.name,
@@ -630,10 +619,10 @@ const addFiles = () => {
         })
       }
     })
-    
+
     // Réinitialiser la sélection
     newFiles.value = null
-    
+
     $q.notify({
       type: 'positive',
       message: `${filesCount} fichier(s) ajouté(s)`,
@@ -660,7 +649,7 @@ const onRejected = (rejectedEntries) => {
       message += `${entry.file.name} (format non supporté), `
     }
   })
-  
+
   $q.notify({
     type: 'negative',
     message: message.slice(0, -2),
@@ -670,7 +659,7 @@ const onRejected = (rejectedEntries) => {
 
 const getFileIcon = (fileType) => {
   if (!fileType) return 'description'
-  
+
   if (fileType.startsWith('image/')) {
     return 'image'
   } else if (fileType === 'application/pdf') {
@@ -686,11 +675,11 @@ const getFileIcon = (fileType) => {
 
 const formatFileSize = (bytes) => {
   if (bytes === 0) return '0 Bytes'
-  
+
   const k = 1024
   const sizes = ['Bytes', 'KB', 'MB', 'GB']
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
+
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 }
 
@@ -699,7 +688,7 @@ const formatFileSize = (bytes) => {
    loadingDirections.value = true
    try {
      const response = await api.get('/api/rec/directions')
-     
+
      if (response.data.success) {
        directionOptions.value = response.data.data.map(direction => ({
          label: direction.label,
@@ -715,7 +704,7 @@ const formatFileSize = (bytes) => {
        type: 'negative',
        message: 'Erreur lors du chargement des directions'
      })
-     
+
      // Fallback avec des directions par défaut en cas d'erreur
      directionOptions.value = [
        { label: 'Direction Générale', value: 'DG', id: 1 },
