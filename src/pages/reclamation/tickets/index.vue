@@ -150,8 +150,18 @@
               </div>
             </div>
 
-            <!-- Actions - Modifier et Supprimer -->
+            <!-- Actions - Messages, Modifier et Supprimer -->
             <div class="flex justify-end space-x-2">
+              <q-btn
+                flat
+                round
+                color="blue-6"
+                icon="chat"
+                size="sm"
+                @click.stop="viewMessages(ticket)"
+              >
+                <q-tooltip>Messages</q-tooltip>
+              </q-btn>
               <q-btn
                 flat
                 round
@@ -301,6 +311,13 @@ const viewTicket = (ticket) => {
 const editTicket = (ticket) => {
   // Rediriger vers edit2.vue avec l'ID du ticket
   router.push(`/reclamations/tickets/edit/${ticket.id}`)
+}
+
+const viewMessages = (ticket) => {
+  // Enregistrer l'ID du ticket dans le store Pinia
+  ticketStore.setTicketForMessages(ticket.id)
+  // Naviguer vers la page des messages
+  router.push('/reclamations/tickets/messages')
 }
 
 const deleteTicket = (ticket) => {

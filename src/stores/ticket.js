@@ -9,13 +9,14 @@ export const useTicketStore = defineStore('ticket', {
     b_rec_ticket_id: LocalStorage.getItem('b_rec_ticket_id') ?? null,
     ticketData: LocalStorage.getItem('ticketData') ?? null,
     isTicketCreated: LocalStorage.getItem('isTicketCreated') ?? false,
+
   }),
 
   getters: {
     hasTicket: (state) => {
       return state.t_rec_ticket_id !== null && state.b_rec_ticket_id !== null;
     },
-    
+
     getTicketInfo: (state) => {
       return {
         t_rec_ticket_id: state.t_rec_ticket_id,
@@ -23,7 +24,9 @@ export const useTicketStore = defineStore('ticket', {
         ticketData: state.ticketData,
         isCreated: state.isTicketCreated
       };
-    }
+    },
+
+
   },
 
   actions: {
@@ -52,7 +55,7 @@ export const useTicketStore = defineStore('ticket', {
             ...data
           };
         }
-        
+
         this.isTicketCreated = true;
 
         // Persister dans LocalStorage
@@ -144,7 +147,7 @@ export const useTicketStore = defineStore('ticket', {
       try {
         this.ticketData = { ...this.ticketData, ...newData };
         LocalStorage.set('ticketData', this.ticketData);
-        
+
         console.log('Données du ticket mises à jour:', this.ticketData);
         return { success: true };
       } catch (error) {
@@ -161,7 +164,7 @@ export const useTicketStore = defineStore('ticket', {
     async getCompleteTicketData(ticketId) {
       try {
         const response = await api.get(`/api/rec/tickets/${ticketId}/complete-data`);
-        
+
         if (response.data.success) {
           console.log('Données complètes du ticket récupérées:', response.data.data);
           return {
@@ -196,13 +199,13 @@ export const useTicketStore = defineStore('ticket', {
             'Content-Type': 'multipart/form-data'
           }
         });
-        
+
         if (response.data.success) {
           console.log('Réclamation finalisée avec succès:', response.data.data);
-          
+
           // Nettoyer les données du ticket après finalisation
           this.clearTicket();
-          
+
           return {
             success: true,
             data: response.data.data,
@@ -224,6 +227,15 @@ export const useTicketStore = defineStore('ticket', {
           errors: error.response?.data?.errors
         };
       }
+    },
+
+    /**
+     * Action pour définir l'ID du ticket pour les messages
+     * @param {number} ticketId - ID du ticket à sélectionner
+     */
+    setTicketForMessages(ticketId) {
+      this.t_rec_ticket_id = ticketId;
+      LocalStorage.set('t_rec_ticket_id', ticketId);
     }
   }
 });
