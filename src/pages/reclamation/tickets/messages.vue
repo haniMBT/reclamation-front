@@ -118,17 +118,6 @@
             <q-btn
               flat
               round
-              color="blue"
-              icon="reply"
-              size="sm"
-              @click="replyToMessage(props.row)"
-              class="q-ml-xs"
-            >
-              <q-tooltip>Répondre</q-tooltip>
-            </q-btn>
-            <q-btn
-              flat
-              round
               color="red"
               icon="delete"
               size="sm"
