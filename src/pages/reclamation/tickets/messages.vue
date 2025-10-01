@@ -737,9 +737,35 @@ const deleteMessage = async (message) => {
   })
 }
 
-const downloadFichier = (fichier) => {
-  // Logique de téléchargement
-  console.log('Téléchargement de:', fichier.nom_fichier)
+const downloadFichier = async (fichier) => {
+  try {
+    const response = await api.get(`/api/rec/messages/files/${fichier.id}/download`, {
+      responseType: 'blob'
+    })
+
+    // Créer un lien de téléchargement
+    const url = window.URL.createObjectURL(new Blob([response.data]))
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', fichier.nom_fichier)
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    window.URL.revokeObjectURL(url)
+
+    $q.notify({
+      type: 'positive',
+      message: 'Téléchargement démarré',
+      position: 'top'
+    })
+  } catch (error) {
+    console.error('Erreur lors du téléchargement:', error)
+    $q.notify({
+      type: 'negative',
+      message: 'Erreur lors du téléchargement du fichier',
+      position: 'top'
+    })
+  }
 }
 
 // Méthodes pour l'upload de fichiers
