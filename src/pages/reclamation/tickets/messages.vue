@@ -106,8 +106,7 @@
         <!-- Slot pour le texte tronqué -->
         <template v-slot:body-cell-texte="props">
           <q-td :props="props">
-            <div class="message-preview">
-              {{ truncateText(props.value, 100) }}
+            <div class="message-preview" v-html="truncateText(props.value, 100)">
             </div>
           </q-td>
         </template>
@@ -410,10 +409,9 @@
                 Contenu du message
               </label>
               <div class="bg-gray-50 p-4 rounded-lg border">
-                <div class="message-content text-gray-800">
-                  {{ selectedMessage.texte }}
-                </div>
-              </div>
+                 <div class="message-content text-gray-800" v-html="selectedMessage.texte">
+                 </div>
+               </div>
             </div>
 
             <!-- Fichiers joints -->
