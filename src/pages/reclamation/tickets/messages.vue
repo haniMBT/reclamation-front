@@ -739,7 +739,7 @@ const deleteMessage = async (message) => {
 
 const downloadFichier = async (fichier) => {
   try {
-    const response = await api.get(`/api/rec/messages/files/${fichier.id}/download`, {
+    const response = await api.get(`/api/rec/messages/attachments/${fichier.id}/download`, {
       responseType: 'blob'
     })
 
