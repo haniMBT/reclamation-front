@@ -25,11 +25,11 @@
             <p class="text-red-800 font-medium">Aucun ticket sélectionné</p>
             <p class="text-red-600 text-sm">Veuillez retourner à la liste des tickets et sélectionner un ticket.</p>
           </div>
-          <q-btn 
-            flat 
-            color="red" 
-            label="Retour aux tickets" 
-            @click="goBack" 
+          <q-btn
+            flat
+            color="red"
+            label="Retour aux tickets"
+            @click="goBack"
             class="ml-auto"
           />
         </div>
@@ -385,45 +385,94 @@
 
     <!-- Dialog Détail Message -->
     <q-dialog v-model="showMessageDetail" persistent>
-      <q-card style="min-width: 700px" v-if="selectedMessage">
-        <q-card-section>
-          <div class="text-h6">{{ selectedMessage.titre }}</div>
-          <div class="text-body2 text-grey-6 q-mt-sm">
-            <q-icon name="person" size="xs" class="q-mr-xs" />
-            Direction: {{ selectedMessage.direction_envoi }}
-            <span class="q-mx-sm">•</span>
-            <q-icon name="schedule" size="xs" class="q-mr-xs" />
-            {{ formatDate(selectedMessage.date_envoie) }}
+      <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;" v-if="selectedMessage">
+        <q-card-section class="flex items-center bg-green-50">
+          <q-icon name="visibility" class="text-green-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-green-900">{{ selectedMessage.titre }}</div>
+            <div class="text-sm text-green-700">
+              <q-icon name="person" size="xs" class="q-mr-xs" />
+              Direction: {{ selectedMessage.direction_envoi }}
+              <span class="q-mx-sm">•</span>
+              <q-icon name="schedule" size="xs" class="q-mr-xs" />
+              {{ formatDate(selectedMessage.date_envoie) }}
+            </div>
           </div>
         </q-card-section>
 
-        <q-card-section class="q-pt-none">
-          <div class="message-content">
-            {{ selectedMessage.texte }}
-          </div>
+        <q-separator />
 
-          <div v-if="selectedMessage.fichiers && selectedMessage.fichiers.length" class="q-mt-md">
-            <div class="text-subtitle2 q-mb-sm">Fichiers :</div>
-            <q-list>
-              <q-item v-for="fichier in selectedMessage.fichiers" :key="fichier.id">
-                <q-item-section avatar>
-                  <q-icon name="attach_file" />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>{{ fichier.nom_fichier }}</q-item-label>
-                  <q-item-label caption>{{ fichier.taille_fichier }}</q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn flat round icon="download" @click="downloadFichier(fichier)" />
-                </q-item-section>
-              </q-item>
-            </q-list>
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div class="space-y-6">
+            <!-- Contenu du message -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">
+                Contenu du message
+              </label>
+              <div class="bg-gray-50 p-4 rounded-lg border">
+                <div class="message-content text-gray-800">
+                  {{ selectedMessage.texte }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Fichiers joints -->
+            <div v-if="selectedMessage.fichiers && selectedMessage.fichiers.length" class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">
+                <q-icon name="attach_file" class="text-green-600 mr-1" />
+                Fichiers joints ({{ selectedMessage.fichiers.length }})
+              </label>
+              <div class="bg-gray-50 p-4 rounded-lg border">
+                <q-list class="space-y-2">
+                  <q-item v-for="fichier in selectedMessage.fichiers" :key="fichier.id" class="bg-white rounded-lg shadow-sm">
+                    <q-item-section avatar>
+                      <q-icon name="description" class="text-blue-600" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="font-medium">{{ fichier.nom_fichier }}</q-item-label>
+                      <q-item-label caption class="text-gray-500">{{ fichier.taille_fichier }}</q-item-label>
+                    </q-item-section>
+                    <q-item-section side>
+                      <q-btn 
+                        flat 
+                        round 
+                        icon="download" 
+                        color="green-6"
+                        @click="downloadFichier(fichier)"
+                        class="hover:bg-green-50"
+                      >
+                        <q-tooltip>Télécharger</q-tooltip>
+                      </q-btn>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+              </div>
+            </div>
           </div>
         </q-card-section>
 
-        <q-card-actions align="right">
-          <q-btn flat label="Fermer" @click="closeMessageDetail" />
-          <q-btn color="primary" label="Répondre" @click="replyToMessage" />
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn
+            @click="closeMessageDetail"
+            color="grey-6"
+            outline
+            no-caps
+            class="px-6"
+          >
+            Fermer
+          </q-btn>
+          <q-btn
+            @click="replyToMessage"
+            color="green-6"
+            no-caps
+            unelevated
+            class="px-6 ml-3"
+          >
+            Répondre
+          </q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -577,8 +626,8 @@ const filteredMessages = computed(() => {
 
 // Méthodes
 const goBack = () => {
-  ticketStore.clearCurrentTicketId()
-  router.push('/reclamation/tickets')
+  ticketStore.clearTicket()
+  router.push('/reclamations/allTicket')
 }
 
 const onRequest = (props) => {
