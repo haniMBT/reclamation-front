@@ -507,7 +507,7 @@ const columns = [
 
 // Configuration de la pagination
 const pagination = ref({
-  sortBy: 'date',
+  sortBy: 'date_envoie',
   descending: true,
   page: 1,
   rowsPerPage: 10,
