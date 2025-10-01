@@ -103,14 +103,6 @@
             class="messages-table"
             flat
           >
-        <!-- Slot pour le texte tronqué -->
-        <template v-slot:body-cell-texte="props">
-          <q-td :props="props">
-            <div class="message-preview" v-html="truncateText(props.value, 100)">
-            </div>
-          </q-td>
-        </template>
-
         <!-- Slot pour les destinataires -->
         <template v-slot:body-cell-destinataires="props">
           <q-td :props="props">
@@ -163,21 +155,6 @@
             >
               <q-tooltip>Répondre</q-tooltip>
             </q-btn>
-          </q-td>
-        </template>
-
-        <!-- Slot pour les fichiers -->
-        <template v-slot:body-cell-fichiers="props">
-          <q-td :props="props">
-            <q-icon
-              v-if="props.value && props.value.length > 0"
-              name="attach_file"
-              color="primary"
-              size="sm"
-            >
-              <q-tooltip>{{ props.value.length }} fichier(s)</q-tooltip>
-            </q-icon>
-            <span v-else class="text-grey-5">-</span>
           </q-td>
         </template>
 
@@ -522,26 +499,12 @@ const statusOptions = [
 // Configuration du tableau
 const columns = [
   {
-    name: 'id',
-    label: 'ID',
+    name: 'date_envoie',
+    label: 'Date Envoi',
     align: 'left',
-    field: 'id',
-    sortable: true
-  },
-  {
-    name: 'titre',
-    required: true,
-    label: 'Titre',
-    align: 'left',
-    field: 'titre',
-    sortable: true
-  },
-  {
-    name: 'texte',
-    label: 'Texte',
-    align: 'left',
-    field: 'texte',
-    sortable: false
+    field: 'date_envoie',
+    sortable: true,
+    format: (val) => formatDate(val)
   },
   {
     name: 'direction_envoi',
@@ -551,32 +514,10 @@ const columns = [
     sortable: true
   },
   {
-    name: 'sender_id',
-    label: 'Expéditeur ID',
-    align: 'left',
-    field: 'sender_id',
-    sortable: true
-  },
-  {
-    name: 'date_envoie',
-    label: 'Date Envoi',
-    align: 'left',
-    field: 'date_envoie',
-    sortable: true,
-    format: (val) => formatDate(val)
-  },
-  {
     name: 'destinataires',
     label: 'Destinataires',
     align: 'center',
     field: 'destinataires',
-    sortable: false
-  },
-  {
-    name: 'fichiers',
-    label: 'Fichiers',
-    align: 'center',
-    field: 'fichiers',
     sortable: false
   },
   {
