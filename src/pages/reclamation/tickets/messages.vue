@@ -82,25 +82,40 @@
         flat
         bordered
       >
-        <!-- Slot pour le statut -->
-        <template v-slot:body-cell-status="props">
-          <q-td :props="props">
-            <q-chip
-              :color="props.value ? 'green' : 'orange'"
-              :text-color="props.value ? 'white' : 'black'"
-              size="sm"
-            >
-              {{ props.value ? 'Lu' : 'Non lu' }}
-            </q-chip>
-          </q-td>
-        </template>
-
-        <!-- Slot pour le contenu tronqué -->
-        <template v-slot:body-cell-content="props">
+        <!-- Slot pour le texte tronqué -->
+        <template v-slot:body-cell-texte="props">
           <q-td :props="props">
             <div class="message-preview">
               {{ truncateText(props.value, 100) }}
             </div>
+          </q-td>
+        </template>
+
+        <!-- Slot pour les destinataires -->
+        <template v-slot:body-cell-destinataires="props">
+          <q-td :props="props">
+            <div v-if="props.value && props.value.length > 0">
+              <q-chip
+                v-for="destinataire in props.value.slice(0, 2)"
+                :key="destinataire.id"
+                size="sm"
+                color="blue"
+                text-color="white"
+                class="q-ma-xs"
+              >
+                {{ destinataire.direction_destinataire }}
+              </q-chip>
+              <q-chip
+                v-if="props.value.length > 2"
+                size="sm"
+                color="grey"
+                text-color="white"
+                class="q-ma-xs"
+              >
+                +{{ props.value.length - 2 }}
+              </q-chip>
+            </div>
+            <span v-else class="text-grey-5">-</span>
           </q-td>
         </template>
 
@@ -131,8 +146,8 @@
           </q-td>
         </template>
 
-        <!-- Slot pour les pièces jointes -->
-        <template v-slot:body-cell-attachments="props">
+        <!-- Slot pour les fichiers -->
+        <template v-slot:body-cell-fichiers="props">
           <q-td :props="props">
             <q-icon
               v-if="props.value && props.value.length > 0"
@@ -140,7 +155,7 @@
               color="primary"
               size="sm"
             >
-              <q-tooltip>{{ props.value.length }} pièce(s) jointe(s)</q-tooltip>
+              <q-tooltip>{{ props.value.length }} fichier(s)</q-tooltip>
             </q-icon>
             <span v-else class="text-grey-5">-</span>
           </q-td>
@@ -353,34 +368,34 @@
     <q-dialog v-model="showMessageDetail" persistent>
       <q-card style="min-width: 700px" v-if="selectedMessage">
         <q-card-section>
-          <div class="text-h6">{{ selectedMessage.subject }}</div>
+          <div class="text-h6">{{ selectedMessage.titre }}</div>
           <div class="text-body2 text-grey-6 q-mt-sm">
             <q-icon name="person" size="xs" class="q-mr-xs" />
-            {{ selectedMessage.sender }}
+            Direction: {{ selectedMessage.direction_envoi }}
             <span class="q-mx-sm">•</span>
             <q-icon name="schedule" size="xs" class="q-mr-xs" />
-            {{ formatDate(selectedMessage.date) }}
+            {{ formatDate(selectedMessage.date_envoie) }}
           </div>
         </q-card-section>
 
         <q-card-section class="q-pt-none">
           <div class="message-content">
-            {{ selectedMessage.content }}
+            {{ selectedMessage.texte }}
           </div>
 
-          <div v-if="selectedMessage.attachments && selectedMessage.attachments.length" class="q-mt-md">
-            <div class="text-subtitle2 q-mb-sm">Pièces jointes :</div>
+          <div v-if="selectedMessage.fichiers && selectedMessage.fichiers.length" class="q-mt-md">
+            <div class="text-subtitle2 q-mb-sm">Fichiers :</div>
             <q-list>
-              <q-item v-for="attachment in selectedMessage.attachments" :key="attachment.id">
+              <q-item v-for="fichier in selectedMessage.fichiers" :key="fichier.id">
                 <q-item-section avatar>
                   <q-icon name="attach_file" />
                 </q-item-section>
                 <q-item-section>
-                  <q-item-label>{{ attachment.name }}</q-item-label>
-                  <q-item-label caption>{{ attachment.size }}</q-item-label>
+                  <q-item-label>{{ fichier.nom_fichier }}</q-item-label>
+                  <q-item-label caption>{{ fichier.taille_fichier }}</q-item-label>
                 </q-item-section>
                 <q-item-section side>
-                  <q-btn flat round icon="download" @click="downloadAttachment(attachment)" />
+                  <q-btn flat round icon="download" @click="downloadFichier(fichier)" />
                 </q-item-section>
               </q-item>
             </q-list>
@@ -439,47 +454,61 @@ const statusOptions = [
 // Configuration du tableau
 const columns = [
   {
-    name: 'subject',
+    name: 'id',
+    label: 'ID',
+    align: 'left',
+    field: 'id',
+    sortable: true
+  },
+  {
+    name: 'titre',
     required: true,
-    label: 'Sujet',
+    label: 'Titre',
     align: 'left',
-    field: 'subject',
+    field: 'titre',
     sortable: true
   },
   {
-    name: 'sender',
-    label: 'Expéditeur',
+    name: 'texte',
+    label: 'Texte',
     align: 'left',
-    field: 'sender',
-    sortable: true
-  },
-  {
-    name: 'content',
-    label: 'Contenu',
-    align: 'left',
-    field: 'content',
+    field: 'texte',
     sortable: false
   },
   {
-    name: 'date',
-    label: 'Date',
+    name: 'direction_envoi',
+    label: 'Direction Envoi',
     align: 'left',
-    field: 'date',
+    field: 'direction_envoi',
+    sortable: true
+  },
+  {
+    name: 'sender_id',
+    label: 'Expéditeur ID',
+    align: 'left',
+    field: 'sender_id',
+    sortable: true
+  },
+  {
+    name: 'date_envoie',
+    label: 'Date Envoi',
+    align: 'left',
+    field: 'date_envoie',
     sortable: true,
     format: (val) => formatDate(val)
   },
   {
-    name: 'status',
-    label: 'Statut',
+    name: 'destinataires',
+    label: 'Destinataires',
     align: 'center',
-    field: 'isRead',
-    sortable: true
+    field: 'destinataires',
+    sortable: false
   },
   {
-    name: 'attachments',
-    label: 'Pièces jointes',
+    name: 'fichiers',
+    label: 'Fichiers',
     align: 'center',
-    field: 'attachments',
+    field: 'fichiers',
     sortable: false
   },
   {
@@ -509,14 +538,15 @@ const filteredMessages = computed(() => {
   if (searchQuery.value) {
     const query = searchQuery.value.toLowerCase()
     filtered = filtered.filter(message =>
-      message.subject.toLowerCase().includes(query) ||
-      message.content.toLowerCase().includes(query) ||
-      message.sender.toLowerCase().includes(query)
+      (message.titre && message.titre.toLowerCase().includes(query)) ||
+      (message.texte && message.texte.toLowerCase().includes(query)) ||
+      (message.direction_envoi && message.direction_envoi.toLowerCase().includes(query))
     )
   }
 
   if (statusFilter.value !== null) {
-    filtered = filtered.filter(message => message.isRead === statusFilter.value)
+    // Note: Le backend n'a pas de champ isRead, cette logique devra être adaptée selon les besoins
+    // filtered = filtered.filter(message => message.isRead === statusFilter.value)
   }
 
   return filtered
@@ -532,12 +562,12 @@ const goBack = () => {
 
 const onRequest = (props) => {
   const { page, rowsPerPage, sortBy, descending } = props.pagination
-  
+
   pagination.value.page = page
   pagination.value.rowsPerPage = rowsPerPage
   pagination.value.sortBy = sortBy
   pagination.value.descending = descending
-  
+
   loadMessages()
 }
 
@@ -550,6 +580,7 @@ const loadMessages = async () => {
 
     if (response.data.success) {
       messages.value = response.data.data || []
+       console.log('Messages chargés:', messages.value);
       // Mettre à jour le nombre total de lignes pour la pagination
       pagination.value.rowsNumber = messages.value.length
     } else {
@@ -692,9 +723,9 @@ const replyToMessage = (message = null) => {
   }
 }
 
-const downloadAttachment = (attachment) => {
+const downloadFichier = (fichier) => {
   // Logique de téléchargement
-  console.log('Téléchargement de:', attachment.name)
+  console.log('Téléchargement de:', fichier.nom_fichier)
 }
 
 // Méthodes pour l'upload de fichiers
