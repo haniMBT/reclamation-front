@@ -1,87 +1,108 @@
 <template>
-  <div class="q-pa-md">
-    <!-- En-tête -->
-    <div class="row items-center justify-between q-mb-md">
-      <div>
-        <h5 class="text-h5 q-my-none">Messages du Ticket</h5>
-        <p class="text-grey-6 q-mb-none" v-if="currentTicketId">
-          Ticket ID: {{ currentTicketId }}
-        </p>
-        <p class="text-red q-mb-none" v-else>
-          Aucun ticket sélectionné
-        </p>
-      </div>
-      <div class="q-gutter-sm">
-        <q-btn
-          color="grey-6"
-          icon="arrow_back"
-          label="Retour"
-          @click="goBack"
-        />
-        <q-btn
-          color="primary"
-          icon="add"
-          label="Nouveau Message"
-          @click="showNewMessageDialog = true"
-          :disable="!currentTicketId"
-        />
-      </div>
-    </div>
-
-    <!-- Alerte si aucun ticket sélectionné -->
-    <q-banner v-if="!currentTicketId" class="bg-red-1 text-red q-mb-md">
-      <template v-slot:avatar>
-        <q-icon name="warning" color="red" />
-      </template>
-      Aucun ticket sélectionné. Veuillez retourner à la liste des tickets et sélectionner un ticket.
-      <template v-slot:action>
-        <q-btn flat color="red" label="Retour aux tickets" @click="goBack" />
-      </template>
-    </q-banner>
-
-    <!-- Liste des messages -->
-    <div v-if="currentTicketId">
-      <!-- Filtres -->
-      <q-card flat bordered class="q-mb-md">
-        <q-card-section>
-          <div class="row q-gutter-md">
-            <q-input
-              v-model="searchQuery"
-              outlined
-              dense
-              placeholder="Rechercher dans les messages..."
-              class="col-md-4 col-sm-6 col-xs-12"
-            >
-              <template v-slot:prepend>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-
-            <q-select
-              v-model="statusFilter"
-              :options="statusOptions"
-              outlined
-              dense
-              label="Statut"
-              clearable
-              class="col-md-3 col-sm-6 col-xs-12"
-            />
+  <div class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Header Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center mb-4">
+          <q-icon name="message" size="2rem" class="text-blue-600 mr-3" />
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-1">Messages du Ticket</h1>
+            <p class="text-gray-600 text-sm" v-if="currentTicketId">
+              Ticket ID: {{ currentTicketId }}
+            </p>
+            <p class="text-red-600 text-sm" v-else>
+              Aucun ticket sélectionné
+            </p>
           </div>
-        </q-card-section>
-      </q-card>
+        </div>
+      </div>
 
-      <!-- Tableau des Messages -->
-      <q-table
-        :rows="filteredMessages"
-        :columns="columns"
-        row-key="id"
-        :loading="loading"
-        :pagination="pagination"
-        @request="onRequest"
-        class="messages-table"
-        flat
-        bordered
-      >
+      <!-- Alerte si aucun ticket sélectionné -->
+      <div v-if="!currentTicketId" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+        <div class="flex items-center">
+          <q-icon name="warning" class="text-red-600 mr-3" size="1.5rem" />
+          <div>
+            <p class="text-red-800 font-medium">Aucun ticket sélectionné</p>
+            <p class="text-red-600 text-sm">Veuillez retourner à la liste des tickets et sélectionner un ticket.</p>
+          </div>
+          <q-btn 
+            flat 
+            color="red" 
+            label="Retour aux tickets" 
+            @click="goBack" 
+            class="ml-auto"
+          />
+        </div>
+      </div>
+
+      <!-- Liste des messages -->
+      <div v-if="currentTicketId">
+        <!-- Toolbar Section -->
+        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex flex-col sm:flex-row gap-3">
+              <q-btn
+                icon="arrow_back"
+                color="grey-6"
+                no-caps
+                @click="goBack"
+                class="px-6"
+              >
+                Retour
+              </q-btn>
+              <q-btn
+                icon="add"
+                color="blue-6"
+                no-caps
+                @click="showNewMessageDialog = true"
+                :disable="!currentTicketId"
+                class="px-6"
+              >
+                Nouveau Message
+              </q-btn>
+              <q-input
+                outlined
+                dense
+                v-model="searchQuery"
+                label="Rechercher un message"
+                class="min-w-[300px]"
+              >
+                <template #prepend>
+                  <q-icon name="search" class="text-blue-600" />
+                </template>
+                <template #append>
+                  <q-icon
+                    name="close"
+                    @click="searchQuery = ''"
+                    class="cursor-pointer text-gray-500 hover:text-gray-700"
+                  />
+                </template>
+              </q-input>
+              <q-select
+                v-model="statusFilter"
+                :options="statusOptions"
+                outlined
+                dense
+                label="Statut"
+                clearable
+                class="min-w-[200px]"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="bg-white rounded-lg shadow-sm p-6">
+          <q-table
+            :rows="filteredMessages"
+            :columns="columns"
+            row-key="id"
+            :loading="loading"
+            :pagination="pagination"
+            @request="onRequest"
+            class="messages-table"
+            flat
+          >
         <!-- Slot pour le texte tronqué -->
         <template v-slot:body-cell-texte="props">
           <q-td :props="props">
@@ -169,9 +190,7 @@
           </div>
         </template>
       </q-table>
-
-
-    </div>
+        </div>
 
     <!-- Dialog Nouveau Message -->
     <q-dialog v-model="showNewMessageDialog" persistent>
@@ -408,6 +427,8 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+      </div>
+    </div>
   </div>
 </template>
 
