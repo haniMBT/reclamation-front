@@ -379,10 +379,10 @@
                       <q-item-label caption class="text-gray-500">{{ fichier.taille_fichier }}</q-item-label>
                     </q-item-section>
                     <q-item-section side>
-                      <q-btn 
-                        flat 
-                        round 
-                        icon="download" 
+                      <q-btn
+                        flat
+                        round
+                        icon="download"
                         color="green-6"
                         @click="downloadFichier(fichier)"
                         class="hover:bg-green-50"
@@ -672,9 +672,10 @@ const closeNewMessageDialog = () => {
 
 const replyToMessage = (message = null) => {
   const messageToReply = message || selectedMessage.value
+  newMessage.value.directions = [selectedMessage.value.direction_envoi]
   if (messageToReply) {
     closeMessageDetail()
-    newMessage.value.subject = `Re: ${messageToReply.subject}`
+    // newMessage.value.subject = `Re: ${messageToReply.subject}`
     showNewMessageDialog.value = true
   }
 }
@@ -699,13 +700,13 @@ const deleteMessage = async (message) => {
     try {
       loading.value = true
       const response = await api.delete(`/api/rec/tickets/${currentTicketId.value}/messages/${message.id}`)
-      
+
       if (response.data.success) {
         $q.notify({
           type: 'positive',
           message: 'Message supprimé avec succès'
         })
-        
+
         // Recharger les messages
         await loadMessages()
       } else {
