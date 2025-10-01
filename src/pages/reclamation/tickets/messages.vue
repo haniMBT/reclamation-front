@@ -155,6 +155,17 @@
             >
               <q-tooltip>Répondre</q-tooltip>
             </q-btn>
+            <q-btn
+              flat
+              round
+              color="red"
+              icon="delete"
+              size="sm"
+              @click="deleteMessage(props.row)"
+              class="q-ml-xs"
+            >
+              <q-tooltip>Supprimer</q-tooltip>
+            </q-btn>
           </q-td>
         </template>
 
@@ -730,6 +741,53 @@ const replyToMessage = (message = null) => {
     newMessage.value.subject = `Re: ${messageToReply.subject}`
     showNewMessageDialog.value = true
   }
+}
+
+const deleteMessage = async (message) => {
+  $q.dialog({
+    title: 'Confirmer la suppression',
+    message: `Êtes-vous sûr de vouloir supprimer ce message ?`,
+    cancel: true,
+    persistent: true,
+    ok: {
+      label: 'Supprimer',
+      color: 'negative',
+      unelevated: true
+    },
+    cancel: {
+      label: 'Annuler',
+      color: 'grey',
+      outline: true
+    }
+  }).onOk(async () => {
+    try {
+      loading.value = true
+      const response = await api.delete(`/api/rec/tickets/${currentTicketId.value}/messages/${message.id}`)
+      
+      if (response.data.success) {
+        $q.notify({
+          type: 'positive',
+          message: 'Message supprimé avec succès'
+        })
+        
+        // Recharger les messages
+        await loadMessages()
+      } else {
+        $q.notify({
+          type: 'negative',
+          message: response.data.message || 'Erreur lors de la suppression'
+        })
+      }
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error)
+      $q.notify({
+        type: 'negative',
+        message: error.response?.data?.message || 'Erreur lors de la suppression du message'
+      })
+    } finally {
+      loading.value = false
+    }
+  })
 }
 
 const downloadFichier = (fichier) => {
