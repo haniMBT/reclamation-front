@@ -335,14 +335,26 @@
       <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;" v-if="selectedMessage">
         <q-card-section class="flex items-center bg-green-50">
           <q-icon name="visibility" class="text-green-600 mr-3" size="2rem" />
-          <div>
+          <div class="flex-1">
             <div class="text-xl font-semibold text-green-900">{{ selectedMessage.titre }}</div>
-            <div class="text-sm text-green-700">
-              <q-icon name="person" size="xs" class="q-mr-xs" />
-              Direction: {{ selectedMessage.direction_envoi }}
-              <span class="q-mx-sm">•</span>
-              <q-icon name="schedule" size="xs" class="q-mr-xs" />
-              {{ formatDate(selectedMessage.date_envoie) }}
+            <div class="text-sm text-green-700 space-y-1">
+              <div>
+                <q-icon name="person" size="xs" class="q-mr-xs" />
+                Direction d'envoi: {{ selectedMessage.direction_envoi }}
+                <span class="q-mx-sm">•</span>
+                <q-icon name="schedule" size="xs" class="q-mr-xs" />
+                {{ formatDate(selectedMessage.date_envoie) }}
+              </div>
+              <div v-if="selectedMessage.destinataires && selectedMessage.destinataires.length">
+                 <q-icon name="send" size="xs" class="q-mr-xs" />
+                 Destinataires:
+                 <span v-for="(destinataire, index) in selectedMessage.destinataires.slice(0, 2)" :key="destinataire.id || destinataire.direction">
+                   {{ destinataire.direction_destinataire }}<span v-if="index < Math.min(selectedMessage.destinataires.length, 2) - 1">, </span>
+                 </span>
+                 <span v-if="selectedMessage.destinataires.length > 2" class="text-green-600 font-medium">
+                   +{{ selectedMessage.destinataires.length - 2 }}
+                 </span>
+               </div>
             </div>
           </div>
         </q-card-section>
@@ -361,6 +373,29 @@
                  </div>
                </div>
             </div>
+
+            <!-- Destinataires/Directions -->
+            <!-- <div v-if="selectedMessage.destinataires && selectedMessage.destinataires.length" class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">
+                <q-icon name="send" class="text-green-600 mr-1" />
+                Destinataires ({{ selectedMessage.destinataires.length }})
+              </label>
+              <div class="bg-gray-50 p-4 rounded-lg border">
+                <div class="flex flex-wrap gap-2">
+                  <q-chip
+                    v-for="destinataire in selectedMessage.destinataires"
+                    :key="destinataire.id || destinataire.direction"
+                    size="md"
+                    color="blue"
+                    text-color="white"
+                    icon="business"
+                    class="q-ma-xs"
+                  >
+                    {{ destinataire.direction_destinataire }}
+                  </q-chip>
+                </div>
+              </div>
+            </div> -->
 
             <!-- Fichiers joints -->
             <div v-if="selectedMessage.fichiers && selectedMessage.fichiers.length" class="space-y-2">
