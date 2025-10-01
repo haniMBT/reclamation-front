@@ -39,62 +39,33 @@
       <div v-if="currentTicketId">
         <!-- Toolbar Section -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div class="flex flex-col sm:flex-row gap-3">
-              <q-btn
-                icon="arrow_back"
-                color="grey-6"
-                no-caps
-                @click="goBack"
-                class="px-6"
-              >
-                Retour
-              </q-btn>
-              <q-btn
-                icon="add"
-                color="blue-6"
-                no-caps
-                @click="showNewMessageDialog = true"
-                :disable="!currentTicketId"
-                class="px-6"
-              >
-                Nouveau Message
-              </q-btn>
-              <q-input
-                outlined
-                dense
-                v-model="searchQuery"
-                label="Rechercher un message"
-                class="min-w-[300px]"
-              >
-                <template #prepend>
-                  <q-icon name="search" class="text-blue-600" />
-                </template>
-                <template #append>
-                  <q-icon
-                    name="close"
-                    @click="searchQuery = ''"
-                    class="cursor-pointer text-gray-500 hover:text-gray-700"
-                  />
-                </template>
-              </q-input>
-              <q-select
-                v-model="statusFilter"
-                :options="statusOptions"
-                outlined
-                dense
-                label="Statut"
-                clearable
-                class="min-w-[200px]"
-              />
-            </div>
+          <div class="flex justify-end gap-3">
+            <q-btn
+              icon="arrow_back"
+              color="grey-6"
+              no-caps
+              @click="goBack"
+              class="px-6"
+            >
+              Retour
+            </q-btn>
+            <q-btn
+              icon="add"
+              color="blue-6"
+              no-caps
+              @click="showNewMessageDialog = true"
+              :disable="!currentTicketId"
+              class="px-6"
+            >
+              Nouveau Message
+            </q-btn>
           </div>
         </div>
 
         <!-- Table Section -->
         <div class="bg-white rounded-lg shadow-sm p-6">
           <q-table
-            :rows="filteredMessages"
+            :rows="messages"
             :columns="columns"
             row-key="id"
             :loading="loading"
@@ -481,8 +452,6 @@ const ticketStore = useTicketStore()
 // État réactif
 const loading = ref(false)
 const messages = ref([])
-const searchQuery = ref('')
-const statusFilter = ref(null)
 const showNewMessageDialog = ref(false)
 const showMessageDetail = ref(false)
 const selectedMessage = ref(null)
@@ -501,11 +470,7 @@ const newFiles = ref(null)
 const loadingDirections = ref(false)
 const directionOptions = ref([])
 
-// Options
-const statusOptions = [
-  { label: 'Lu', value: true },
-  { label: 'Non lu', value: false }
-]
+
 
 // Configuration du tableau
 const columns = [
@@ -552,25 +517,7 @@ const pagination = ref({
 // Computed
 const currentTicketId = computed(() => ticketStore.t_rec_ticket_id)
 
-const filteredMessages = computed(() => {
-  let filtered = messages.value
 
-  if (searchQuery.value) {
-    const query = searchQuery.value.toLowerCase()
-    filtered = filtered.filter(message =>
-      (message.titre && message.titre.toLowerCase().includes(query)) ||
-      (message.texte && message.texte.toLowerCase().includes(query)) ||
-      (message.direction_envoi && message.direction_envoi.toLowerCase().includes(query))
-    )
-  }
-
-  if (statusFilter.value !== null) {
-    // Note: Le backend n'a pas de champ isRead, cette logique devra être adaptée selon les besoins
-    // filtered = filtered.filter(message => message.isRead === statusFilter.value)
-  }
-
-  return filtered
-})
 
 
 
