@@ -789,6 +789,7 @@ const newMessage = ref({
 const newFiles = ref(null)
 const loadingDirections = ref(false)
 const directionOptions = ref([])
+const directionsNonConcerneOptions = ref([])
 
 
 
@@ -1198,6 +1199,13 @@ const formatFileSize = (bytes) => {
          value: direction.value,
          id: direction.id
        }))
+
+       directionsNonConcerneOptions.value = response.data.directionsNonConcerne.map(direction => ({
+         label: direction.label,
+         value: direction.value,
+         id: direction.id
+       }))
+
      } else {
        throw new Error(response.data.message || 'Erreur lors du chargement des directions')
      }
