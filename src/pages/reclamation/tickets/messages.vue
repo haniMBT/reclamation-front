@@ -37,9 +37,21 @@
 
       <!-- Section des directions du ticket -->
       <div v-if="currentTicketId && directionOptions.length > 0" class="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <div class="flex items-center mb-4">
-          <q-icon name="account_tree" size="1.5rem" class="text-green-600 mr-3" />
-          <h2 class="text-lg font-semibold text-gray-800">Directions associées à ce ticket</h2>
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center">
+            <q-icon name="account_tree" size="1.5rem" class="text-green-600 mr-3" />
+            <h2 class="text-lg font-semibold text-gray-800">Directions associées à ce ticket</h2>
+          </div>
+          <q-btn
+            icon="add"
+            color="green"
+            size="sm"
+            round
+            @click="showAddDirectionDialog = true"
+            class="ml-4"
+          >
+            <q-tooltip>Ajouter d'autres directions</q-tooltip>
+          </q-btn>
         </div>
         <div class="flex flex-wrap gap-2">
           <q-chip
@@ -749,6 +761,47 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialog pour ajouter d'autres directions -->
+    <q-dialog v-model="showAddDirectionDialog" persistent>
+      <q-card class="w-96">
+        <q-card-section class="bg-green-600 text-white">
+          <div class="text-h6">Ajouter d'autres directions</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-md">
+          <q-select
+            v-model="selectedAdditionalDirections"
+            :options="directionsNonConcerneOptions"
+            label="Sélectionner les directions"
+            multiple
+            use-chips
+            stack-label
+            option-value="value"
+            option-label="label"
+            emit-value
+            map-options
+            class="q-mb-md"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn
+            label="Annuler"
+            color="grey-7"
+            flat
+            v-close-popup
+            @click="selectedAdditionalDirections = []"
+          />
+          <q-btn
+            label="Ajouter"
+            color="green"
+            unelevated
+            @click="addAdditionalDirections"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
       </div>
     </div>
   </div>
@@ -790,6 +843,8 @@ const newFiles = ref(null)
 const loadingDirections = ref(false)
 const directionOptions = ref([])
 const directionsNonConcerneOptions = ref([])
+const showAddDirectionDialog = ref(false)
+const selectedAdditionalDirections = ref([])
 
 
 
@@ -1294,6 +1349,52 @@ const downloadTicketFile = async (file) => {
    return 'description'
  }
 
+ // Fonction pour ajouter des directions supplémentaires
+ const addAdditionalDirections = () => {
+   if (selectedAdditionalDirections.value.length > 0) {
+     // Ajouter les nouvelles directions à la liste existante
+     const newDirections = directionsNonConcerneOptions.value
+       .filter(option => selectedAdditionalDirections.value.includes(option.value))
+       .map(option => ({
+         id: `additional_${Date.now()}_${Math.random()}`,
+         label: option.label,
+         value: option.value
+       }))
+     
+     directionOptions.value = [...directionOptions.value, ...newDirections]
+     
+     $q.notify({
+       type: 'positive',
+       message: `${newDirections.length} direction(s) ajoutée(s) avec succès`,
+       position: 'top'
+     })
+   }
+   
+   // Réinitialiser et fermer le dialog
+   selectedAdditionalDirections.value = []
+   showAddDirectionDialog.value = false
+ }
+
+ // Initialiser les options de directions non concernées
+ onMounted(() => {
+   // Données d'exemple pour directionsNonConcerneOptions
+   directionsNonConcerneOptions.value = [
+     { label: 'Direction Technique', value: 'technique' },
+     { label: 'Direction Commerciale', value: 'commerciale' },
+     { label: 'Direction Financière', value: 'financiere' },
+     { label: 'Direction Ressources Humaines', value: 'rh' },
+     { label: 'Direction Marketing', value: 'marketing' },
+     { label: 'Direction Qualité', value: 'qualite' },
+     { label: 'Direction Logistique', value: 'logistique' },
+     { label: 'Direction Juridique', value: 'juridique' }
+   ]
+   
+   if (currentTicketId.value) {
+     loadMessages()
+   }
+   loadDirections()
+ })
+
  const formatFileSizeVoir = (bytes) => {
    if (!bytes) return '0 B'
 
@@ -1311,13 +1412,7 @@ watch(currentTicketId, (newId) => {
   }
 })
 
-// Lifecycle
-onMounted(() => {
-  if (currentTicketId.value) {
-    loadMessages()
-  }
-  loadDirections()
-})
+// Lifecycle hook déjà défini plus haut avec l'initialisation des directions
 </script>
 
 <style scoped>
