@@ -1166,7 +1166,7 @@ const formatFileSize = (bytes) => {
  const loadDirections = async () => {
    loadingDirections.value = true
    try {
-     const response = await api.get('/api/rec/directions')
+     const response = await api.get(`/api/rec/directions_ticket/${currentTicketId.value}`)
 
      if (response.data.success) {
        directionOptions.value = response.data.data.map(direction => ({
