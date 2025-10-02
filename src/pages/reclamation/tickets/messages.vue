@@ -870,6 +870,7 @@ const sendMessage = async () => {
       // Réinitialiser le formulaire
        newMessage.value = {
          title: '',
+         content: '',
          description: '',
          directions: [],
          attachments: []
@@ -908,6 +909,7 @@ const closeNewMessageDialog = () => {
 const replyToMessage = (message = null) => {
   const messageToReply = message || selectedMessage.value
   newMessage.value.directions = [selectedMessage.value.direction_envoi]
+  newMessage.value.content = null
   if (messageToReply) {
     closeMessageDetail()
     // newMessage.value.subject = `Re: ${messageToReply.subject}`
