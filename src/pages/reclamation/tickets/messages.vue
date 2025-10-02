@@ -50,6 +50,16 @@
               Retour
             </q-btn>
             <q-btn
+              icon="visibility"
+              color="orange-6"
+              no-caps
+              @click="showTicketDetailDialog = true"
+              :disable="!currentTicketId"
+              class="px-6"
+            >
+              Voir Réclamation
+            </q-btn>
+            <q-btn
               icon="add"
               color="blue-6"
               no-caps
@@ -457,6 +467,45 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialog Voir Réclamation -->
+    <q-dialog v-model="showTicketDetailDialog" persistent>
+      <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-orange-50">
+          <q-icon name="visibility" class="text-orange-600 mr-3" size="2rem" />
+          <div class="flex-1">
+            <div class="text-xl font-semibold text-orange-900">Détails de la Réclamation</div>
+            <div class="text-sm text-orange-700">Consultation des informations complètes du ticket</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div class="flex items-center justify-center py-12">
+            <div class="text-center">
+              <q-icon name="info" size="4rem" class="text-orange-300 mb-4" />
+              <h3 class="text-lg font-medium text-gray-700 mb-2">Contenu à venir</h3>
+              <p class="text-gray-500">Les détails de la réclamation seront affichés ici.</p>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions align="right" class="bg-gray-50 px-6 py-4">
+          <q-btn
+            @click="showTicketDetailDialog = false"
+            color="grey-6"
+            outline
+            no-caps
+            class="px-6"
+          >
+            Fermer
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
       </div>
     </div>
   </div>
@@ -480,6 +529,7 @@ const showNewMessageDialog = ref(false)
 const showMessageDetail = ref(false)
 const selectedMessage = ref(null)
 const sending = ref(false)
+const showTicketDetailDialog = ref(false)
 
 // Nouveau message
 const newMessage = ref({
