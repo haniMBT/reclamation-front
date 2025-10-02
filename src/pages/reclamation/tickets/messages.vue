@@ -468,87 +468,157 @@
       </q-card>
     </q-dialog>
 
-    <!-- Dialog Voir Réclamation -->
-    <q-dialog v-model="showTicketDetailDialog" persistent>
-      <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
-        <q-card-section class="flex items-center bg-orange-50">
-          <q-icon name="visibility" class="text-orange-600 mr-3" size="2rem" />
-          <div class="flex-1">
-            <div class="text-xl font-semibold text-orange-900">Détails de la Réclamation #{{ currentTicketId }}</div>
-            <div class="text-sm text-orange-700">Consultation des informations complètes du ticket</div>
+    <!-- Modal Voir Réclamation - Design Moderne -->
+    <q-dialog v-model="showTicketDetailDialog" maximized transition-show="slide-up" transition-hide="slide-down">
+      <q-card class="bg-gradient-to-br from-gray-50 to-gray-100">
+        <!-- En-tête moderne avec gradient -->
+        <q-card-section class="bg-gradient-to-r from-orange-500 to-orange-600 text-white relative overflow-hidden">
+          <div class="absolute inset-0 bg-black opacity-10"></div>
+          <div class="relative z-10 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+              <div class="bg-white bg-opacity-20 p-3 rounded-full">
+                <q-icon name="visibility" size="2rem" class="text-white" />
+              </div>
+              <div>
+                <h2 class="text-2xl font-bold mb-1">Détails de la Réclamation</h2>
+                <div class="flex items-center space-x-4 text-orange-100">
+                  <span class="flex items-center">
+                    <q-icon name="tag" class="mr-1" size="sm" />
+                    Ticket #{{ currentTicketId }}
+                  </span>
+                  <span v-if="ticketDetails?.created_at" class="flex items-center">
+                    <q-icon name="schedule" class="mr-1" size="sm" />
+                    {{ new Date(ticketDetails.created_at).toLocaleDateString('fr-FR') }}
+                  </span>
+                  <span v-if="ticketDetails?.statut" class="flex items-center">
+                    <q-icon name="info" class="mr-1" size="sm" />
+                    {{ ticketDetails.statut }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <q-btn
+              icon="close"
+              flat
+              round
+              size="lg"
+              class="text-white hover:bg-white hover:bg-opacity-20 transition-colors"
+              v-close-popup
+            />
           </div>
         </q-card-section>
 
-        <q-separator />
-
-        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
-          <!-- Loading State -->
-          <div v-if="ticketDetailsLoading" class="text-center py-8">
-            <q-spinner-dots size="50px" color="orange-6" />
-            <p class="text-gray-600 mt-4">Chargement des détails...</p>
+        <!-- Contenu principal avec scroll -->
+        <q-card-section class="flex-1 overflow-auto p-0">
+          <!-- États de chargement et d'erreur -->
+          <div v-if="ticketDetailsLoading" class="flex flex-col items-center justify-center py-20">
+            <div class="bg-white rounded-full p-6 shadow-lg mb-6">
+              <q-spinner-dots size="60px" color="orange-6" />
+            </div>
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Chargement en cours...</h3>
+            <p class="text-gray-500">Récupération des détails de la réclamation</p>
           </div>
 
-          <!-- Error State -->
-          <div v-else-if="ticketDetailsError" class="text-center py-8">
-            <q-icon name="error" size="3rem" class="text-red-500 mb-4" />
-            <p class="text-lg font-medium mb-2 text-red-600">Erreur de chargement</p>
-            <p class="text-sm text-gray-600">{{ ticketDetailsError }}</p>
+          <div v-else-if="ticketDetailsError" class="flex flex-col items-center justify-center py-20">
+            <div class="bg-red-50 rounded-full p-6 mb-6">
+              <q-icon name="error_outline" size="4rem" class="text-red-500" />
+            </div>
+            <h3 class="text-xl font-semibold text-red-600 mb-2">Erreur de chargement</h3>
+            <p class="text-gray-600 mb-6 text-center max-w-md">{{ ticketDetailsError }}</p>
             <q-btn
               label="Réessayer"
               color="orange-6"
-              outline
+              unelevated
               @click="loadTicketDetails"
-              class="mt-4"
+              class="px-8"
+              icon="refresh"
             />
           </div>
 
-          <!-- Ticket Details Content -->
-          <div v-else-if="ticketDetails" class="space-y-6">
-            <!-- Objet de la réclamation -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Objet de la réclamation
-              </label>
-              <div class="bg-gray-50 p-3 rounded-md border">
-                <div class="flex items-center">
-                  <q-icon name="subject" class="text-orange-600 mr-2" />
-                  <span class="text-gray-800">{{ ticketDetails.objet || 'Non spécifié' }}</span>
-                </div>
+          <!-- Contenu des détails -->
+          <div v-else-if="ticketDetails" class="p-6 space-y-6">
+            <!-- Résumé rapide en haut -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-orange-50 to-orange-100 px-6 py-4 border-b border-orange-200">
+                <h3 class="text-lg font-semibold text-orange-800 flex items-center">
+                  <q-icon name="subject" class="mr-2" />
+                  Objet de la réclamation
+                </h3>
+              </div>
+              <div class="p-6">
+                <p class="text-gray-800 text-lg leading-relaxed">
+                  {{ ticketDetails.objet || 'Non spécifié' }}
+                </p>
               </div>
             </div>
 
-            <!-- Types de réclamation -->
-            <div v-if="ticketDetails.types && ticketDetails.types.length > 0" class="bg-white rounded-lg shadow-sm p-6">
-              <label class="block text-sm font-medium text-gray-700 mb-4">
-                Type(s) de réclamation
-              </label>
-              <div class="space-y-4">
-                <div v-for="type in ticketDetails.types" :key="type.b_rec_type_id" class="border border-gray-200 rounded-lg p-4">
-                  <div class="flex items-start space-x-3">
-                    <q-icon name="check_circle" class="text-orange-600 mt-1" />
-                    <div class="flex-1">
-                      <div class="font-medium text-gray-800">{{ type.libelle }}</div>
-                      <div v-if="type.description" class="text-sm text-gray-600 mt-1">
-                        {{ type.description }}
+            <!-- Layout en grille pour les sections principales -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <!-- Types de réclamation -->
+              <div v-if="ticketDetails.types && ticketDetails.types.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-blue-200">
+                  <h3 class="text-lg font-semibold text-blue-800 flex items-center">
+                    <q-icon name="category" class="mr-2" />
+                    Types de réclamation
+                    <q-badge color="blue-6" class="ml-2">{{ ticketDetails.types.length }}</q-badge>
+                  </h3>
+                </div>
+                <div class="p-6 space-y-4">
+                  <div v-for="type in ticketDetails.types" :key="type.b_rec_type_id" class="bg-gradient-to-r from-blue-50 to-transparent border border-blue-200 rounded-lg p-4">
+                    <div class="flex items-start space-x-3">
+                      <div class="bg-blue-500 rounded-full p-1 mt-1">
+                        <q-icon name="check" class="text-white" size="sm" />
                       </div>
+                      <div class="flex-1">
+                        <h4 class="font-semibold text-gray-800 mb-1">{{ type.libelle }}</h4>
+                        <p v-if="type.description" class="text-sm text-gray-600 mb-3">{{ type.description }}</p>
 
-                      <!-- Détails sélectionnés -->
-                      <div v-if="type.details && type.details.length > 0" class="mt-3 ml-4">
-                        <div class="text-sm font-medium text-gray-600 mb-2">Détails sélectionnés :</div>
-                        <div class="space-y-1">
-                          <div v-for="detail in type.details" :key="detail.b_rec_detail_id" class="flex items-center space-x-2">
-                            <q-icon name="check" class="text-green-600" size="sm" />
-                            <span class="text-sm text-gray-700">{{ detail.libelle }}</span>
+                        <!-- Détails sélectionnés -->
+                        <div v-if="type.details && type.details.length > 0" class="mt-3">
+                          <p class="text-sm font-medium text-gray-700 mb-2">Détails sélectionnés :</p>
+                          <div class="flex flex-wrap gap-2">
+                            <q-chip
+                              v-for="detail in type.details"
+                              :key="detail.b_rec_detail_id"
+                              color="green-6"
+                              text-color="white"
+                              size="sm"
+                              icon="check_circle"
+                            >
+                              {{ detail.libelle }}
+                            </q-chip>
+                          </div>
+                        </div>
+
+                        <!-- Autre précision -->
+                        <div v-if="type.autre" class="mt-3">
+                          <p class="text-sm font-medium text-gray-700 mb-2">Précision supplémentaire :</p>
+                          <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+                            <p class="text-sm text-purple-800">{{ type.autre }}</p>
                           </div>
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
-                      <!-- Autre précision -->
-                      <div v-if="type.autre" class="mt-3 ml-4">
-                        <div class="text-sm font-medium text-gray-600 mb-2">Autre précision :</div>
-                        <div class="bg-purple-50 p-2 rounded text-sm text-gray-700">
-                          {{ type.autre }}
-                        </div>
+              <!-- Informations générales -->
+              <div v-if="ticketDetails.infos_generales && ticketDetails.infos_generales.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 px-6 py-4 border-b border-yellow-200">
+                  <h3 class="text-lg font-semibold text-yellow-800 flex items-center">
+                    <q-icon name="info" class="mr-2" />
+                    Informations générales
+                  </h3>
+                </div>
+                <div class="p-6">
+                  <div class="grid grid-cols-1 gap-4">
+                    <div v-for="info in ticketDetails.infos_generales" :key="info.info_general_id" class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <label class="block text-sm font-semibold text-gray-700 mb-2">
+                        {{ info.libelle }}
+                      </label>
+                      <div class="bg-white rounded-md p-3 border">
+                        <span class="text-gray-800">{{ info.value || 'Non renseigné' }}</span>
                       </div>
                     </div>
                   </div>
@@ -556,100 +626,102 @@
               </div>
             </div>
 
-            <!-- Description détaillée -->
-            <div class="bg-white rounded-lg shadow-sm p-6">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Description détaillée
-              </label>
-              <div class="bg-gray-50 p-4 rounded-md border min-h-[200px]">
-                <div v-if="ticketDetails.description" v-html="ticketDetails.description" class="prose max-w-none"></div>
-                <div v-else class="text-gray-500 italic">Aucune description fournie</div>
+            <!-- Description détaillée - Pleine largeur -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 px-6 py-4 border-b border-indigo-200">
+                <h3 class="text-lg font-semibold text-indigo-800 flex items-center">
+                  <q-icon name="description" class="mr-2" />
+                  Description détaillée
+                </h3>
               </div>
-            </div>
-
-            <!-- Informations générales -->
-            <div v-if="ticketDetails.infos_generales && ticketDetails.infos_generales.length > 0" class="bg-white rounded-lg shadow-sm p-6">
-              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <div class="flex items-center mb-4">
-                  <q-icon name="info" class="text-yellow-600 mr-3" size="1.5rem" />
-                  <h3 class="text-lg font-medium text-yellow-800">Informations générales</h3>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div v-for="info in ticketDetails.infos_generales" :key="info.info_general_id" class="space-y-2">
-                    <label class="block text-sm font-medium text-gray-700">
-                      {{ info.libelle }}
-                    </label>
-                    <div class="bg-white p-2 rounded border">
-                      <span class="text-gray-800">{{ info.value || 'Non renseigné' }}</span>
+              <div class="p-6">
+                <div class="bg-gray-50 rounded-lg p-6 border border-gray-200 min-h-[200px]">
+                  <div v-if="ticketDetails.description" v-html="ticketDetails.description" class="prose max-w-none text-gray-800"></div>
+                  <div v-else class="flex items-center justify-center h-32">
+                    <div class="text-center">
+                      <q-icon name="edit_note" size="2rem" class="text-gray-400 mb-2" />
+                      <p class="text-gray-500 italic">Aucune description fournie</p>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- Documents à fournir -->
-            <div v-if="ticketDetails.documentAFournir" class="bg-white rounded-lg shadow-sm p-6">
-              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="flex items-start">
-                  <q-icon name="description" class="text-blue-600 mr-3 mt-0.5" />
-                  <div class="text-sm text-blue-800">
-                    <p class="font-medium mb-2">Documents à fournir :</p>
-                    <div class="text-blue-700" v-html="ticketDetails.documentAFournir"></div>
+            <!-- Documents et fichiers -->
+            <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <!-- Documents à fournir -->
+              <div v-if="ticketDetails.documentAFournir" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-cyan-50 to-cyan-100 px-6 py-4 border-b border-cyan-200">
+                  <h3 class="text-lg font-semibold text-cyan-800 flex items-center">
+                    <q-icon name="assignment" class="mr-2" />
+                    Documents requis
+                  </h3>
+                </div>
+                <div class="p-6">
+                  <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+                    <div class="text-cyan-800" v-html="ticketDetails.documentAFournir"></div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Fichiers joints -->
-            <div v-if="ticketDetails.files && ticketDetails.files.length > 0" class="bg-white rounded-lg shadow-sm p-6">
-              <label class="block text-sm font-medium text-gray-700 mb-2">
-                Fichiers joints ({{ ticketDetails.files.length }})
-              </label>
-              <div class="space-y-2">
-                <div
-                  v-for="file in ticketDetails.files"
-                  :key="file.id"
-                  class="flex items-center justify-between bg-green-50 p-3 rounded-md border border-green-200"
-                >
-                  <div class="flex items-center">
-                    <q-icon
-                      :name="getFileIconVoir(file.type_fichier)"
-                      size="1.5rem"
-                      class="text-green-600 mr-3"
-                    />
-                    <div>
-                      <div class="text-sm font-medium text-gray-800">{{ file.nom_fichier }}</div>
-                      <div class="text-xs text-gray-500">{{ formatFileSizeVoir(file.taille_fichier) }}</div>
-                    </div>
-                  </div>
-                  <q-btn
-                    icon="download"
-                    size="sm"
-                    flat
-                    round
-                    color="primary"
-                    @click="downloadTicketFile(file)"
+              <!-- Fichiers joints -->
+              <div v-if="ticketDetails.files && ticketDetails.files.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-green-200">
+                  <h3 class="text-lg font-semibold text-green-800 flex items-center">
+                    <q-icon name="attach_file" class="mr-2" />
+                    Fichiers joints
+                    <q-badge color="green-6" class="ml-2">{{ ticketDetails.files.length }}</q-badge>
+                  </h3>
+                </div>
+                <div class="p-6 space-y-3">
+                  <div
+                    v-for="file in ticketDetails.files"
+                    :key="file.id"
+                    class="bg-gradient-to-r from-green-50 to-transparent border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                   >
-                    <q-tooltip>Télécharger</q-tooltip>
-                  </q-btn>
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center space-x-3">
+                        <div class="bg-green-500 rounded-lg p-2">
+                          <q-icon
+                            :name="getFileIconVoir(file.type_fichier)"
+                            size="1.5rem"
+                            class="text-white"
+                          />
+                        </div>
+                        <div>
+                          <p class="font-medium text-gray-800">{{ file.nom_fichier }}</p>
+                          <p class="text-sm text-gray-500">{{ formatFileSizeVoir(file.taille_fichier) }}</p>
+                        </div>
+                      </div>
+                      <q-btn
+                        icon="download"
+                        color="green-6"
+                        round
+                        unelevated
+                        @click="downloadTicketFile(file)"
+                        class="hover:scale-105 transition-transform"
+                      >
+                        <q-tooltip class="bg-green-6">Télécharger {{ file.nom_fichier }}</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </q-card-section>
 
-        <q-separator />
-
-        <q-card-actions align="right" class="bg-gray-50 px-6 py-4">
+        <!-- Pied de page moderne -->
+        <q-card-actions class="bg-white border-t border-gray-200 px-6 py-4">
+          <q-space />
           <q-btn
-            @click="showTicketDetailDialog = false"
-            color="grey-6"
-            outline
-            no-caps
-            class="px-6"
-          >
-            Fermer
-          </q-btn>
+            label="Fermer"
+            color="grey-7"
+            unelevated
+            v-close-popup
+            class="px-8"
+            icon="close"
+          />
         </q-card-actions>
       </q-card>
     </q-dialog>
