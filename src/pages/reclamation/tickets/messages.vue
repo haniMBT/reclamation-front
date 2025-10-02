@@ -35,6 +35,30 @@
         </div>
       </div>
 
+      <!-- Section des directions du ticket -->
+      <div v-if="currentTicketId && directionOptions.length > 0" class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center mb-4">
+          <q-icon name="account_tree" size="1.5rem" class="text-green-600 mr-3" />
+          <h2 class="text-lg font-semibold text-gray-800">Directions associées à ce ticket</h2>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <q-chip
+            v-for="direction in directionOptions"
+            :key="direction.id"
+            color="green"
+            text-color="white"
+            icon="business"
+            class="text-sm"
+          >
+            {{ direction.label }}
+          </q-chip>
+        </div>
+        <div v-if="loadingDirections" class="flex items-center justify-center py-4">
+          <q-spinner color="green" size="2em" />
+          <span class="ml-2 text-gray-600">Chargement des directions...</span>
+        </div>
+      </div>
+
       <!-- Liste des messages -->
       <div v-if="currentTicketId">
         <!-- Toolbar Section -->
