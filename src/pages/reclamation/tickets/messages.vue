@@ -469,8 +469,8 @@
     </q-dialog>
 
     <!-- Modal Voir Réclamation - Design Moderne -->
-    <q-dialog v-model="showTicketDetailDialog" maximized transition-show="slide-up" transition-hide="slide-down">
-      <q-card class="bg-gradient-to-br from-gray-50 to-gray-100">
+    <q-dialog v-model="showTicketDetailDialog" transition-show="slide-up" transition-hide="slide-down">
+      <q-card class="bg-gradient-to-br from-gray-50 to-gray-100" style="width: 90vw; height: 90vh; max-width: 90vw; max-height: 90vh;">
         <!-- En-tête moderne avec gradient -->
         <q-card-section class="bg-gradient-to-r from-orange-500 to-orange-600 text-white relative overflow-hidden">
           <div class="absolute inset-0 bg-black opacity-10"></div>
