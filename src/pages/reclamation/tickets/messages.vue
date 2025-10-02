@@ -53,7 +53,7 @@
               icon="visibility"
               color="orange-6"
               no-caps
-              @click="showTicketDetailDialog = true"
+              @click="openTicketDetails"
               :disable="!currentTicketId"
               class="px-6"
             >
@@ -474,7 +474,7 @@
         <q-card-section class="flex items-center bg-orange-50">
           <q-icon name="visibility" class="text-orange-600 mr-3" size="2rem" />
           <div class="flex-1">
-            <div class="text-xl font-semibold text-orange-900">Détails de la Réclamation</div>
+            <div class="text-xl font-semibold text-orange-900">Détails de la Réclamation #{{ currentTicketId }}</div>
             <div class="text-sm text-orange-700">Consultation des informations complètes du ticket</div>
           </div>
         </q-card-section>
@@ -482,11 +482,158 @@
         <q-separator />
 
         <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
-          <div class="flex items-center justify-center py-12">
-            <div class="text-center">
-              <q-icon name="info" size="4rem" class="text-orange-300 mb-4" />
-              <h3 class="text-lg font-medium text-gray-700 mb-2">Contenu à venir</h3>
-              <p class="text-gray-500">Les détails de la réclamation seront affichés ici.</p>
+          <!-- Loading State -->
+          <div v-if="ticketDetailsLoading" class="text-center py-8">
+            <q-spinner-dots size="50px" color="orange-6" />
+            <p class="text-gray-600 mt-4">Chargement des détails...</p>
+          </div>
+
+          <!-- Error State -->
+          <div v-else-if="ticketDetailsError" class="text-center py-8">
+            <q-icon name="error" size="3rem" class="text-red-500 mb-4" />
+            <p class="text-lg font-medium mb-2 text-red-600">Erreur de chargement</p>
+            <p class="text-sm text-gray-600">{{ ticketDetailsError }}</p>
+            <q-btn
+              label="Réessayer"
+              color="orange-6"
+              outline
+              @click="loadTicketDetails"
+              class="mt-4"
+            />
+          </div>
+
+          <!-- Ticket Details Content -->
+          <div v-else-if="ticketDetails" class="space-y-6">
+            <!-- Objet de la réclamation -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Objet de la réclamation
+              </label>
+              <div class="bg-gray-50 p-3 rounded-md border">
+                <div class="flex items-center">
+                  <q-icon name="subject" class="text-orange-600 mr-2" />
+                  <span class="text-gray-800">{{ ticketDetails.objet || 'Non spécifié' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Types de réclamation -->
+            <div v-if="ticketDetails.types && ticketDetails.types.length > 0" class="bg-white rounded-lg shadow-sm p-6">
+              <label class="block text-sm font-medium text-gray-700 mb-4">
+                Type(s) de réclamation
+              </label>
+              <div class="space-y-4">
+                <div v-for="type in ticketDetails.types" :key="type.b_rec_type_id" class="border border-gray-200 rounded-lg p-4">
+                  <div class="flex items-start space-x-3">
+                    <q-icon name="check_circle" class="text-orange-600 mt-1" />
+                    <div class="flex-1">
+                      <div class="font-medium text-gray-800">{{ type.libelle }}</div>
+                      <div v-if="type.description" class="text-sm text-gray-600 mt-1">
+                        {{ type.description }}
+                      </div>
+
+                      <!-- Détails sélectionnés -->
+                      <div v-if="type.details && type.details.length > 0" class="mt-3 ml-4">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Détails sélectionnés :</div>
+                        <div class="space-y-1">
+                          <div v-for="detail in type.details" :key="detail.b_rec_detail_id" class="flex items-center space-x-2">
+                            <q-icon name="check" class="text-green-600" size="sm" />
+                            <span class="text-sm text-gray-700">{{ detail.libelle }}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Autre précision -->
+                      <div v-if="type.autre" class="mt-3 ml-4">
+                        <div class="text-sm font-medium text-gray-600 mb-2">Autre précision :</div>
+                        <div class="bg-purple-50 p-2 rounded text-sm text-gray-700">
+                          {{ type.autre }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description détaillée -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Description détaillée
+              </label>
+              <div class="bg-gray-50 p-4 rounded-md border min-h-[200px]">
+                <div v-if="ticketDetails.description" v-html="ticketDetails.description" class="prose max-w-none"></div>
+                <div v-else class="text-gray-500 italic">Aucune description fournie</div>
+              </div>
+            </div>
+
+            <!-- Informations générales -->
+            <div v-if="ticketDetails.infos_generales && ticketDetails.infos_generales.length > 0" class="bg-white rounded-lg shadow-sm p-6">
+              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex items-center mb-4">
+                  <q-icon name="info" class="text-yellow-600 mr-3" size="1.5rem" />
+                  <h3 class="text-lg font-medium text-yellow-800">Informations générales</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div v-for="info in ticketDetails.infos_generales" :key="info.info_general_id" class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">
+                      {{ info.libelle }}
+                    </label>
+                    <div class="bg-white p-2 rounded border">
+                      <span class="text-gray-800">{{ info.value || 'Non renseigné' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Documents à fournir -->
+            <div v-if="ticketDetails.documentAFournir" class="bg-white rounded-lg shadow-sm p-6">
+              <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                  <q-icon name="description" class="text-blue-600 mr-3 mt-0.5" />
+                  <div class="text-sm text-blue-800">
+                    <p class="font-medium mb-2">Documents à fournir :</p>
+                    <div class="text-blue-700" v-html="ticketDetails.documentAFournir"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fichiers joints -->
+            <div v-if="ticketDetails.files && ticketDetails.files.length > 0" class="bg-white rounded-lg shadow-sm p-6">
+              <label class="block text-sm font-medium text-gray-700 mb-2">
+                Fichiers joints ({{ ticketDetails.files.length }})
+              </label>
+              <div class="space-y-2">
+                <div
+                  v-for="file in ticketDetails.files"
+                  :key="file.id"
+                  class="flex items-center justify-between bg-green-50 p-3 rounded-md border border-green-200"
+                >
+                  <div class="flex items-center">
+                    <q-icon
+                      :name="getFileIconVoir(file.type_fichier)"
+                      size="1.5rem"
+                      class="text-green-600 mr-3"
+                    />
+                    <div>
+                      <div class="text-sm font-medium text-gray-800">{{ file.nom_fichier }}</div>
+                      <div class="text-xs text-gray-500">{{ formatFileSizeVoir(file.taille_fichier) }}</div>
+                    </div>
+                  </div>
+                  <q-btn
+                    icon="download"
+                    size="sm"
+                    flat
+                    round
+                    color="primary"
+                    @click="downloadTicketFile(file)"
+                  >
+                    <q-tooltip>Télécharger</q-tooltip>
+                  </q-btn>
+                </div>
+              </div>
             </div>
           </div>
         </q-card-section>
@@ -530,6 +677,9 @@ const showMessageDetail = ref(false)
 const selectedMessage = ref(null)
 const sending = ref(false)
 const showTicketDetailDialog = ref(false)
+const ticketDetails = ref(null)
+const ticketDetailsLoading = ref(false)
+const ticketDetailsError = ref(null)
 
 // Nouveau message
 const newMessage = ref({
@@ -934,6 +1084,11 @@ const formatFileSize = (bytes) => {
 }
 
 // Charger les directions disponibles
+ const openTicketDetails = () => {
+   showTicketDetailDialog.value = true
+   loadTicketDetails()
+ }
+
  const loadDirections = async () => {
    loadingDirections.value = true
    try {
@@ -966,6 +1121,81 @@ const formatFileSize = (bytes) => {
    } finally {
      loadingDirections.value = false
    }
+ }
+
+const loadTicketDetails = async () => {
+   if (!currentTicketId.value) return
+
+   ticketDetailsLoading.value = true
+   ticketDetailsError.value = null
+   try {
+     const response = await api.get(`/api/rec/tickets/${currentTicketId.value}/edit`)
+
+     if (response.data.success) {
+       ticketDetails.value = response.data.data
+     } else {
+       throw new Error(response.data.message || 'Erreur lors du chargement des détails')
+     }
+   } catch (error) {
+     console.error('Erreur lors du chargement des détails du ticket:', error)
+     ticketDetailsError.value = error.response?.data?.message || 'Erreur lors du chargement des détails du ticket'
+   } finally {
+     ticketDetailsLoading.value = false
+   }
+ }
+
+const downloadTicketFile = async (file) => {
+   try {
+     const response = await api.get(`/api/rec/tickets/files/${file.id}/download`, {
+       responseType: 'blob'
+     })
+
+     // Créer un lien de téléchargement
+     const url = window.URL.createObjectURL(new Blob([response.data]))
+     const link = document.createElement('a')
+     link.href = url
+     link.setAttribute('download', file.nom_fichier)
+     document.body.appendChild(link)
+     link.click()
+     link.remove()
+     window.URL.revokeObjectURL(url)
+
+     $q.notify({
+       type: 'positive',
+       message: 'Téléchargement démarré',
+       position: 'top'
+     })
+   } catch (error) {
+     console.error('Erreur lors du téléchargement:', error)
+     $q.notify({
+       type: 'negative',
+       message: 'Erreur lors du téléchargement du fichier',
+       position: 'top'
+     })
+   }
+ }
+
+ // Fonctions utilitaires pour les fichiers
+ const getFileIconVoir = (fileType) => {
+   if (!fileType) return 'description'
+
+   const type = fileType.toLowerCase()
+   if (type.includes('image')) return 'image'
+   if (type.includes('pdf')) return 'picture_as_pdf'
+   if (type.includes('word') || type.includes('doc')) return 'description'
+   if (type.includes('excel') || type.includes('sheet')) return 'table_chart'
+   if (type.includes('text')) return 'text_snippet'
+   return 'description'
+ }
+
+ const formatFileSizeVoir = (bytes) => {
+   if (!bytes) return '0 B'
+
+   const k = 1024
+   const sizes = ['B', 'KB', 'MB', 'GB']
+   const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
  }
 
 // Watchers
