@@ -421,7 +421,7 @@
             </div>
 
             <!-- Destinataires/Directions -->
-            <!-- <div v-if="selectedMessage.destinataires && selectedMessage.destinataires.length" class="space-y-2">
+            <div v-if="selectedMessage.destinataires && selectedMessage.destinataires.length" class="space-y-2">
               <label class="block text-sm font-medium text-gray-700">
                 <q-icon name="send" class="text-green-600 mr-1" />
                 Destinataires ({{ selectedMessage.destinataires.length }})
@@ -441,7 +441,7 @@
                   </q-chip>
                 </div>
               </div>
-            </div> -->
+            </div>
 
             <!-- Fichiers joints -->
             <div v-if="selectedMessage.fichiers && selectedMessage.fichiers.length" class="space-y-2">
