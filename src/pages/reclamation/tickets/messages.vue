@@ -48,7 +48,7 @@
             size="sm"
             round
             @click="showAddDirectionDialog = true"
-            class="ml-4"
+            class="ml-auto"
           >
             <q-tooltip>Ajouter d'autres directions</q-tooltip>
           </q-btn>
