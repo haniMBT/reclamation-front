@@ -115,6 +115,16 @@
             >
               Réponse
             </q-btn>
+            <q-btn
+              icon="check_circle"
+              color="red-6"
+              no-caps
+              @click="showCloseDialog = true"
+              :disable="!currentTicketId"
+              class="px-6 q-ml-sm"
+            >
+              Clôturer la réclamation
+            </q-btn>
           </div>
         </div>
 
@@ -979,6 +989,35 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Modal de confirmation de clôture -->
+    <q-dialog v-model="showCloseDialog" persistent>
+      <q-card class="w-96">
+        <q-card-section class="bg-red-600 text-white">
+          <div class="text-h6">Clôturer la réclamation</div>
+          <div class="text-caption">Cette action est irréversible.</div>
+        </q-card-section>
+
+        <q-card-section>
+          <p class="text-gray-700">Voulez-vous vraiment clôturer cette réclamation ?</p>
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn
+            label="Annuler"
+            color="grey-7"
+            flat
+            v-close-popup
+          />
+          <q-btn
+            label="Confirmer"
+            color="red-6"
+            :loading="isClosing"
+            @click="closeTicket"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
       </div>
     </div>
   </div>
@@ -1023,6 +1062,9 @@ const directionsNonConcerneOptions = ref([])
 const showAddDirectionDialog = ref(false)
 const selectedAdditionalDirections = ref([])
 const selectedStatutDirection = ref('traitement')
+// Clôture
+const showCloseDialog = ref(false)
+const isClosing = ref(false)
 
 
 
@@ -1092,6 +1134,28 @@ const onRequest = (props) => {
   loadMessages()
 }
 
+// Clôturer la réclamation
+const closeTicket = async () => {
+  if (!currentTicketId.value) return
+  isClosing.value = true
+  try {
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/close`)
+    if (response.data && response.data.success) {
+      $q.notify({ type: 'positive', message: 'Réclamation clôturée avec succès', position: 'top' })
+      showCloseDialog.value = false
+      // Nettoyer le store et rediriger vers la liste
+      ticketStore.clearTicket()
+      router.push('/reclamations/allTicket')
+    } else {
+      throw new Error(response.data?.message || 'Échec de la clôture du ticket')
+    }
+  } catch (error) {
+    console.error('Erreur de clôture:', error)
+    $q.notify({ type: 'negative', message: 'Erreur lors de la clôture de la réclamation', position: 'top' })
+  } finally {
+    isClosing.value = false
+  }
+}
 const loadMessages = async () => {
   if (!currentTicketId.value) return
 
