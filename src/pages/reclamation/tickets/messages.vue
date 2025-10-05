@@ -1281,7 +1281,7 @@ const sendReplyMessage = async () => {
       }
     })
 
-    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages`, formData, {
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages/reply`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
