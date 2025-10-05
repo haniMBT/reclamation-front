@@ -1360,16 +1360,16 @@ const downloadTicketFile = async (file) => {
          label: option.label,
          value: option.value
        }))
-     
+
      directionOptions.value = [...directionOptions.value, ...newDirections]
-     
+
      $q.notify({
        type: 'positive',
        message: `${newDirections.length} direction(s) ajoutée(s) avec succès`,
        position: 'top'
      })
    }
-   
+
    // Réinitialiser et fermer le dialog
    selectedAdditionalDirections.value = []
    showAddDirectionDialog.value = false
@@ -1388,7 +1388,7 @@ const downloadTicketFile = async (file) => {
      { label: 'Direction Logistique', value: 'logistique' },
      { label: 'Direction Juridique', value: 'juridique' }
    ]
-   
+
    if (currentTicketId.value) {
      loadMessages()
    }
