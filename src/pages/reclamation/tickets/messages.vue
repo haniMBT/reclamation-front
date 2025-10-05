@@ -52,6 +52,16 @@
           >
             <q-tooltip>Ajouter d'autres directions</q-tooltip>
           </q-btn>
+          <q-btn
+            icon="remove"
+            color="red"
+            size="sm"
+            round
+            @click="showRemoveDirectionDialog = true"
+            class="ml-2"
+          >
+            <q-tooltip>Supprimer des directions</q-tooltip>
+          </q-btn>
         </div>
         <div class="flex flex-wrap gap-2">
           <q-chip
@@ -990,6 +1000,47 @@
       </q-card>
     </q-dialog>
 
+    <!-- Dialog pour supprimer des directions -->
+    <q-dialog v-model="showRemoveDirectionDialog" persistent>
+      <q-card class="w-96">
+        <q-card-section class="bg-red-600 text-white">
+          <div class="text-h6">Supprimer des directions</div>
+        </q-card-section>
+
+        <q-card-section class="q-pt-md">
+          <q-select
+            v-model="selectedRemoveDirections"
+            :options="directionOptions"
+            label="Sélectionner les directions à supprimer"
+            multiple
+            use-chips
+            stack-label
+            option-value="value"
+            option-label="label"
+            emit-value
+            map-options
+            class="q-mb-md"
+          />
+        </q-card-section>
+
+        <q-card-actions align="right">
+          <q-btn
+            label="Annuler"
+            color="grey-7"
+            flat
+            v-close-popup
+            @click="selectedRemoveDirections = []"
+          />
+          <q-btn
+            label="Supprimer"
+            color="red"
+            unelevated
+            @click="removeSelectedDirections"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Modal de confirmation de clôture -->
     <q-dialog v-model="showCloseDialog" persistent>
       <q-card class="rounded-lg shadow-2 flex flex-col" style="width: 900px; max-width: 95vw; height: 70vh;">
@@ -1071,6 +1122,9 @@ const directionsNonConcerneOptions = ref([])
 const showAddDirectionDialog = ref(false)
 const selectedAdditionalDirections = ref([])
 const selectedStatutDirection = ref('traitement')
+// Suppression de directions
+const showRemoveDirectionDialog = ref(false)
+const selectedRemoveDirections = ref([])
 // Clôture
 const showCloseDialog = ref(false)
 const isClosing = ref(false)
@@ -1731,6 +1785,46 @@ const downloadTicketFile = async (file) => {
      selectedAdditionalDirections.value = []
      selectedStatutDirection.value = 'traitement'
      showAddDirectionDialog.value = false
+   }
+ }
+
+ // Fonction pour supprimer des directions (envoi au backend)
+ const removeSelectedDirections = async () => {
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné' })
+     return
+   }
+
+   if (selectedRemoveDirections.value.length === 0) {
+     $q.notify({ type: 'warning', message: 'Sélectionnez au moins une direction à supprimer' })
+     return
+   }
+
+   try {
+     const response = await api.post(`/api/rec/directions_ticket/${currentTicketId.value}/delete`, {
+       directions: selectedRemoveDirections.value
+     })
+
+     // Rafraîchir les listes depuis le backend
+     await loadDirections()
+
+     const deletedCount = response?.data?.data?.deleted_count ?? selectedRemoveDirections.value.length
+     $q.notify({
+       type: 'positive',
+       message: `${deletedCount} direction(s) supprimée(s) avec succès`,
+       position: 'top'
+     })
+   } catch (error) {
+     console.error('Erreur lors de la suppression des directions:', error)
+     $q.notify({
+       type: 'negative',
+       message: 'Erreur lors de la suppression des directions',
+       position: 'top'
+     })
+   } finally {
+     // Réinitialiser et fermer le dialog
+     selectedRemoveDirections.value = []
+     showRemoveDirectionDialog.value = false
    }
  }
 
