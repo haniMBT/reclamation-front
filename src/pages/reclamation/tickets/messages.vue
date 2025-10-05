@@ -771,6 +771,14 @@
 
         <q-card-section class="q-pt-md">
           <q-select
+            v-model="selectedStatutDirection"
+            :options="['traitement', 'consultation']"
+            label="Statut de direction"
+            outlined
+            dense
+            class="q-mb-md"
+          />
+          <q-select
             v-model="selectedAdditionalDirections"
             :options="directionsNonConcerneOptions"
             label="Sélectionner les directions"
@@ -845,6 +853,7 @@ const directionOptions = ref([])
 const directionsNonConcerneOptions = ref([])
 const showAddDirectionDialog = ref(false)
 const selectedAdditionalDirections = ref([])
+const selectedStatutDirection = ref('traitement')
 
 
 
@@ -1349,30 +1358,49 @@ const downloadTicketFile = async (file) => {
    return 'description'
  }
 
- // Fonction pour ajouter des directions supplémentaires
- const addAdditionalDirections = () => {
-   if (selectedAdditionalDirections.value.length > 0) {
-     // Ajouter les nouvelles directions à la liste existante
-     const newDirections = directionsNonConcerneOptions.value
-       .filter(option => selectedAdditionalDirections.value.includes(option.value))
-       .map(option => ({
-         id: `additional_${Date.now()}_${Math.random()}`,
-         label: option.label,
-         value: option.value
-       }))
+ // Fonction pour ajouter des directions supplémentaires (envoi au backend)
+ const addAdditionalDirections = async () => {
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné' })
+     return
+   }
 
-     directionOptions.value = [...directionOptions.value, ...newDirections]
+   if (selectedAdditionalDirections.value.length === 0) {
+     $q.notify({ type: 'warning', message: 'Sélectionnez au moins une direction' })
+     return
+   }
+
+   try {
+     let addedCount = 0
+     for (const dirValue of selectedAdditionalDirections.value) {
+       await api.post(`/api/rec/directions_ticket/${currentTicketId.value}`, {
+         direction: dirValue,
+         statut_direction: selectedStatutDirection.value
+       })
+       addedCount++
+     }
+
+     // Rafraîchir les listes depuis le backend
+     await loadDirections()
 
      $q.notify({
        type: 'positive',
-       message: `${newDirections.length} direction(s) ajoutée(s) avec succès`,
+       message: `${addedCount} direction(s) ajoutée(s) avec succès`,
        position: 'top'
      })
+   } catch (error) {
+     console.error('Erreur lors de l\'ajout des directions:', error)
+     $q.notify({
+       type: 'negative',
+       message: 'Erreur lors de l\'ajout des directions',
+       position: 'top'
+     })
+   } finally {
+     // Réinitialiser et fermer le dialog
+     selectedAdditionalDirections.value = []
+     selectedStatutDirection.value = 'traitement'
+     showAddDirectionDialog.value = false
    }
-
-   // Réinitialiser et fermer le dialog
-   selectedAdditionalDirections.value = []
-   showAddDirectionDialog.value = false
  }
 
  // Initialiser les options de directions non concernées
