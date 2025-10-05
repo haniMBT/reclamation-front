@@ -992,17 +992,17 @@
 
     <!-- Modal de confirmation de clôture -->
     <q-dialog v-model="showCloseDialog" persistent>
-      <q-card class="w-96">
+      <q-card class="rounded-lg shadow-2 flex flex-col" style="width: 900px; max-width: 95vw; height: 70vh;">
         <q-card-section class="bg-red-600 text-white">
           <div class="text-h6">Clôturer la réclamation</div>
           <div class="text-caption">Cette action est irréversible.</div>
         </q-card-section>
 
-        <q-card-section>
-          <p class="text-gray-700 q-mb-sm">Veuillez saisir la conclusion de la clôture (obligatoire) :</p>
+        <q-card-section style="flex: 1; overflow: auto;">
+          <p class="text-gray-700 q-mb-md">Veuillez saisir la conclusion de la clôture (obligatoire) :</p>
           <q-editor
             v-model="closeConclusion"
-            min-height="8rem"
+            min-height="20rem"
             :definitions="{}">
           </q-editor>
           <div class="text-negative text-caption q-mt-xs" v-if="!isConclusionValid">
