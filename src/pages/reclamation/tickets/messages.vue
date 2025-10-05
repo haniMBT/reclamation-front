@@ -671,7 +671,7 @@
             Fermer
           </q-btn>
           <q-btn
-            @click="replyToMessage"
+            @click="replyToMessage(selectedMessage)"
             color="green-6"
             no-caps
             unelevated
@@ -1398,10 +1398,14 @@ const replyToMessage = (message = null) => {
   const messageToReply = message || selectedMessage.value
   newMessage.value.directions = [selectedMessage.value.direction_envoi]
   newMessage.value.content = null
-  if (messageToReply) {
+  if (messageToReply.destinataires[0].direction_destinataire!='directions'&& messageToReply.destinataires[0].direction_destinataire!='client')  {
     closeMessageDetail()
     // newMessage.value.subject = `Re: ${messageToReply.subject}`
-    showNewMessageDialog.value = true
+    showNewMessageDialog.value = true;
+  }else {
+    showReplyDialog.value = true;
+        closeMessageDetail();
+
   }
 }
 
