@@ -999,7 +999,15 @@
         </q-card-section>
 
         <q-card-section>
-          <p class="text-gray-700">Voulez-vous vraiment clôturer cette réclamation ?</p>
+          <p class="text-gray-700 q-mb-sm">Veuillez saisir la conclusion de la clôture (obligatoire) :</p>
+          <q-editor
+            v-model="closeConclusion"
+            min-height="8rem"
+            :definitions="{}">
+          </q-editor>
+          <div class="text-negative text-caption q-mt-xs" v-if="!isConclusionValid">
+            La conclusion est obligatoire.
+          </div>
         </q-card-section>
 
         <q-card-actions align="right">
@@ -1010,9 +1018,10 @@
             v-close-popup
           />
           <q-btn
-            label="Confirmer"
+            label="Confirmer la clôture"
             color="red-6"
             :loading="isClosing"
+            :disable="!isConclusionValid"
             @click="closeTicket"
           />
         </q-card-actions>
@@ -1065,6 +1074,12 @@ const selectedStatutDirection = ref('traitement')
 // Clôture
 const showCloseDialog = ref(false)
 const isClosing = ref(false)
+const closeConclusion = ref('')
+const isConclusionValid = computed(() => {
+  const text = closeConclusion.value || ''
+  const stripped = text.replace(/<[^>]*>/g, '').trim()
+  return stripped.length > 0
+})
 
 
 
@@ -1139,10 +1154,14 @@ const closeTicket = async () => {
   if (!currentTicketId.value) return
   isClosing.value = true
   try {
-    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/close`)
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/close`, {
+      conclusion: closeConclusion.value,
+      status: 'clôturé'
+    })
     if (response.data && response.data.success) {
       $q.notify({ type: 'positive', message: 'Réclamation clôturée avec succès', position: 'top' })
       showCloseDialog.value = false
+      closeConclusion.value = ''
       // Nettoyer le store et rediriger vers la liste
       ticketStore.clearTicket()
       router.push('/reclamations/allTicket')
