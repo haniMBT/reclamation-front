@@ -105,6 +105,16 @@
             >
               Nouveau Message
             </q-btn>
+            <q-btn
+              icon="reply"
+              color="green-6"
+              no-caps
+              @click="showReplyDialog = true"
+              :disable="!currentTicketId"
+              class="px-6 q-ml-sm"
+            >
+              Réponse
+            </q-btn>
           </div>
         </div>
 
@@ -371,6 +381,165 @@
             :disable="!newMessage.subject || !newMessage.content"
           >
             Envoyer le message
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Réponse -->
+    <q-dialog v-model="showReplyDialog" persistent>
+      <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-green-50">
+          <q-icon name="reply" class="text-green-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-green-900">Réponse</div>
+            <div class="text-sm text-green-700">Répondre au ticket {{ currentTicketId }}</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <q-form @submit="sendReplyMessage" class="space-y-6">
+            <div class="grid grid-cols-1 gap-6">
+              <!-- Titre -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                  Titre <span class="text-red-500">*</span>
+                </label>
+                <q-input
+                  v-model="replyMessage.subject"
+                  outlined
+                  dense
+                  placeholder="Entrez le titre du message"
+                  :rules="[val => !!val || 'Le titre est requis']"
+                >
+                  <template #prepend>
+                    <q-icon name="title" class="text-green-600" />
+                  </template>
+                </q-input>
+              </div>
+
+              <!-- Description avec QEditor -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                  Description <span class="text-red-500">*</span>
+                </label>
+                <q-editor
+                  v-model="replyMessage.content"
+                  min-height="200px"
+                  :toolbar="[
+                    ['bold', 'italic', 'underline'],
+                    ['unordered', 'ordered'],
+                    ['undo', 'redo']
+                  ]"
+                  placeholder="Rédigez votre message..."
+                />
+              </div>
+
+              <!-- Upload de fichiers -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                  Fichiers joints (optionnel)
+                </label>
+
+                <!-- Zone d'ajout de fichiers -->
+                <div class="flex gap-3 mb-3">
+                  <q-file
+                    v-model="replyFiles"
+                    multiple
+                    outlined
+                    dense
+                    accept="image/*,application/pdf,.doc,.docx,.txt"
+                    max-file-size="10485760"
+                    class="flex-1"
+                    @rejected="onRejected"
+                    @update:model-value="onReplyFilesSelected"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="attach_file" class="text-green-600" />
+                    </template>
+                    <template v-slot:hint>
+                      Formats acceptés: Images, PDF, Word. Taille max: 10Mo par fichier
+                    </template>
+                  </q-file>
+
+                  <q-btn
+                    label="Ajouter"
+                    color="green-6"
+                    outline
+                    :disable="!replyFiles || replyFiles.length === 0"
+                    @click="addReplyFiles"
+                    class="px-4"
+                  >
+                    <q-icon name="add" class="mr-1" />
+                  </q-btn>
+                </div>
+
+                <!-- Liste des fichiers sélectionnés -->
+                <div v-if="replyMessage.attachments.length > 0" class="mt-3">
+                  <div class="text-sm font-medium text-gray-700 mb-2">
+                    Fichiers sélectionnés ({{ replyMessage.attachments.length }}) :
+                  </div>
+                  <div class="space-y-2">
+                    <div
+                      v-for="(file, index) in replyMessage.attachments"
+                      :key="index"
+                      class="flex items-center justify-between bg-gray-50 p-3 rounded-md border"
+                    >
+                      <div class="flex items-center">
+                        <q-icon
+                          :name="getFileIcon(file.type)"
+                          size="1.5rem"
+                          class="text-green-600 mr-3"
+                        />
+                        <div>
+                          <div class="text-sm font-medium text-gray-800">{{ file.name }}</div>
+                          <div class="text-xs text-gray-500">{{ formatFileSize(file.size) }}</div>
+                        </div>
+                      </div>
+                      <q-btn
+                        icon="close"
+                        size="sm"
+                        flat
+                        round
+                        color="negative"
+                        @click="removeReplyFile(index)"
+                        class="ml-2"
+                      >
+                        <q-tooltip>Supprimer le fichier</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </q-form>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn
+            @click="closeReplyDialog"
+            color="grey-6"
+            outline
+            no-caps
+            class="px-6"
+          >
+            Annuler
+          </q-btn>
+          <q-btn
+            @click="sendReplyMessage"
+            color="green-6"
+            no-caps
+            unelevated
+            class="px-6 ml-3"
+            :loading="sendingReply"
+            :disable="!replyMessage.subject || !replyMessage.content"
+          >
+            Envoyer la réponse
           </q-btn>
         </q-card-actions>
       </q-card>
@@ -1053,6 +1222,81 @@ const sendMessage = async () => {
     })
   } finally {
     sending.value = false
+  }
+}
+
+// État et logique pour le dialogue de réponse
+const showReplyDialog = ref(false)
+const sendingReply = ref(false)
+const replyFiles = ref(null)
+const replyMessage = ref({
+  subject: '',
+  content: '',
+  attachments: []
+})
+
+const closeReplyDialog = () => {
+  showReplyDialog.value = false
+  replyMessage.value = { subject: '', content: '', attachments: [] }
+  replyFiles.value = null
+}
+
+const onReplyFilesSelected = (files) => {
+  replyFiles.value = files
+}
+
+const addReplyFiles = () => {
+  if (!replyFiles.value || replyFiles.value.length === 0) return
+  replyFiles.value.forEach(file => {
+    replyMessage.value.attachments.push({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file
+    })
+  })
+  replyFiles.value = null
+}
+
+const removeReplyFile = (index) => {
+  replyMessage.value.attachments.splice(index, 1)
+}
+
+const sendReplyMessage = async () => {
+  if (!replyMessage.value.subject || !replyMessage.value.content) {
+    $q.notify({ type: 'negative', message: 'Veuillez remplir tous les champs obligatoires' })
+    return
+  }
+
+  sendingReply.value = true
+  try {
+    const formData = new FormData()
+    formData.append('titre', replyMessage.value.subject)
+    formData.append('description', replyMessage.value.content)
+    // Pas de directions dans la réponse
+
+    replyMessage.value.attachments.forEach((attachment, index) => {
+      if (attachment.file) {
+        formData.append(`attachments[${index}]`, attachment.file)
+      }
+    })
+
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    if (response.data.success) {
+      $q.notify({ type: 'positive', message: 'Réponse envoyée avec succès' })
+      closeReplyDialog()
+      await loadMessages()
+    } else {
+      $q.notify({ type: 'warning', message: response.data.message || 'Échec de l’envoi de la réponse' })
+    }
+  } catch (error) {
+    console.error('Erreur lors de l’envoi de la réponse:', error)
+    $q.notify({ type: 'negative', message: 'Erreur lors de l’envoi de la réponse' })
+  } finally {
+    sendingReply.value = false
   }
 }
 
