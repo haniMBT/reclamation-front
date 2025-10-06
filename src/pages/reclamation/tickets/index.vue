@@ -16,6 +16,7 @@
             no-caps
             unelevated
             icon="add"
+            v-if="privilege && privilege.insertion"
             class="px-6"
             @click="$router.push('/reclamations/ticket')"
           >
@@ -127,14 +128,14 @@
                   :label="ticket.status || 'OUVERT'"
                   class="text-xs"
                 />
-                <q-badge
+                <!-- <q-badge
                   v-if="isTicketValidated(ticket)"
                   color="green"
                   label="VALIDÉ"
                   class="text-xs"
                 >
                   <q-icon name="verified" size="xs" class="mr-1" />
-                </q-badge>
+                </q-badge> -->
               </div>
             </div>
 
@@ -158,6 +159,7 @@
                 color="blue-6"
                 icon="chat"
                 size="sm"
+                v-if="ticket.status != 'ouvert'"
                 @click.stop="viewMessages(ticket)"
               >
                 <q-tooltip>Messages</q-tooltip>
@@ -225,6 +227,7 @@ const ticketStore = useTicketStore()
 
 // État réactif
 const tickets = ref([])
+const privilege = ref(null)
 const loading = ref(false)
 const searchQuery = ref('')
 const dateFrom = ref('')
@@ -253,6 +256,7 @@ const fetchTickets = async (props = {}) => {
     })
 
     if (response.data.success) {
+      privilege.value = response.data.data.privilege
       tickets.value = response.data.data.items
       pagination.page = response.data.data.meta.current_page
       pagination.rowsPerPage = response.data.data.meta.per_page
@@ -291,8 +295,10 @@ const formatDate = (dateString) => {
 
 const getStatusColor = (status) => {
   const statusColors = {
-    'OUVERT': 'blue',
-    'En attente': 'grey',
+    'OUVERT': 'grey',
+    'ouvert': 'grey',
+    'En attente': 'blue',
+    'clôturé': 'green',
 
     'EN_COURS': 'orange',
     'FERME': 'green',
