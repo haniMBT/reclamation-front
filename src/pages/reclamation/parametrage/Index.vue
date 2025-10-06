@@ -21,6 +21,7 @@
               color="blue-6"
               no-caps
               @click="openAddTicket"
+              v-if="privilege.insertion && directions.length > 0"
               class="px-6"
             >
               Ajouter un ticket
@@ -75,6 +76,7 @@
                     size="sm"
                     flat
                     round
+                    v-if="privilege.suppression"
                     color="negative"
                     @click.stop="openDeleteTicket(ticket)"
                   >
@@ -278,7 +280,7 @@
                     </label>
                     <q-select
                       v-model="form.direction"
-                      :options="directions"
+                      :options="directions_visibilite"
                       option-value="DIRECTION"
                       option-label="DIRECTION"
                       emit-value
@@ -491,7 +493,7 @@
                     </label>
                     <q-select
                       v-model="form.direction"
-                      :options="directions"
+                      :options="directions_visibilite"
                       option-value="DIRECTION"
                       option-label="DIRECTION"
                       emit-value
@@ -1067,7 +1069,9 @@ import draggable from 'vuedraggable';
 
 // Reactive variables
 const tickets = ref([]);
+const directions_visibilite = ref([]);
 const directions = ref([]);
+const privilege = ref('');
 const searchTickets = ref('');
 const addTicket = ref(false);
 const editTicket = ref(false);
@@ -1208,7 +1212,9 @@ const fetchData = async () => {
   try {
     const response = await api.get('/api/rec/parametrage');
     tickets.value = response.data.tickets || [];
+    directions_visibilite.value = response.data.directions_visibilite || [];
     directions.value = response.data.directions || [];
+    privilege.value = response.data.privilege || null;
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error);
     $q.notify({
