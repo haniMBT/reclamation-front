@@ -1,5 +1,18 @@
 <template>
-  <div class="bg-gray-50" v-if="canAccessParametrage">
+  <!-- Chargement initial -->
+  <div v-if="initialLoading" class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <q-card class="max-w-md w-full bg-white shadow-sm border border-gray-200">
+      <q-card-section class="flex flex-col items-center py-8">
+        <div class="bg-white rounded-full p-5 shadow mb-4">
+          <q-spinner-dots size="60px" color="grey-7" />
+        </div>
+        <h3 class="text-lg font-semibold text-gray-800">Chargement de la page...</h3>
+        <p class="text-gray-500 text-sm">Veuillez patienter</p>
+      </q-card-section>
+    </q-card>
+  </div>
+
+  <div class="bg-gray-50" v-else-if="canAccessParametrage">
     <div class="container mx-auto px-4 py-8">
       <!-- Header Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -1058,7 +1071,7 @@
     </q-card>
   </q-dialog>
 
-  <div v-if="!canAccessParametrage" class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+  <div v-if="!canAccessParametrage && !initialLoading" class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
     <q-card class="max-w-xl w-full bg-white shadow-sm border border-gray-200">
       <q-card-section class="flex items-center gap-4">
         <div class="bg-gray-100 p-3 rounded-full">
@@ -1235,6 +1248,11 @@ const canAccessParametrage = computed(() => {
   const hasConsultation = p.consultation === true || p.consultation === 1;
   const role = typeof p.role === 'string' ? p.role.toLowerCase() : '';
   return hasConsultation && role === 'admin';
+});
+
+// Spinner de chargement initial
+const initialLoading = computed(() => {
+  return loadingTickets.value || privilege.value === '';
 });
 
 const goHome = () => router.push('/reclamations/allTicket');
