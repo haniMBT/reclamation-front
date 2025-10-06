@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gray-50">
+  <div class="bg-gray-50" v-if="canAccessParametrage">
     <div class="container mx-auto px-4 py-8">
       <!-- Header Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -1057,10 +1057,31 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+  <div v-if="!canAccessParametrage" class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <q-card class="max-w-xl w-full bg-white shadow-sm border border-gray-200">
+      <q-card-section class="flex items-center gap-4">
+        <div class="bg-gray-100 p-3 rounded-full">
+          <q-icon name="warning_amber" size="2rem" class="text-gray-700" />
+        </div>
+        <div>
+          <h2 class="text-xl font-semibold text-gray-800 mb-1">Accès refusé</h2>
+          <p class="text-gray-600">Vous n’avez pas accès à cette page.</p>
+        </div>
+      </q-card-section>
+      <q-separator />
+      <q-card-actions class="p-4 bg-gray-50">
+        <q-space />
+        <q-btn label="Retour" color="grey-7" flat no-caps class="px-6" @click="goBack" />
+        <q-btn label="Liste des réclamation" color="grey-7" unelevated no-caps class="px-6 ml-2" @click="goHome" />
+      </q-card-actions>
+    </q-card>
+  </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
 import ErrorValidation from 'src/components/ErrorValidation.vue';
@@ -1205,6 +1226,19 @@ const initialPagination = ref({
 });
 
 const $q = useQuasar();
+const router = useRouter();
+
+// Accès à la page en fonction des privilèges
+const canAccessParametrage = computed(() => {
+  const p = privilege.value;
+  if (!p) return false;
+  const hasConsultation = p.consultation === true || p.consultation === 1;
+  const role = typeof p.role === 'string' ? p.role.toLowerCase() : '';
+  return hasConsultation && role === 'admin';
+});
+
+const goHome = () => router.push('/reclamations/allTicket');
+const goBack = () => router.back();
 
 // Methods
 const fetchData = async () => {
