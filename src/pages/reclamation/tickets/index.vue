@@ -299,11 +299,11 @@ const getStatusColor = (status) => {
     'ouvert': 'grey',
     'En attente': 'blue',
     'clôturé': 'green',
-
     'EN_COURS': 'orange',
+    'En cours': 'orange',
+
     'FERME': 'green',
     'ANNULE': 'red',
-    'En cours': 'orange',
     'Terminé': 'green',
     'Annulé': 'red'
   }
