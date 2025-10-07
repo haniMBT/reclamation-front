@@ -8,10 +8,10 @@
           <div>
             <h1 class="text-2xl font-bold text-gray-800 mb-1">Messages du Ticket</h1>
             <p class="text-gray-600 text-sm" v-if="currentTicketId">
-              Ticket ID: {{ currentTicketId }}
+              <!-- Ticket ID: {{ currentTicketId }} -->
             </p>
             <p class="text-red-600 text-sm" v-else>
-              Aucun ticket sélectionné
+              Aucun ticket sélectionné .
             </p>
           </div>
         </div>
@@ -35,28 +35,32 @@
         </div>
       </div>
 
-      <!-- Section des directions du ticket -->
-      <div v-if="currentTicketId && directionOptions.length > 0" class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <!-- Section des directions du ticket -->        <!--condition si il est concerne par cet reclamation  -->
+      <div v-if="currentTicketId && directionOptions.length > 0 && privilege.role=='employe_Répondeur' && ticket_direction!=null" class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center">
             <q-icon name="account_tree" size="1.5rem" class="text-green-600 mr-3" />
-            <h2 class="text-lg font-semibold text-gray-800">Directions associées à ce ticket</h2>
+            <h2 class="text-lg font-semibold text-gray-800">Directions associées à ce ticket </h2>
           </div>
+          <!-- confirmi conditioon v if essq ticket_direction.direction == cab ou commercial ou type orientation == ticket ou default -->
           <q-btn
             icon="add"
             color="green"
             size="sm"
+            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket'"
             round
             @click="showAddDirectionDialog = true"
             class="ml-auto"
           >
             <q-tooltip>Ajouter d'autres directions</q-tooltip>
           </q-btn>
+          <!-- confirmi conditioon v if essq cab ou commercial ou type orientation == ticket ou default -->
           <q-btn
             icon="remove"
             color="red"
             size="sm"
             round
+            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket'"
             @click="showRemoveDirectionDialog = true"
             class="ml-2"
           >
@@ -109,26 +113,34 @@
               icon="add"
               color="blue-6"
               no-caps
+              v-if="ticket_direction!=null && ticket_direction.statut_direction=='traitement'"
               @click="showNewMessageDialog = true"
               :disable="!currentTicketId"
               class="px-6"
             >
               Nouveau Message
             </q-btn>
+            <!-- ticket_direction.type_orientation=='ticket' a confimet -->
             <q-btn
               icon="reply"
               color="green-6"
               no-caps
+              v-if="(ticket.user_id==authStore.user.id && canClientReply) ||
+              (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
+              && ticket_direction.type_orientation=='ticket' && !canClientReply)"
               @click="showReplyDialog = true"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
             >
               Réponse
             </q-btn>
+            <!-- ticket a confirmet -->
             <q-btn
               icon="check_circle"
               color="red-6"
               no-caps
+               v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
+              && ticket_direction.type_orientation=='ticket')"
               @click="showCloseDialog = true"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -1089,13 +1101,18 @@ import { useQuasar } from 'quasar'
 import { useRouter } from 'vue-router'
 import { useTicketStore } from 'src/stores/ticket'
 import { api } from 'src/boot/axios'
+import { useAuthStore } from "stores/auth";
 
+const authStore = useAuthStore()
 const $q = useQuasar()
 const router = useRouter()
 const ticketStore = useTicketStore()
 
 // État réactif
 const loading = ref(false)
+const ticket_direction = ref(false)
+const ticket = ref(false)
+const privilege = ref(false)
 const messages = ref([])
 const showNewMessageDialog = ref(false)
 const showMessageDetail = ref(false)
@@ -1183,8 +1200,25 @@ const pagination = ref({
 const currentTicketId = computed(() => ticketStore.t_rec_ticket_id)
 
 
+const clientMessages = computed(() => {
+  return messages.value.filter(message =>
+    message.destinataires?.some(d => d.direction_destinataire == 'client')
+  );
+});
 
+// Détermine si le client peut envoyer une réponse
+const canClientReply = computed(() => {
+  // Nombre de messages destinés au client
+  let totalClientMessages = clientMessages.value.length;
 
+  // Si le ticket a un recours, on ajoute +1
+  // if (ticket.value?.recour === 1) {
+  //   totalClientMessages += 1;
+  // }
+
+  // Le client peut répondre seulement si le total (ajusté) est impair
+  return totalClientMessages % 2 !== 0;
+});
 
 // Méthodes
 const goBack = () => {
@@ -1238,7 +1272,9 @@ const loadMessages = async () => {
 
     if (response.data.success) {
       messages.value = response.data.data || []
-       console.log('Messages chargés:', messages.value);
+      ticket_direction.value = response.data.ticket_direction || null
+      ticket.value = response.data.ticket || null
+      privilege.value = response.data.privilege || null
       // Mettre à jour le nombre total de lignes pour la pagination
       pagination.value.rowsNumber = messages.value.length
     } else {
@@ -1830,17 +1866,6 @@ const downloadTicketFile = async (file) => {
 
  // Initialiser les options de directions non concernées
  onMounted(() => {
-   // Données d'exemple pour directionsNonConcerneOptions
-   directionsNonConcerneOptions.value = [
-     { label: 'Direction Technique', value: 'technique' },
-     { label: 'Direction Commerciale', value: 'commerciale' },
-     { label: 'Direction Financière', value: 'financiere' },
-     { label: 'Direction Ressources Humaines', value: 'rh' },
-     { label: 'Direction Marketing', value: 'marketing' },
-     { label: 'Direction Qualité', value: 'qualite' },
-     { label: 'Direction Logistique', value: 'logistique' },
-     { label: 'Direction Juridique', value: 'juridique' }
-   ]
 
    if (currentTicketId.value) {
      loadMessages()
