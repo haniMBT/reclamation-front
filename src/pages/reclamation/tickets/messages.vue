@@ -47,7 +47,7 @@
             icon="add"
             color="green"
             size="sm"
-            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket'"
+            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
             round
             @click="showAddDirectionDialog = true"
             class="ml-auto"
@@ -60,7 +60,7 @@
             color="red"
             size="sm"
             round
-            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket'"
+            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
             @click="showRemoveDirectionDialog = true"
             class="ml-2"
           >
@@ -113,7 +113,7 @@
               icon="add"
               color="blue-6"
               no-caps
-              v-if="ticket_direction!=null && ticket_direction.statut_direction=='traitement'"
+              v-if="ticket_direction!=null && ticket_direction.statut_direction=='traitement' && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
               @click="showNewMessageDialog = true"
               :disable="!currentTicketId"
               class="px-6"
@@ -127,7 +127,8 @@
               no-caps
               v-if="(ticket.user_id==authStore.user.id && canClientReply) ||
               (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
-              && ticket_direction.type_orientation=='ticket' && !canClientReply)"
+              && ticket_direction.type_orientation=='ticket' && !canClientReply)
+              && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
               @click="showReplyDialog = true"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -140,14 +141,15 @@
               color="red-6"
               no-caps
                v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
-              && ticket_direction.type_orientation=='ticket')"
+              && ticket_direction.type_orientation=='ticket')
+              && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
               @click="showCloseDialog = true"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
             >
               Clôturer la réclamation
             </q-btn>
-          </div>
+           </div>
         </div>
 
         <!-- Table Section -->
@@ -203,17 +205,22 @@
             >
               <q-tooltip>Voir le détail</q-tooltip>
             </q-btn>
-            <q-btn
+            <!-- <q-btn
               flat
               round
               color="red"
               icon="delete"
               size="sm"
+              v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
+              && ticket_direction.direction==props.row.direction_envoi
+               && props.row.id == lastUserMessageId)
+               && props.row.message_vers != 'client'
+              && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
               @click="deleteMessage(props.row)"
               class="q-ml-xs"
             >
-              <q-tooltip>Supprimer</q-tooltip>
-            </q-btn>
+              <q-tooltip>Supprimer </q-tooltip>
+            </q-btn> -->
           </q-td>
         </template>
 
@@ -695,6 +702,15 @@
           <q-btn
             @click="replyToMessage(selectedMessage)"
             color="green-6"
+            v-if="(selectedMessage.destinataires[0].direction_destinataire!='client'
+              && selectedMessage.destinataires[0].direction_destinataire!='directions' && ticket_direction!=null
+              && ticket_direction.statut_direction=='traitement'
+              && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+            ||(selectedMessage.destinataires[0].direction_destinataire=='client'  && !canClientReply
+              && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+            ||(selectedMessage.destinataires[0].direction_destinataire=='directions'  && canClientReply
+              && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+            "
             no-caps
             unelevated
             class="px-6 ml-3"
@@ -719,10 +735,10 @@
               <div>
                 <h2 class="text-2xl font-bold mb-1">Détails de la Réclamation</h2>
                 <div class="flex items-center space-x-4 text-orange-100">
-                  <span class="flex items-center">
+                  <!-- <span class="flex items-center">
                     <q-icon name="tag" class="mr-1" size="sm" />
                     Ticket #{{ currentTicketId }}
-                  </span>
+                  </span> -->
                   <span v-if="ticketDetails?.created_at" class="flex items-center">
                     <q-icon name="schedule" class="mr-1" size="sm" />
                     {{ new Date(ticketDetails.created_at).toLocaleDateString('fr-FR') }}
@@ -1146,11 +1162,7 @@ const selectedRemoveDirections = ref([])
 const showCloseDialog = ref(false)
 const isClosing = ref(false)
 const closeConclusion = ref('')
-const isConclusionValid = computed(() => {
-  const text = closeConclusion.value || ''
-  const stripped = text.replace(/<[^>]*>/g, '').trim()
-  return stripped.length > 0
-})
+
 
 
 
@@ -1197,6 +1209,12 @@ const pagination = ref({
 })
 
 // Computed
+const isConclusionValid = computed(() => {
+  const text = closeConclusion.value || ''
+  const stripped = text.replace(/<[^>]*>/g, '').trim()
+  return stripped.length > 0
+})
+
 const currentTicketId = computed(() => ticketStore.t_rec_ticket_id)
 
 
@@ -1218,6 +1236,22 @@ const canClientReply = computed(() => {
 
   // Le client peut répondre seulement si le total (ajusté) est impair
   return totalClientMessages % 2 !== 0;
+});
+
+const lastUserMessageId = computed(() => {
+  if (!messages.value || messages.value.length === 0) return null;
+
+  // Filtrer les messages envoyés par la direction courante
+  const userMessages = messages.value.filter(
+    m => m.direction_envoi === ticket_direction.value?.direction
+  );
+
+  if (userMessages.length === 0) return null;
+
+  // Trier les messages selon la date d'envoi (ou ID si auto-incrémenté)
+  const lastMessage = [...userMessages].sort((a, b) => b.id - a.id)[0];
+
+  return lastMessage ? lastMessage.id : null;
 });
 
 // Méthodes
