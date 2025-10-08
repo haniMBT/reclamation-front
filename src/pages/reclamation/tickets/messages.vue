@@ -125,10 +125,13 @@
               icon="reply"
               color="green-6"
               no-caps
-              v-if="(ticket.user_id==authStore.user.id && canClientReply) ||
-              (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
-              && ticket_direction.type_orientation=='ticket' && !canClientReply)
-              && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
+              v-if="(ticket.user_id==authStore.user.id && canClientReply
+                  && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+               ||
+                  (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
+                  && ticket_direction.type_orientation=='ticket' && !canClientReply
+                  && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+              "
               @click="showReplyDialog = true"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -141,7 +144,8 @@
               color="red-6"
               no-caps
                v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
-              && ticket_direction.type_orientation=='ticket')
+              && ticket_direction.type_orientation=='ticket'
+              && lastMessageVersClient)
               && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
               @click="showCloseDialog = true"
               :disable="!currentTicketId"
@@ -1235,7 +1239,8 @@ const canClientReply = computed(() => {
   // }
 
   // Le client peut répondre seulement si le total (ajusté) est impair
-  return totalClientMessages % 2 !== 0;
+  // return totalClientMessages+1;
+  return (totalClientMessages) % 2 != 0;
 });
 
 const lastUserMessageId = computed(() => {
@@ -1252,6 +1257,15 @@ const lastUserMessageId = computed(() => {
   const lastMessage = [...userMessages].sort((a, b) => b.id - a.id)[0];
 
   return lastMessage ? lastMessage.id : null;
+});
+
+const lastMessageVersClient = computed(() => {
+  if (!messages.value || messages.value.length === 0) return false;
+
+  // Prendre le dernier message selon l'ID (ou created_at si tu préfères)
+  const lastMessage = [...messages.value].sort((a, b) => b.id - a.id)[0];
+  // Vérifie s'il est destiné au client
+  return lastMessage && lastMessage.message_vers == 'direction vers clien';
 });
 
 // Méthodes
