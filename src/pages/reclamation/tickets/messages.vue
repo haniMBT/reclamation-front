@@ -138,6 +138,18 @@
             >
               Réponse
             </q-btn>
+            <q-btn
+              icon="gavel"
+              color="blue-6"
+              no-caps
+               v-if="ticket.user_id==authStore.user.id
+                && ticket.status=='clôturé'"
+              @click="showRecourDialog = true"
+              :disable="!currentTicketId"
+              class="px-6 q-ml-sm"
+            >
+              Recour
+            </q-btn>
             <!-- ticket a confirmet -->
             <q-btn
               icon="check_circle"
@@ -583,6 +595,158 @@
             :disable="!replyMessage.subject || !replyMessage.content"
           >
             Envoyer la réponse
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Recour -->
+    <q-dialog v-model="showRecourDialog" persistent>
+      <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-blue-50">
+          <q-icon name="gavel" class="text-blue-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-blue-900">Recour</div>
+            <div class="text-sm text-blue-700">Envoyer un recour pour le ticket {{ currentTicketId }}</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <q-form @submit="sendRecourMessage" class="space-y-6">
+            <div class="grid grid-cols-1 gap-6">
+              <!-- Titre -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                  Titre <span class="text-red-500">*</span>
+                </label>
+                <q-input
+                  v-model="recourMessage.subject"
+                  outlined
+                  dense
+                  placeholder="Entrez le titre du recour"
+                  :rules="[val => !!val || 'Le titre est requis']"
+                >
+                  <template #prepend>
+                    <q-icon name="title" class="text-blue-600" />
+                  </template>
+                </q-input>
+              </div>
+
+              <!-- Description -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                  Description <span class="text-red-500">*</span>
+                </label>
+                <q-editor
+                  v-model="recourMessage.content"
+                  min-height="200px"
+                  :toolbar="[
+                    ['bold', 'italic', 'underline'],
+                    ['unordered', 'ordered'],
+                    ['undo', 'redo']
+                  ]"
+                  placeholder="Expliquez le recour..."
+                />
+              </div>
+
+              <!-- Directions -->
+
+
+              <!-- Fichiers -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                  Fichiers joints (optionnel)
+                </label>
+
+                <div class="flex gap-3 mb-3">
+                  <q-file
+                    v-model="recourFiles"
+                    multiple
+                    outlined
+                    dense
+                    accept="image/*,application/pdf,.doc,.docx,.txt"
+                    max-file-size="10485760"
+                    class="flex-1"
+                    @rejected="onRejected"
+                    @update:model-value="onRecourFilesSelected"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="attach_file" class="text-blue-600" />
+                    </template>
+                    <template v-slot:hint>
+                      Formats acceptés: Images, PDF, Word. Taille max: 10Mo par fichier
+                    </template>
+                  </q-file>
+
+                  <q-btn
+                    label="Ajouter"
+                    color="blue-6"
+                    outline
+                    :disable="!recourFiles || recourFiles.length === 0"
+                    @click="addRecourFiles"
+                    class="px-4"
+                  >
+                    <q-icon name="add" class="mr-1" />
+                  </q-btn>
+                </div>
+
+                <div v-if="recourMessage.attachments.length > 0" class="mt-3">
+                  <div class="text-sm font-medium text-gray-700 mb-2">
+                    Fichiers sélectionnés ({{ recourMessage.attachments.length }}) :
+                  </div>
+                  <div class="space-y-2">
+                    <div
+                      v-for="(file, index) in recourMessage.attachments"
+                      :key="index"
+                      class="flex items-center justify-between bg-gray-50 p-3 rounded-md border"
+                    >
+                      <div class="flex items-center">
+                        <q-icon
+                          :name="getFileIcon(file.type)"
+                          size="1.5rem"
+                          class="text-orange-600 mr-3"
+                        />
+                        <div>
+                          <div class="text-sm font-medium text-gray-800">{{ file.name }}</div>
+                          <div class="text-xs text-gray-500">{{ formatFileSize(file.size) }}</div>
+                        </div>
+                      </div>
+                      <q-btn
+                        icon="close"
+                        size="sm"
+                        flat
+                        round
+                        color="negative"
+                        @click="removeRecourFile(index)"
+                        class="ml-2"
+                      >
+                        <q-tooltip>Supprimer le fichier</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </q-form>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn @click="closeRecourDialog" color="grey-6" outline no-caps class="px-6">Annuler</q-btn>
+          <q-btn
+            @click="sendRecourMessage"
+            color="orange-6"
+            no-caps
+            unelevated
+            class="px-6 ml-3"
+            :loading="sendingRecour"
+            :disable="!recourMessage.subject || !recourMessage.content"
+          >
+            Envoyer le recour
           </q-btn>
         </q-card-actions>
       </q-card>
@@ -1138,6 +1302,7 @@ const showNewMessageDialog = ref(false)
 const showMessageDetail = ref(false)
 const selectedMessage = ref(null)
 const sending = ref(false)
+const sendingRecour = ref(false)
 const showTicketDetailDialog = ref(false)
 const ticketDetails = ref(null)
 const ticketDetailsLoading = ref(false)
@@ -1148,6 +1313,15 @@ const newMessage = ref({
   subject: '',
   content: '',
   directions: [],
+  attachments: []
+})
+
+// Recour message
+const showRecourDialog = ref(false)
+const recourFiles = ref(null)
+const recourMessage = ref({
+  subject: '',
+  content: '',
   attachments: []
 })
 
@@ -1240,6 +1414,7 @@ const canClientReply = computed(() => {
 
   // Le client peut répondre seulement si le total (ajusté) est impair
   // return totalClientMessages+1;
+  return (totalClientMessages) ;
   return (totalClientMessages) % 2 != 0;
 });
 
@@ -1462,6 +1637,12 @@ const closeReplyDialog = () => {
   replyFiles.value = null
 }
 
+const closeRecourDialog = () => {
+  showRecourDialog.value = false
+  recourMessage.value = { subject: '', content: '', attachments: [] }
+  recourFiles.value = null
+}
+
 const onReplyFilesSelected = (files) => {
   replyFiles.value = files
 }
@@ -1477,6 +1658,27 @@ const addReplyFiles = () => {
     })
   })
   replyFiles.value = null
+}
+
+const onRecourFilesSelected = (files) => {
+  recourFiles.value = files
+}
+
+const addRecourFiles = () => {
+  if (!recourFiles.value || recourFiles.value.length === 0) return
+  recourFiles.value.forEach(file => {
+    recourMessage.value.attachments.push({
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      file
+    })
+  })
+  recourFiles.value = null
+}
+
+const removeRecourFile = (index) => {
+  recourMessage.value.attachments.splice(index, 1)
 }
 
 const removeReplyFile = (index) => {
@@ -1518,6 +1720,43 @@ const sendReplyMessage = async () => {
     $q.notify({ type: 'negative', message: 'Erreur lors de l’envoi de la réponse' })
   } finally {
     sendingReply.value = false
+  }
+}
+
+const sendRecourMessage = async () => {
+  if (!recourMessage.value.subject || !recourMessage.value.content) {
+    $q.notify({ type: 'negative', message: 'Veuillez remplir tous les champs obligatoires' })
+    return
+  }
+
+  sendingRecour.value = true
+  try {
+    const formData = new FormData()
+    formData.append('titre', recourMessage.value.subject)
+    formData.append('description', recourMessage.value.content)
+
+    recourMessage.value.attachments.forEach((attachment, index) => {
+      if (attachment.file) {
+        formData.append(`attachments[${index}]`, attachment.file)
+      }
+    })
+
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages/recour`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+
+    if (response.data.success) {
+      $q.notify({ type: 'positive', message: 'Recour envoyé avec succès' })
+      closeRecourDialog()
+      await loadMessages()
+    } else {
+      $q.notify({ type: 'warning', message: response.data.message || 'Échec de l’envoi du recour' })
+    }
+  } catch (error) {
+    console.error('Erreur lors de l’envoi du recour:', error)
+    $q.notify({ type: 'negative', message: 'Erreur lors de l’envoi du recour' })
+  } finally {
+    sendingRecour.value = false
   }
 }
 
