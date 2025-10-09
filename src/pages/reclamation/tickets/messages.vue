@@ -147,7 +147,7 @@
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
             >
-              Réponse {{ canClientReply }}
+              Réponse
             </q-btn>
             <q-btn
               icon="gavel"
@@ -168,7 +168,7 @@
               no-caps
                v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
               && ticket_direction.type_orientation=='ticket'
-              && lastMessageVersClient)
+              && (lastMessageVersClient||ticket.status=='Recours'))
               && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
               @click="showCloseDialog = true"
               :disable="!currentTicketId"
@@ -1476,9 +1476,9 @@ const canClientReply = computed(() => {
   let totalClientMessages = clientMessages.value.length;
 
   // Si le ticket a un recours, on ajoute +1
-  // if (ticket.value?.recour === 1) {
-  //   totalClientMessages += 1;
-  // }
+   if (ticket.value?.status == 'Recours') {
+     totalClientMessages += 1;
+   }
 
   // Le client peut répondre seulement si le total (ajusté) est impair
   // return totalClientMessages+1;
@@ -1566,6 +1566,7 @@ const loadMessages = async () => {
       ticket_direction.value = response.data.ticket_direction || null
       ticket.value = response.data.ticket || null
       privilege.value = response.data.privilege || null
+      closeConclusion.value = ticket.value.conclusion
       // Mettre à jour le nombre total de lignes pour la pagination
       pagination.value.rowsNumber = messages.value.length
     } else {
