@@ -110,6 +110,17 @@
               Voir Réclamation
             </q-btn>
             <q-btn
+              icon="assignment_turned_in"
+              color="purple-6"
+              no-caps
+              v-if="['clôturé','Recours clôturé'].includes(ticket?.status)"
+              @click="openConclusionDialog"
+              :disable="!currentTicketId"
+              class="px-6 q-ml-sm"
+            >
+              Voir Conclusion
+            </q-btn>
+            <q-btn
               icon="add"
               color="blue-6"
               no-caps
@@ -752,6 +763,61 @@
       </q-card>
     </q-dialog>
 
+    <!-- Dialog Conclusion -->
+    <q-dialog v-model="showConclusionDialog" persistent>
+      <q-card class="w-full" style="min-width: 70vw; max-width: 85vw; max-height: 90vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-purple-50">
+          <q-icon name="assignment_turned_in" class="text-purple-600 mr-3" size="2rem" />
+          <div class="flex-1">
+            <div class="text-xl font-semibold text-purple-900">Conclusion de la réclamation</div>
+            <div class="text-sm text-purple-700 space-x-3 flex items-center">
+              <span class="flex items-center" v-if="ticket?.closed_at">
+                <q-icon name="schedule" class="mr-1" size="sm" />
+                {{ formatDate(ticket.closed_at) }}
+              </span>
+              <q-chip square color="purple-6" text-color="white" v-if="ticket?.status" class="q-ml-sm">
+                {{ ticket.status }}
+              </q-chip>
+            </div>
+          </div>
+          <q-btn icon="close" flat round size="lg" class="text-purple-600" v-close-popup />
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="flex-1 overflow-auto p-0">
+          <div class="p-6">
+            <div v-if="ticket?.conclusion" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-purple-200">
+                <h3 class="text-lg font-semibold text-purple-800 flex items-center">
+                  <q-icon name="text_snippet" class="mr-2" />
+                  Conclusion enregistrée
+                </h3>
+              </div>
+              <div class="p-6 prose max-w-none">
+                <div v-html="ticket.conclusion"></div>
+              </div>
+            </div>
+
+            <div v-else class="flex flex-col items-center justify-center py-16">
+              <div class="bg-purple-50 rounded-full p-6 mb-6">
+                <q-icon name="info" size="4rem" class="text-purple-500" />
+              </div>
+              <h3 class="text-xl font-semibold text-purple-700 mb-2">Aucune conclusion disponible</h3>
+              <p class="text-gray-600 text-center max-w-md">La réclamation ne contient pas de conclusion enregistrée pour le moment.</p>
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn @click="closeConclusionDialog" color="grey-6" outline no-caps class="px-6">Fermer</q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Dialog Détail Message -->
     <q-dialog v-model="showMessageDetail" persistent>
       <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;" v-if="selectedMessage">
@@ -1307,6 +1373,8 @@ const showTicketDetailDialog = ref(false)
 const ticketDetails = ref(null)
 const ticketDetailsLoading = ref(false)
 const ticketDetailsError = ref(null)
+// Conclusion du ticket
+const showConclusionDialog = ref(false)
 
 // Nouveau message
 const newMessage = ref({
@@ -1958,6 +2026,15 @@ const formatFileSize = (bytes) => {
  const openTicketDetails = () => {
    showTicketDetailDialog.value = true
    loadTicketDetails()
+ }
+
+ // Ouvrir/fermer le dialogue de conclusion
+ const openConclusionDialog = () => {
+   showConclusionDialog.value = true
+ }
+
+ const closeConclusionDialog = () => {
+   showConclusionDialog.value = false
  }
 
  const loadDirections = async () => {
