@@ -47,7 +47,7 @@
             icon="add"
             color="green"
             size="sm"
-            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
+            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
             round
             @click="showAddDirectionDialog = true"
             class="ml-auto"
@@ -60,7 +60,7 @@
             color="red"
             size="sm"
             round
-            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
+            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
             @click="showRemoveDirectionDialog = true"
             class="ml-2"
           >
@@ -113,7 +113,7 @@
               icon="add"
               color="blue-6"
               no-caps
-              v-if="ticket_direction!=null && ticket_direction.statut_direction=='traitement' && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
+              v-if="ticket_direction!=null && ticket_direction.statut_direction=='traitement' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
               @click="showNewMessageDialog = true"
               :disable="!currentTicketId"
               class="px-6"
@@ -126,17 +126,17 @@
               color="green-6"
               no-caps
               v-if="(ticket.user_id==authStore.user.id && canClientReply
-                  && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+                  && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
                ||
                   (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
                   && ticket_direction.type_orientation=='ticket' && !canClientReply
-                  && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+                  && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
               "
               @click="showReplyDialog = true"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
             >
-              Réponse
+              Réponse {{ canClientReply }}
             </q-btn>
             <q-btn
               icon="gavel"
@@ -158,7 +158,7 @@
                v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
               && ticket_direction.type_orientation=='ticket'
               && lastMessageVersClient)
-              && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
+              && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
               @click="showCloseDialog = true"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -231,7 +231,7 @@
               && ticket_direction.direction==props.row.direction_envoi
                && props.row.id == lastUserMessageId)
                && props.row.message_vers != 'client'
-              && ticket.status!='clôturé' && ticket.status!='recours clôturé'"
+              && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
               @click="deleteMessage(props.row)"
               class="q-ml-xs"
             >
@@ -873,11 +873,11 @@
             v-if="(selectedMessage.destinataires[0].direction_destinataire!='client'
               && selectedMessage.destinataires[0].direction_destinataire!='directions' && ticket_direction!=null
               && ticket_direction.statut_direction=='traitement'
-              && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+              && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
             ||(selectedMessage.destinataires[0].direction_destinataire=='client'  && !canClientReply
-              && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+              && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
             ||(selectedMessage.destinataires[0].direction_destinataire=='directions'  && canClientReply
-              && ticket.status!='clôturé' && ticket.status!='recours clôturé')
+              && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
             "
             no-caps
             unelevated
@@ -1398,7 +1398,7 @@ const currentTicketId = computed(() => ticketStore.t_rec_ticket_id)
 
 const clientMessages = computed(() => {
   return messages.value.filter(message =>
-    message.destinataires?.some(d => d.direction_destinataire == 'client')
+    message.destinataires?.some(d => (d.direction_destinataire == 'client' || d.direction_destinataire == 'directions'))
   );
 });
 
@@ -1414,7 +1414,7 @@ const canClientReply = computed(() => {
 
   // Le client peut répondre seulement si le total (ajusté) est impair
   // return totalClientMessages+1;
-  return (totalClientMessages) ;
+  // return (totalClientMessages) ;
   return (totalClientMessages) % 2 != 0;
 });
 
@@ -1440,7 +1440,7 @@ const lastMessageVersClient = computed(() => {
   // Prendre le dernier message selon l'ID (ou created_at si tu préfères)
   const lastMessage = [...messages.value].sort((a, b) => b.id - a.id)[0];
   // Vérifie s'il est destiné au client
-  return lastMessage && lastMessage.message_vers == 'direction vers clien';
+  return lastMessage && lastMessage.message_vers == 'direction vers client';
 });
 
 // Méthodes
