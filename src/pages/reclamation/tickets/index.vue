@@ -295,12 +295,15 @@ const formatDate = (dateString) => {
 
 const getStatusColor = (status) => {
   const statusColors = {
-    'OUVERT': 'grey',
-    'ouvert': 'grey',
-    'En attente': 'blue',
-    'clôturé': 'green',
-    'EN_COURS': 'orange',
+    'ouvert': 'blue',
+    'En attente': 'grey',
     'En cours': 'orange',
+    'clôturé': 'green',
+    'Recours': 'orange',
+    'Recours clôturé': 'green',
+
+    // 'OUVERT': 'grey',
+    // 'EN_COURS': 'orange',
 
     'FERME': 'green',
     'ANNULE': 'red',
