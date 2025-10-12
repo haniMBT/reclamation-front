@@ -140,7 +140,7 @@
                   && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
                ||
                   (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
-                  && ticket_direction.type_orientation=='ticket' && !canClientReply
+                  && ticket_direction.type_orientation=='ticket' && canClientReply
                   && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur!=null)
                   && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
               "
@@ -943,7 +943,7 @@
               && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
             ||(selectedMessage.destinataires[0].direction_destinataire=='client'  && canClientReply
               && ticket.status!='clôturé' && ticket.status!='Recours clôturé' && ticket.user_id==authStore.user.id )
-            ||(selectedMessage.destinataires[0].direction_destinataire=='directions'  && !canClientReply
+            ||(selectedMessage.destinataires[0].direction_destinataire=='directions'  && canClientReply
               && ticket.status!='clôturé' && ticket.status!='Recours clôturé' && ticket_direction!=null && ticket_direction.type_orientation=='ticket')
             "
             no-caps
@@ -1473,20 +1473,22 @@ const clientMessages = computed(() => {
 
 // Détermine si le client peut envoyer une réponse
 const canClientReply = computed(() => {
-  // Nombre de messages destinés au client
-  let totalClientMessages = clientMessages.value.length;
+  let reponse=null;
+if(ticket.value.reply_permission=='employe_Répondeur'){
+  if(ticket.value.user_id==authStore.user.id){
+      reponse= false;
+  }else{
+      reponse= true;
+  }
+}else{
+  if(ticket.value.user_id==authStore.user.id){
+      reponse= true;
+  }else{
+      reponse= false;
+  }
+}
 
-  // Si le ticket a un recours, on ajoute +1
-   if (ticket.value?.status == 'Recours') {
-    if(lastMessageVersClient ){
-       totalClientMessages += 1;
-    }
-   }
-
-  // Le client peut répondre seulement si le total (ajusté) est impair
-  // return totalClientMessages+1;
-  // return (totalClientMessages) ;
-  return (totalClientMessages) % 2 != 0;
+  return reponse;
 });
 
 const lastUserMessageId = computed(() => {
@@ -1781,7 +1783,7 @@ const sendReplyMessage = async () => {
       }
     })
 
-    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages/reply`, formData, {
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages/reply  `, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
 
