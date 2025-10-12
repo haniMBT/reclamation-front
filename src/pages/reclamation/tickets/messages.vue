@@ -141,7 +141,7 @@
                ||
                   (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
                   && ticket_direction.type_orientation=='ticket' && canClientReply
-                  && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur!=null)
+                  && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur==null)
                   && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
               "
               @click="showReplyDialog = true"
@@ -155,7 +155,7 @@
               color="blue-6"
               no-caps
                v-if="ticket.user_id==authStore.user.id
-                && ticket.status=='clôturé'"
+                && ticket.status=='clôturé' && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur==null)"
               @click="showRecourDialog = true"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -169,7 +169,7 @@
               no-caps
                v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
               && ticket_direction.type_orientation=='ticket'
-              && (hasMessageVersClient||ticket.status=='Recours'))
+              && (hasMessageVersClient||ticket.status=='Recours' || (ticket.privilege_crateur.role=='employe_Répondeur' && ticket.ticket_direction_crateur!=null)))
               && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
               @click="showCloseDialog = true"
               :disable="!currentTicketId"
