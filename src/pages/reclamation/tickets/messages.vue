@@ -136,11 +136,12 @@
               icon="reply"
               color="green-6"
               no-caps
-              v-if="(ticket.user_id==authStore.user.id && canClientReply
+              v-if="(ticket.user_id==authStore.user.id && canClientReply && ticket_direction==null
                   && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
                ||
                   (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
                   && ticket_direction.type_orientation=='ticket' && !canClientReply
+                  && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur!=null)
                   && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
               "
               @click="showReplyDialog = true"
