@@ -940,10 +940,10 @@
               && selectedMessage.destinataires[0].direction_destinataire!='directions' && ticket_direction!=null
               && ticket_direction.statut_direction=='traitement'
               && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
-            ||(selectedMessage.destinataires[0].direction_destinataire=='client'  && !canClientReply
-              && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
-            ||(selectedMessage.destinataires[0].direction_destinataire=='directions'  && canClientReply
-              && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
+            ||(selectedMessage.destinataires[0].direction_destinataire=='client'  && canClientReply
+              && ticket.status!='clôturé' && ticket.status!='Recours clôturé' && ticket.user_id==authStore.user.id )
+            ||(selectedMessage.destinataires[0].direction_destinataire=='directions'  && !canClientReply
+              && ticket.status!='clôturé' && ticket.status!='Recours clôturé' && ticket_direction!=null && ticket_direction.type_orientation=='ticket')
             "
             no-caps
             unelevated
@@ -1477,7 +1477,7 @@ const canClientReply = computed(() => {
 
   // Si le ticket a un recours, on ajoute +1
    if (ticket.value?.status == 'Recours') {
-     totalClientMessages += 1;
+    //  totalClientMessages += 1;
    }
 
   // Le client peut répondre seulement si le total (ajusté) est impair
