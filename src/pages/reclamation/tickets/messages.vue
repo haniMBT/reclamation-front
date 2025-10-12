@@ -169,7 +169,7 @@
               no-caps
                v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
               && ticket_direction.type_orientation=='ticket'
-              && (lastMessageVersClient||ticket.status=='Recours'))
+              && (hasMessageVersClient||ticket.status=='Recours'))
               && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
               @click="showCloseDialog = true"
               :disable="!currentTicketId"
@@ -1478,7 +1478,9 @@ const canClientReply = computed(() => {
 
   // Si le ticket a un recours, on ajoute +1
    if (ticket.value?.status == 'Recours') {
-    //  totalClientMessages += 1;
+    if(lastMessageVersClient ){
+       totalClientMessages += 1;
+    }
    }
 
   // Le client peut répondre seulement si le total (ajusté) est impair
@@ -1509,7 +1511,12 @@ const lastMessageVersClient = computed(() => {
   // Prendre le dernier message selon l'ID (ou created_at si tu préfères)
   const lastMessage = [...messages.value].sort((a, b) => b.id - a.id)[0];
   // Vérifie s'il est destiné au client
-  return lastMessage && lastMessage.message_vers == 'direction vers client';
+  return lastMessage && lastMessage.message_vers == 'direction vers client' && lastMessage.direction_envoi=='client';
+});
+
+const hasMessageVersClient = computed(() => {
+  if (!messages.value || messages.value.length === 0) return false;
+  return messages.value.some(m => m.message_vers === 'direction vers client');
 });
 
 // Méthodes
