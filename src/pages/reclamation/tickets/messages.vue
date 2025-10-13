@@ -1581,6 +1581,15 @@ const onRequest = (props) => {
 // Clôturer la réclamation
 const closeTicket = async () => {
   if (!currentTicketId.value) return
+  // Sécurité: rafraîchir et revalider la condition de clôture
+  await loadMessages()
+  await loadDirections()
+  if (!canShowCloseButton.value) {
+    $q.notify({ type: 'warning', message: 'Clôture non autorisée dans l’état actuel du ticket', position: 'top' })
+    // Fermer le q-dialog
+    showCloseDialog.value = false
+    return
+  }
   isClosing.value = true
   try {
     const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/close`, {
@@ -1676,6 +1685,22 @@ const closeMessageDetail = () => {
 
 const sendMessage = async () => {
   console.log('Envoi du message:', newMessage.value);
+
+  // Rafraîchir et revalider avant envoi
+  if (!currentTicketId.value) {
+    $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+    // Fermer le q-dialog pour éviter les actions ultérieures
+    showNewMessageDialog.value = false
+    return
+  }
+  await loadMessages()
+  await loadDirections()
+  if (!canShowNewMessageButton.value) {
+    $q.notify({ type: 'warning', message: 'Création de message non autorisée dans cet état', position: 'top' })
+    // Fermer le q-dialog
+    showNewMessageDialog.value = false
+    return
+  }
 
   if (!newMessage.value.subject || !newMessage.value.content) {
     $q.notify({
@@ -1805,6 +1830,22 @@ const removeReplyFile = (index) => {
 }
 
 const sendReplyMessage = async () => {
+  // Rafraîchir et revalider avant envoi
+  if (!currentTicketId.value) {
+    $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+    // Fermer le q-dialog
+    closeReplyDialog()
+    return
+  }
+  await loadMessages()
+  await loadDirections()
+  if (!canShowReplyButton.value) {
+    $q.notify({ type: 'warning', message: 'Réponse non autorisée pour l’état actuel du ticket', position: 'top' })
+    // Fermer le q-dialog
+    closeReplyDialog()
+    return
+  }
+
   if (!replyMessage.value.subject || !replyMessage.value.content) {
     $q.notify({ type: 'negative', message: 'Veuillez remplir tous les champs obligatoires' })
     return
@@ -1843,6 +1884,22 @@ const sendReplyMessage = async () => {
 }
 
 const sendRecourMessage = async () => {
+  // Rafraîchir et revalider avant envoi
+  if (!currentTicketId.value) {
+    $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+    // Fermer le q-dialog
+   closeRecourDialog()
+    return
+  }
+  await loadMessages()
+  await loadDirections()
+  if (!canShowRecourButton.value) {
+    $q.notify({ type: 'warning', message: 'Recour non disponible pour l’état actuel du ticket', position: 'top' })
+    // Fermer le q-dialog
+   closeRecourDialog()
+    return
+  }
+
   if (!recourMessage.value.subject || !recourMessage.value.content) {
     $q.notify({ type: 'negative', message: 'Veuillez remplir tous les champs obligatoires' })
     return
@@ -2290,18 +2347,32 @@ const downloadTicketFile = async (file) => {
  }
 
  // Fonction pour ajouter des directions supplémentaires (envoi au backend)
- const addAdditionalDirections = async () => {
-   if (!currentTicketId.value) {
-     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné' })
-     return
-   }
+const addAdditionalDirections = async () => {
+  if (!currentTicketId.value) {
+    $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné' })
+    // Fermer le q-dialog
+    showAddDirectionDialog.value = false
+    return
+  }
 
-   if (selectedAdditionalDirections.value.length === 0) {
-     $q.notify({ type: 'warning', message: 'Sélectionnez au moins une direction' })
-     return
-   }
+  // Rafraîchir et revalider avant envoi depuis le q-dialog d'ajout
+  await loadMessages()
+  await loadDirections()
+  if (!canAddDirection.value) {
+    $q.notify({ type: 'warning', message: 'Ajout de directions non autorisé dans cet état', position: 'top' })
+    // Fermer le q-dialog
+    showAddDirectionDialog.value = false
+    return
+  }
 
-   try {
+  if (selectedAdditionalDirections.value.length === 0) {
+    $q.notify({ type: 'warning', message: 'Sélectionnez au moins une direction' })
+    // Fermer le q-dialog
+    showAddDirectionDialog.value = false
+    return
+  }
+
+  try {
      let addedCount = 0
      for (const dirValue of selectedAdditionalDirections.value) {
        await api.post(`/api/rec/directions_ticket/${currentTicketId.value}`, {
@@ -2335,18 +2406,32 @@ const downloadTicketFile = async (file) => {
  }
 
  // Fonction pour supprimer des directions (envoi au backend)
- const removeSelectedDirections = async () => {
-   if (!currentTicketId.value) {
-     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné' })
-     return
-   }
+const removeSelectedDirections = async () => {
+  if (!currentTicketId.value) {
+    $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné' })
+    // Fermer le q-dialog
+    showRemoveDirectionDialog.value = false
+    return
+  }
 
-   if (selectedRemoveDirections.value.length === 0) {
-     $q.notify({ type: 'warning', message: 'Sélectionnez au moins une direction à supprimer' })
-     return
-   }
+  // Rafraîchir et revalider avant envoi depuis le q-dialog de suppression
+  await loadMessages()
+  await loadDirections()
+  if (!canRemoveDirection.value) {
+    $q.notify({ type: 'warning', message: 'Suppression de directions non autorisée dans cet état', position: 'top' })
+    // Fermer le q-dialog
+    showRemoveDirectionDialog.value = false
+    return
+  }
 
-   try {
+  if (selectedRemoveDirections.value.length === 0) {
+    $q.notify({ type: 'warning', message: 'Sélectionnez au moins une direction à supprimer' })
+    // Fermer le q-dialog
+    showRemoveDirectionDialog.value = false
+    return
+  }
+
+  try {
      const response = await api.post(`/api/rec/directions_ticket/${currentTicketId.value}/delete`, {
        directions: selectedRemoveDirections.value
      })
