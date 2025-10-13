@@ -2079,22 +2079,109 @@ const formatFileSize = (bytes) => {
    loadTicketDetails()
  }
 
- // Ouvrir/fermer le dialogue de conclusion
- const openConclusionDialog = () => {
-   showConclusionDialog.value = true
+ // Ouvrir/fermer le dialogue de conclusion (sécurisé)
+ const openConclusionDialog = async () => {
+   await loadMessages()
+   await loadDirections()
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+     return
+   }
+   if (canShowConclusionButton.value) {
+     showConclusionDialog.value = true
+   } else {
+     $q.notify({ type: 'warning', message: 'Conclusion non disponible pour l’état actuel du ticket', position: 'top' })
+   }
  }
 
  const closeConclusionDialog = () => {
    showConclusionDialog.value = false
  }
 
- // Ouverture des autres dialogues via fonctions dédiées
- const openNewMessageDialog = () => { showNewMessageDialog.value = true }
- const openReplyDialog = () => { showReplyDialog.value = true }
- const openRecourDialog = () => { showRecourDialog.value = true }
- const openCloseDialog = () => { showCloseDialog.value = true }
- const openAddDirectionDialog = () => { showAddDirectionDialog.value = true }
- const openRemoveDirectionDialog = () => { showRemoveDirectionDialog.value = true }
+ // Ouverture des autres dialogues via fonctions dédiées (sécurisées)
+ const openNewMessageDialog = async () => {
+   await loadMessages()
+   await loadDirections()
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+     return
+   }
+   if (canShowNewMessageButton.value) {
+     showNewMessageDialog.value = true
+   } else {
+     $q.notify({ type: 'warning', message: 'Création de message non autorisée dans cet état', position: 'top' })
+   }
+ }
+
+ const openReplyDialog = async () => {
+   await loadMessages()
+   await loadDirections()
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+     return
+   }
+   if (canShowReplyButton.value) {
+     showReplyDialog.value = true
+   } else {
+     $q.notify({ type: 'warning', message: 'Réponse non autorisée pour l’état actuel du ticket', position: 'top' })
+   }
+ }
+
+ const openRecourDialog = async () => {
+   await loadMessages()
+   await loadDirections()
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+     return
+   }
+   if (canShowRecourButton.value) {
+     showRecourDialog.value = true
+   } else {
+     $q.notify({ type: 'warning', message: 'Recour non disponible pour l’état actuel du ticket', position: 'top' })
+   }
+ }
+
+ const openCloseDialog = async () => {
+   await loadMessages()
+   await loadDirections()
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+     return
+   }
+   if (canShowCloseButton.value) {
+     showCloseDialog.value = true
+   } else {
+     $q.notify({ type: 'warning', message: 'Clôture non autorisée dans l’état actuel du ticket', position: 'top' })
+   }
+ }
+
+ const openAddDirectionDialog = async () => {
+   await loadMessages()
+   await loadDirections()
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+     return
+   }
+   if (canAddDirection.value) {
+     showAddDirectionDialog.value = true
+   } else {
+     $q.notify({ type: 'warning', message: 'Ajout de directions non autorisé dans cet état', position: 'top' })
+   }
+ }
+
+ const openRemoveDirectionDialog = async () => {
+   await loadMessages()
+   await loadDirections()
+   if (!currentTicketId.value) {
+     $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+     return
+   }
+   if (canRemoveDirection.value) {
+     showRemoveDirectionDialog.value = true
+   } else {
+     $q.notify({ type: 'warning', message: 'Suppression de directions non autorisée dans cet état', position: 'top' })
+   }
+ }
 
  const loadDirections = async () => {
    loadingDirections.value = true
