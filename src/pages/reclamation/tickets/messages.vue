@@ -7,7 +7,7 @@
           <q-icon name="message" size="2rem" class="text-blue-600 mr-3" />
           <div>
             <h1 class="text-2xl font-bold text-gray-800 mb-1">Messages du Ticket</h1>
-            <p class="text-gray-600 text-sm" v-if="currentTicketId">
+            <p class="text-gray-600 text-sm" v-if="hasCurrentTicket">
               <!-- Ticket ID: {{ currentTicketId }} -->
             </p>
             <p class="text-red-600 text-sm" v-else>
@@ -18,7 +18,7 @@
       </div>
 
       <!-- Alerte si aucun ticket sélectionné -->
-      <div v-if="!currentTicketId" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+      <div v-if="isNoTicketSelected" class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
         <div class="flex items-center">
           <q-icon name="warning" class="text-red-600 mr-3" size="1.5rem" />
           <div>
@@ -36,7 +36,7 @@
       </div>
 
       <!-- Section des directions du ticket -->        <!--condition si il est concerne par cet reclamation  -->
-      <div v-if="currentTicketId && directionOptions.length > 0 && privilege.role=='employe_Répondeur' && ticket_direction!=null" class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div v-if="showAssociatedDirections" class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center">
             <q-icon name="account_tree" size="1.5rem" class="text-green-600 mr-3" />
@@ -47,7 +47,7 @@
             icon="add"
             color="green"
             size="sm"
-            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
+            v-if="canAddDirection"
             round
             @click="openAddDirectionDialog"
             class="ml-auto"
@@ -60,7 +60,7 @@
             color="red"
             size="sm"
             round
-            v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
+            v-if="canRemoveDirection"
             @click="openRemoveDirectionDialog"
             class="ml-2"
           >
@@ -79,14 +79,14 @@
             {{ direction.label }}
           </q-chip>
         </div>
-        <div v-if="loadingDirections" class="flex items-center justify-center py-4">
+        <div v-if="isLoadingDirections" class="flex items-center justify-center py-4">
           <q-spinner color="green" size="2em" />
           <span class="ml-2 text-gray-600">Chargement des directions...</span>
         </div>
       </div>
 
       <!-- Liste des messages -->
-      <div v-if="currentTicketId">
+      <div v-if="hasCurrentTicket">
         <!-- Toolbar Section -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
           <div class="flex justify-end gap-3">
@@ -113,7 +113,7 @@
               icon="assignment_turned_in"
               color="purple-6"
               no-caps
-              v-if="['clôturé','Recours clôturé'].includes(ticket?.status)"
+              v-if="canShowConclusionButton"
               @click="openConclusionDialog"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -124,7 +124,7 @@
               icon="add"
               color="blue-6"
               no-caps
-              v-if="ticket_direction!=null && ticket_direction.statut_direction=='traitement' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
+              v-if="canShowNewMessageButton"
               @click="openNewMessageDialog"
               :disable="!currentTicketId"
               class="px-6"
@@ -136,14 +136,7 @@
               icon="reply"
               color="green-6"
               no-caps
-              v-if="(ticket.user_id==authStore.user.id && canClientReply && ticket_direction==null
-                  && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
-               ||
-                  (ticket_direction!=null && ticket_direction.statut_direction=='traitement'
-                  && ticket_direction.type_orientation=='ticket' && canClientReply
-                  && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur==null)
-                  && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
-              "
+              v-if="canShowReplyButton"
               @click="openReplyDialog"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -154,8 +147,7 @@
               icon="gavel"
               color="blue-6"
               no-caps
-               v-if="ticket.user_id==authStore.user.id
-                && ticket.status=='clôturé' && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur==null)"
+               v-if="canShowRecourButton"
               @click="openRecourDialog"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -167,10 +159,7 @@
               icon="check_circle"
               color="red-6"
               no-caps
-               v-if="(ticket_direction!=null && ticket_direction.statut_direction=='traitement'
-              && ticket_direction.type_orientation=='ticket'
-              && (hasMessageVersClient||ticket.status=='Recours' || (ticket.privilege_crateur.role=='employe_Répondeur' && ticket.ticket_direction_crateur!=null)))
-              && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
+               v-if="canShowCloseButton"
               @click="openCloseDialog"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -385,7 +374,7 @@
                 </div>
 
                 <!-- Liste des fichiers sélectionnés -->
-                <div v-if="newMessage.attachments.length > 0" class="mt-3">
+          <div v-if="hasNewMessageAttachments" class="mt-3">
                   <div class="text-sm font-medium text-gray-700 mb-2">
                     Fichiers sélectionnés ({{ newMessage.attachments.length }}) :
                   </div>
@@ -544,7 +533,7 @@
                 </div>
 
                 <!-- Liste des fichiers sélectionnés -->
-                <div v-if="replyMessage.attachments.length > 0" class="mt-3">
+          <div v-if="hasReplyAttachments" class="mt-3">
                   <div class="text-sm font-medium text-gray-700 mb-2">
                     Fichiers sélectionnés ({{ replyMessage.attachments.length }}) :
                   </div>
@@ -704,7 +693,7 @@
                   </q-btn>
                 </div>
 
-                <div v-if="recourMessage.attachments.length > 0" class="mt-3">
+          <div v-if="hasRecourAttachments" class="mt-3">
                   <div class="text-sm font-medium text-gray-700 mb-2">
                     Fichiers sélectionnés ({{ recourMessage.attachments.length }}) :
                   </div>
@@ -772,11 +761,11 @@
           <div class="flex-1">
             <div class="text-xl font-semibold text-purple-900">Conclusion de la réclamation</div>
             <div class="text-sm text-purple-700 space-x-3 flex items-center">
-              <span class="flex items-center" v-if="ticket?.closed_at">
+      <span class="flex items-center" v-if="hasTicketClosedAt">
                 <q-icon name="schedule" class="mr-1" size="sm" />
                 {{ formatDate(ticket.closed_at) }}
               </span>
-              <q-chip square color="purple-6" text-color="white" v-if="ticket?.status" class="q-ml-sm">
+      <q-chip square color="purple-6" text-color="white" v-if="hasTicketStatus" class="q-ml-sm">
                 {{ ticket.status }}
               </q-chip>
             </div>
@@ -788,7 +777,7 @@
 
         <q-card-section class="flex-1 overflow-auto p-0">
           <div class="p-6">
-            <div v-if="ticket?.conclusion" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div v-if="hasTicketConclusion" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div class="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-purple-200">
                 <h3 class="text-lg font-semibold text-purple-800 flex items-center">
                   <q-icon name="text_snippet" class="mr-2" />
@@ -821,7 +810,7 @@
 
     <!-- Dialog Détail Message -->
     <q-dialog v-model="showMessageDetail" persistent>
-      <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;" v-if="selectedMessage">
+      <q-card class="w-full" style="min-width: 80vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;" v-if="hasSelectedMessage">
         <q-card-section class="flex items-center bg-green-50">
           <q-icon name="visibility" class="text-green-600 mr-3" size="2rem" />
           <div class="flex-1">
@@ -864,7 +853,7 @@
             </div>
 
             <!-- Destinataires/Directions -->
-            <div v-if="selectedMessage.destinataires && selectedMessage.destinataires.length" class="space-y-2">
+      <div v-if="hasSelectedMessageDestinataires" class="space-y-2">
               <label class="block text-sm font-medium text-gray-700">
                 <q-icon name="send" class="text-green-600 mr-1" />
                 Destinataires ({{ selectedMessage.destinataires.length }})
@@ -887,7 +876,7 @@
             </div>
 
             <!-- Fichiers joints -->
-            <div v-if="selectedMessage.fichiers && selectedMessage.fichiers.length" class="space-y-2">
+      <div v-if="hasSelectedMessageFiles" class="space-y-2">
               <label class="block text-sm font-medium text-gray-700">
                 <q-icon name="attach_file" class="text-green-600 mr-1" />
                 Fichiers joints ({{ selectedMessage.fichiers.length }})
@@ -974,11 +963,11 @@
                     <q-icon name="tag" class="mr-1" size="sm" />
                     Ticket #{{ currentTicketId }}
                   </span> -->
-                  <span v-if="ticketDetails?.created_at" class="flex items-center">
+      <span v-if="hasTicketDetailsCreatedAt" class="flex items-center">
                     <q-icon name="schedule" class="mr-1" size="sm" />
                     {{ new Date(ticketDetails.created_at).toLocaleDateString('fr-FR') }}
                   </span>
-                  <span v-if="ticketDetails?.statut" class="flex items-center">
+      <span v-if="hasTicketDetailsStatut" class="flex items-center">
                     <q-icon name="info" class="mr-1" size="sm" />
                     {{ ticketDetails.statut }}
                   </span>
@@ -999,7 +988,7 @@
         <!-- Contenu principal avec scroll -->
         <q-card-section class="flex-1 overflow-auto p-0">
           <!-- États de chargement et d'erreur -->
-          <div v-if="ticketDetailsLoading" class="flex flex-col items-center justify-center py-20">
+          <div v-if="isTicketDetailsLoading" class="flex flex-col items-center justify-center py-20">
             <div class="bg-white rounded-full p-6 shadow-lg mb-6">
               <q-spinner-dots size="60px" color="orange-6" />
             </div>
@@ -1043,7 +1032,7 @@
             <!-- Layout en grille pour les sections principales -->
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <!-- Types de réclamation -->
-              <div v-if="ticketDetails.types && ticketDetails.types.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div v-if="hasTicketDetailsTypes" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-blue-50 to-blue-100 px-6 py-4 border-b border-blue-200">
                   <h3 class="text-lg font-semibold text-blue-800 flex items-center">
                     <q-icon name="category" class="mr-2" />
@@ -1092,7 +1081,7 @@
               </div>
 
               <!-- Informations générales -->
-              <div v-if="ticketDetails.infos_generales && ticketDetails.infos_generales.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div v-if="hasTicketDetailsInfosGenerales" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 px-6 py-4 border-b border-yellow-200">
                   <h3 class="text-lg font-semibold text-yellow-800 flex items-center">
                     <q-icon name="info" class="mr-2" />
@@ -1124,7 +1113,7 @@
               </div>
               <div class="p-6">
                 <div class="bg-gray-50 rounded-lg p-6 border border-gray-200 min-h-[200px]">
-                  <div v-if="ticketDetails.description" v-html="ticketDetails.description" class="prose max-w-none text-gray-800"></div>
+      <div v-if="hasTicketDetailsDescription" v-html="ticketDetails.description" class="prose max-w-none text-gray-800"></div>
                   <div v-else class="flex items-center justify-center h-32">
                     <div class="text-center">
                       <q-icon name="edit_note" size="2rem" class="text-gray-400 mb-2" />
@@ -1138,7 +1127,7 @@
             <!-- Documents et fichiers -->
             <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <!-- Documents à fournir -->
-              <div v-if="ticketDetails.documentAFournir" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div v-if="hasTicketDetailsDocumentAFournir" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-cyan-50 to-cyan-100 px-6 py-4 border-b border-cyan-200">
                   <h3 class="text-lg font-semibold text-cyan-800 flex items-center">
                     <q-icon name="assignment" class="mr-2" />
@@ -1153,7 +1142,7 @@
               </div>
 
               <!-- Fichiers joints -->
-              <div v-if="ticketDetails.files && ticketDetails.files.length > 0" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div v-if="hasTicketDetailsFiles" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div class="bg-gradient-to-r from-green-50 to-green-100 px-6 py-4 border-b border-green-200">
                   <h3 class="text-lg font-semibold text-green-800 flex items-center">
                     <q-icon name="attach_file" class="mr-2" />
@@ -1520,6 +1509,57 @@ const hasMessageVersClient = computed(() => {
   if (!messages.value || messages.value.length === 0) return false;
   return messages.value.some(m => m.message_vers === 'direction vers client');
 });
+
+// Visibilité UI (computed) — garde la logique inchangée
+const hasCurrentTicket = computed(() => !!currentTicketId.value)
+const isNoTicketSelected = computed(() => !currentTicketId.value)
+const showAssociatedDirections = computed(() => !!currentTicketId.value && directionOptions.value.length > 0 && privilege.value?.role=='employe_Répondeur' && ticket_direction.value!=null)
+const canAddDirection = computed(() => ticket_direction.value?.statut_direction=='traitement' && ticket_direction.value?.type_orientation=='ticket' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
+const canRemoveDirection = computed(() => ticket_direction.value?.statut_direction=='traitement' && ticket_direction.value?.type_orientation=='ticket' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
+const isLoadingDirections = computed(() => loadingDirections.value)
+
+const canShowConclusionButton = computed(() => ['clôturé','Recours clôturé'].includes(ticket.value?.status))
+const canShowNewMessageButton = computed(() => ticket_direction.value!=null && ticket_direction.value.statut_direction=='traitement' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
+const canShowReplyButton = computed(() => (
+  ticket.value?.user_id==authStore.user.id && canClientReply.value && ticket_direction.value==null &&
+  ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé'
+) || (
+  ticket_direction.value!=null && ticket_direction.value.statut_direction=='traitement' &&
+  ticket_direction.value.type_orientation=='ticket' && canClientReply.value &&
+  (ticket.value?.privilege_crateur?.role!='employe_Répondeur' || ticket.value?.ticket_direction_crateur==null) &&
+  ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé'
+))
+const canShowRecourButton = computed(() => ticket.value?.user_id==authStore.user.id && ticket.value?.status=='clôturé' && (ticket.value?.privilege_crateur?.role!='employe_Répondeur' || ticket.value?.ticket_direction_crateur==null))
+const canShowCloseButton = computed(() => (
+  ticket_direction.value!=null && ticket_direction.value.statut_direction=='traitement' &&
+  ticket_direction.value.type_orientation=='ticket' &&
+  (hasMessageVersClient.value || ticket.value?.status=='Recours' || (ticket.value?.privilege_crateur?.role=='employe_Répondeur' && ticket.value?.ticket_direction_crateur!=null))
+) && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
+
+// Attachments
+const hasNewMessageAttachments = computed(() => (newMessage.value.attachments?.length || 0) > 0)
+const hasReplyAttachments = computed(() => (replyMessage.value.attachments?.length || 0) > 0)
+const hasRecourAttachments = computed(() => (recourMessage.value.attachments?.length || 0) > 0)
+
+// Ticket chips
+const hasTicketClosedAt = computed(() => !!ticket.value?.closed_at)
+const hasTicketStatus = computed(() => !!ticket.value?.status)
+const hasTicketConclusion = computed(() => !!ticket.value?.conclusion)
+
+// Message sélectionné
+const hasSelectedMessage = computed(() => !!selectedMessage.value)
+const hasSelectedMessageDestinataires = computed(() => !!selectedMessage.value?.destinataires && selectedMessage.value.destinataires.length > 0)
+const hasSelectedMessageFiles = computed(() => !!selectedMessage.value?.fichiers && selectedMessage.value.fichiers.length > 0)
+
+// Détails du ticket
+const isTicketDetailsLoading = computed(() => !!ticketDetailsLoading.value)
+const hasTicketDetailsCreatedAt = computed(() => !!ticketDetails.value?.created_at)
+const hasTicketDetailsStatut = computed(() => !!ticketDetails.value?.statut)
+const hasTicketDetailsTypes = computed(() => !!ticketDetails.value?.types && ticketDetails.value.types.length > 0)
+const hasTicketDetailsInfosGenerales = computed(() => !!ticketDetails.value?.infos_generales && ticketDetails.value.infos_generales.length > 0)
+const hasTicketDetailsDescription = computed(() => !!ticketDetails.value?.description)
+const hasTicketDetailsDocumentAFournir = computed(() => !!ticketDetails.value?.documentAFournir)
+const hasTicketDetailsFiles = computed(() => !!ticketDetails.value?.files && ticketDetails.value.files.length > 0)
 
 // Méthodes
 const goBack = () => {
