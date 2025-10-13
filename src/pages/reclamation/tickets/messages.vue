@@ -1625,7 +1625,9 @@ const loadMessages = async () => {
       ticket_direction.value = response.data.ticket_direction || null
       ticket.value = response.data.ticket || null
       privilege.value = response.data.privilege || null
-      closeConclusion.value = ticket.value.conclusion
+      if(!showCloseDialog.value){
+        closeConclusion.value = ticket.value.conclusion
+      }
       // Mettre à jour le nombre total de lignes pour la pagination
       pagination.value.rowsNumber = messages.value.length
     } else {
