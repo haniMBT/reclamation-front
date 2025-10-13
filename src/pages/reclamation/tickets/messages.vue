@@ -49,7 +49,7 @@
             size="sm"
             v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
             round
-            @click="showAddDirectionDialog = true"
+            @click="openAddDirectionDialog"
             class="ml-auto"
           >
             <q-tooltip>Ajouter d'autres directions</q-tooltip>
@@ -61,7 +61,7 @@
             size="sm"
             round
             v-if="ticket_direction.statut_direction=='traitement' && ticket_direction.type_orientation=='ticket' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
-            @click="showRemoveDirectionDialog = true"
+            @click="openRemoveDirectionDialog"
             class="ml-2"
           >
             <q-tooltip>Supprimer des directions</q-tooltip>
@@ -125,7 +125,7 @@
               color="blue-6"
               no-caps
               v-if="ticket_direction!=null && ticket_direction.statut_direction=='traitement' && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
-              @click="showNewMessageDialog = true"
+              @click="openNewMessageDialog"
               :disable="!currentTicketId"
               class="px-6"
             >
@@ -144,7 +144,7 @@
                   && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur==null)
                   && ticket.status!='clôturé' && ticket.status!='Recours clôturé')
               "
-              @click="showReplyDialog = true"
+              @click="openReplyDialog"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
             >
@@ -156,7 +156,7 @@
               no-caps
                v-if="ticket.user_id==authStore.user.id
                 && ticket.status=='clôturé' && (ticket.privilege_crateur.role!='employe_Répondeur' || ticket.ticket_direction_crateur==null)"
-              @click="showRecourDialog = true"
+              @click="openRecourDialog"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
             >
@@ -171,7 +171,7 @@
               && ticket_direction.type_orientation=='ticket'
               && (hasMessageVersClient||ticket.status=='Recours' || (ticket.privilege_crateur.role=='employe_Répondeur' && ticket.ticket_direction_crateur!=null)))
               && ticket.status!='clôturé' && ticket.status!='Recours clôturé'"
-              @click="showCloseDialog = true"
+              @click="openCloseDialog"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
             >
@@ -2047,6 +2047,14 @@ const formatFileSize = (bytes) => {
  const closeConclusionDialog = () => {
    showConclusionDialog.value = false
  }
+
+ // Ouverture des autres dialogues via fonctions dédiées
+ const openNewMessageDialog = () => { showNewMessageDialog.value = true }
+ const openReplyDialog = () => { showReplyDialog.value = true }
+ const openRecourDialog = () => { showRecourDialog.value = true }
+ const openCloseDialog = () => { showCloseDialog.value = true }
+ const openAddDirectionDialog = () => { showAddDirectionDialog.value = true }
+ const openRemoveDirectionDialog = () => { showRemoveDirectionDialog.value = true }
 
  const loadDirections = async () => {
    loadingDirections.value = true
