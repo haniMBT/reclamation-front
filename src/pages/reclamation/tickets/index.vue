@@ -140,12 +140,12 @@
             </div>
 
             <!-- Dates de création et mise à jour -->
-            <div class="bg-gray-50 rounded-lg p-3 mb-4">
-              <div class="text-xs text-gray-600 mb-1">
+            <div class="bg-gray-50 rounded-lg p-3 mb-4" >
+              <div v-if="ticket.created_at" class="text-xs text-gray-600 mb-1">
                 <q-icon name="schedule" size="xs" class="mr-1" />
                 Créé le {{ formatDate(ticket.created_at) }}
               </div>
-              <div class="text-xs text-gray-500 mb-1">
+              <div v-if="ticket.updated_at" class="text-xs text-yellow-500 mb-1">
                 <q-icon name="update" size="xs" class="mr-1" />
                 Mis à jour le {{ formatDate(ticket.updated_at) }}
               </div>
@@ -159,17 +159,18 @@
                 <q-icon name="play_arrow" size="xs" class="mr-1" />
                 En cours depuis le {{ formatDate(ticket.date_en_cours) }}
               </div>
-              <div v-if="ticket.date_recours" class="text-xs text-purple-600 mb-1">
+              <!-- Affichage conditionnel de closed_at selon la présence de recours :class="getClosedAtClass(ticket)"-->
+              <div v-if="ticket.closed_at"  class="text-xs text-red-600 mb-1">
+                <q-icon :name="getClosedAtIcon(ticket)" size="xs" class="mr-1" />
+                {{ getClosedAtLabel(ticket) }} {{ formatDate(ticket.closed_at) }}
+              </div>
+              <div v-if="ticket.date_recours" class="text-xs text-blue-600 mb-1">
                 <q-icon name="gavel" size="xs" class="mr-1" />
-                Recours depuis le {{ formatDate(ticket.date_recours) }}
+                Recours lancé le {{ formatDate(ticket.date_recours) }}
               </div>
-              <div v-if="ticket.date_cloture_recours" class="text-xs text-blue-600 mb-1">
-                <q-icon name="how_to_reg" size="xs" class="mr-1" />
-                Recours clôturé le {{ formatDate(ticket.date_cloture_recours) }}
-              </div>
-              <div v-if="ticket.closed_at" class="text-xs text-red-600">
-                <q-icon name="lock" size="xs" class="mr-1" />
-                Fermé le {{ formatDate(ticket.closed_at) }}
+              <div v-if="ticket.date_cloture_recours" class="text-xs text-black-600 mb-1">
+                <q-icon name="cancel" size="xs" class="mr-1" />
+                Clôture du recours le {{ formatDate(ticket.date_cloture_recours) }}
               </div>
             </div>
 
@@ -333,6 +334,21 @@ const getStatusColor = (status) => {
     'Annulé': 'red'
   }
   return statusColors[status] || 'grey'
+}
+
+// Nouvelles méthodes pour l'affichage conditionnel de closed_at
+const getClosedAtLabel = (ticket) => {
+  return ticket.date_recours ? 'Refusé le' : 'Fermé le'
+}
+
+const getClosedAtIcon = (ticket) => {
+  return ticket.date_recours ? 'block' : 'lock'
+}
+
+const getClosedAtClass = (ticket) => {
+  // Rouge si pas de recours OU si recours clôturé
+  const isRed = !ticket.date_recours || ticket.date_cloture_recours
+  return isRed ? 'text-xs text-red-600' : 'text-xs text-gray-600'
 }
 
 const viewTicket = (ticket) => {
