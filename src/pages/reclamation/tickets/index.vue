@@ -145,9 +145,31 @@
                 <q-icon name="schedule" size="xs" class="mr-1" />
                 Créé le {{ formatDate(ticket.created_at) }}
               </div>
-              <div class="text-xs text-gray-500">
+              <div class="text-xs text-gray-500 mb-1">
                 <q-icon name="update" size="xs" class="mr-1" />
                 Mis à jour le {{ formatDate(ticket.updated_at) }}
+              </div>
+
+              <!-- Dates clés du cycle de traitement -->
+              <div v-if="ticket.date_validation_createur" class="text-xs text-green-600 mb-1">
+                <q-icon name="verified" size="xs" class="mr-1" />
+                Validé le {{ formatDate(ticket.date_validation_createur) }}
+              </div>
+              <div v-if="ticket.date_en_cours" class="text-xs text-orange-600 mb-1">
+                <q-icon name="play_arrow" size="xs" class="mr-1" />
+                En cours depuis le {{ formatDate(ticket.date_en_cours) }}
+              </div>
+              <div v-if="ticket.date_recours" class="text-xs text-purple-600 mb-1">
+                <q-icon name="gavel" size="xs" class="mr-1" />
+                Recours depuis le {{ formatDate(ticket.date_recours) }}
+              </div>
+              <div v-if="ticket.date_cloture_recours" class="text-xs text-blue-600 mb-1">
+                <q-icon name="how_to_reg" size="xs" class="mr-1" />
+                Recours clôturé le {{ formatDate(ticket.date_cloture_recours) }}
+              </div>
+              <div v-if="ticket.closed_at" class="text-xs text-red-600">
+                <q-icon name="lock" size="xs" class="mr-1" />
+                Fermé le {{ formatDate(ticket.closed_at) }}
               </div>
             </div>
 
