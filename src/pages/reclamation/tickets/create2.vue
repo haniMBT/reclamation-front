@@ -557,6 +557,9 @@ const submitForm = async () => {
       }
     })
 
+    // Ajouter les fichiers sélectionnés avant l'envoi même si les fichiers n'ont pas été ajoutés
+    addFiles()
+
     // Construire le payload standardisé
     const payload = {
       tticket_id: ticketInfo.value.t_rec_ticket_id,

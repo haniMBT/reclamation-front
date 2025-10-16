@@ -1714,6 +1714,9 @@ const sendMessage = async () => {
 
   sending.value = true
   try {
+    // Ajouter les fichiers sélectionnés avant l'envoi même si les fichiers n'ont pas été ajoutés
+    addFiles()
+
     // Créer un FormData pour inclure les fichiers
      const formData = new FormData()
      formData.append('titre', newMessage.value.subject)
@@ -1855,6 +1858,9 @@ const sendReplyMessage = async () => {
 
   sendingReply.value = true
   try {
+    // Ajouter les fichiers sélectionnés avant l'envoi même si les fichiers n'ont pas été ajoutés
+    addReplyFiles()
+
     const formData = new FormData()
     formData.append('titre', replyMessage.value.subject)
     formData.append('description', replyMessage.value.content)
@@ -1909,6 +1915,9 @@ const sendRecourMessage = async () => {
 
   sendingRecour.value = true
   try {
+    // Ajouter les fichiers sélectionnés avant l'envoi même si les fichiers n'ont pas été ajoutés
+    addRecourFiles()
+
     const formData = new FormData()
     formData.append('titre', recourMessage.value.subject)
     formData.append('description', recourMessage.value.content)

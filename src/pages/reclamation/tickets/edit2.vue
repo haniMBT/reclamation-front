@@ -752,6 +752,9 @@ const submitForm = async () => {
     // Ajouter la sélection des types
     formData.append('type_selection', JSON.stringify(typeSelection))
 
+    // Ajouter les fichiers sélectionnés avant l'envoi même si les fichiers n'ont pas été ajoutés
+    addFiles()
+
     // Synchroniser avant l'envoi
     syncInfoGenerales()
 
