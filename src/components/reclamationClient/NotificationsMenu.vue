@@ -71,7 +71,7 @@
               'border-gray-200 hover:bg-gray-50': notification.is_read == 1
             }"
             clickable
-            @click="markAsRead(notification.id)"
+            @click="markAsRead(notification)"
           >
             <!-- Avatar de l'expéditeur -->
             <q-item-section avatar>
@@ -116,8 +116,8 @@
               >
                 <q-icon name="schedule" size="12px" class="mr-1" />
                 🕒 {{ getRelativeTime(notification.created_at) }}
-                <span class="mx-2">•</span>
-                {{ notification.direction }}
+                <!-- <span class="mx-2">•</span> -->
+                <!-- {{ notification.direction }}  -->
               </q-item-label>
             </q-item-section>
 
@@ -151,11 +151,15 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth'
 import moment from 'moment'
+import { useTicketStore } from 'src/stores/ticket'
+import { useRouter } from 'vue-router'
 
 // Configuration de moment en français
 moment.locale('fr')
 
 const authStore = useAuthStore()
+const ticketStore = useTicketStore()
+const router = useRouter()
 
 // Données réactives
 const notifications = ref([])
@@ -229,8 +233,10 @@ const getRelativeTime = (dateString) => {
 }
 
 // Méthode pour marquer une notification comme lue
-const markAsRead = async (id) => {
+const markAsRead = async (notif) => {
   try {
+    const id = notif.id
+    const tticket_id = notif.tticket_id
     await api.put(`/api/rec/notifications/${id}/mark-as-read`)
 
     // Mettre à jour localement
@@ -238,6 +244,10 @@ const markAsRead = async (id) => {
     if (notification) {
       notification.is_read = 1
     }
+     // Enregistrer l'ID du ticket dans le store Pinia
+      ticketStore.setTicketForMessages(tticket_id)
+      // Naviguer vers la page des messages
+      router.push('/reclamations/tickets/messages')
   } catch (error) {
     console.error('Erreur lors du marquage comme lu:', error)
   }
