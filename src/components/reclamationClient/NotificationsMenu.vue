@@ -26,7 +26,7 @@
               <p class="text-gray-600 text-sm mb-0">Restez informé de vos activités</p>
             </div>
           </div>
-          <q-btn
+          <!-- <q-btn
             v-if="notifications.length > 0"
             flat
             dense
@@ -36,7 +36,7 @@
             @click="markAllAsRead"
             class="text-xs px-3 py-1 rounded-full bg-blue-50 hover:bg-blue-100 transition-colors"
             no-caps
-          />
+          /> -->
         </div>
       </div>
 
@@ -150,12 +150,15 @@
 import { ref, computed, onMounted } from 'vue'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth'
-import moment from 'moment'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+import 'dayjs/locale/fr'
 import { useTicketStore } from 'src/stores/ticket'
 import { useRouter } from 'vue-router'
 
-// Configuration de moment en français
-moment.locale('fr')
+// Configuration de dayjs en français
+dayjs.extend(relativeTime)
+dayjs.locale('fr')
 
 const authStore = useAuthStore()
 const ticketStore = useTicketStore()
@@ -229,7 +232,7 @@ const truncateMessage = (message) => {
 // Méthode pour obtenir le temps relatif
 const getRelativeTime = (dateString) => {
   if (!dateString) return ''
-  return moment(dateString).fromNow()
+  return dayjs(dateString).fromNow()
 }
 
 // Méthode pour marquer une notification comme lue
