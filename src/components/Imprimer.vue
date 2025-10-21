@@ -141,6 +141,9 @@ function formatDateTime(dateTimeStr) {
 <style scoped>
 * {
   font-size: 16px;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+  color-adjust: exact !important;
 }
 
 h1 {
@@ -149,11 +152,13 @@ h1 {
   font-weight: bold;
   text-align: center;
   margin-bottom: 10px;
+  page-break-after: avoid;
 }
 
 #info {
   display: flex;
   margin-top: 10px;
+  page-break-inside: avoid;
 }
 
 #info>div {
@@ -169,6 +174,7 @@ table {
   border-collapse: collapse;
   margin-top: 1rem;
   font-size: 0.95rem;
+  page-break-inside: avoid;
 }
 
 table * {
@@ -176,8 +182,9 @@ table * {
 }
 
 thead {
-  background: #0e4ba1;
-  color: white;
+  background: #0e4ba1 !important;
+  color: white !important;
+  -webkit-print-color-adjust: exact;
 }
 
 thead th,
@@ -194,6 +201,7 @@ tbody td {
   flex-wrap: wrap;
   gap: 1rem;
   margin-top: 4px !important;
+  page-break-inside: avoid;
 }
 
 .total-section {
@@ -208,5 +216,29 @@ tbody td {
 .condition {
   font-size: 14px !important;
   color: gray;
+  page-break-before: avoid;
+}
+
+/* Styles spécifiques pour l'impression */
+@media print {
+  .q-page {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    min-height: auto !important;
+  }
+  
+  /* Éviter les coupures dans les éléments importants */
+  table, #info, .total-section-imp {
+    page-break-inside: avoid;
+  }
+  
+  /* S'assurer que les couleurs s'impriment */
+  thead {
+    background: #0e4ba1 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color: white !important;
+  }
 }
 </style>

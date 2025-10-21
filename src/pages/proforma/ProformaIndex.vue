@@ -1,5 +1,5 @@
 <template>
-  <q-page class="q-pa-md bg-gray-50 min-h-screen">
+  <q-page class="q-pa-md bg-gray-50 min-h-screen ">
     <div style="visibility: hidden; position: absolute; z-index: -1;" id="imprimer">
         <Imprimer
           :user="{ name: authStore.getUserFullName }"
@@ -505,22 +505,32 @@ onMounted(() => {
 }
 
 @media print {
-    body * {
-        visibility: hidden;
-    }
+  /* Cacher tous les éléments sauf Imprimer */
 
-    #imprimer {
-        position: absolute;
-        top: 0;
-        z-index: 1 !important;
-    }
 
-    #imprimer * {
-        visibility: visible;
-        border: none;
-        z-index: 1 !important;
+  /* Afficher seulement le composant d'impression */
+  #imprimer {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    background: white !important;
+  }
 
-    }
+  /* Reset de la page */
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  .q-page {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 body {
