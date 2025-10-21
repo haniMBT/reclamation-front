@@ -89,6 +89,7 @@ export const useAuthStore = defineStore('auth', {
 
               // Stocker les nouvelles données utilisateur
               this.userProfile = {
+                id: res.data.user.id || '',
                 nom: res.data.user.Nom || '',
                 prenom: res.data.user.Prenom || '',
                 email: res.data.user.Email || '',

@@ -7,11 +7,14 @@
     size="md"
     class="notification-btn"
   >
-    <q-menu 
+    <q-menu
+      v-model="menuVisible"
       class="notification-menu"
       style="min-width: 380px; max-width: 420px;"
       transition-show="scale"
       transition-hide="scale"
+      @show="fetchNotifications"
+      persistent
     >
       <!-- Header du menu -->
       <div class="notification-header bg-white border-b border-gray-200 px-6 py-4">
@@ -49,79 +52,100 @@
         </div>
 
         <!-- État vide -->
-        <div v-else-if="notifications.length === 0" class="text-center py-8 px-6">
-          <div class="bg-white rounded-full p-4 shadow-sm inline-block mb-4">
-            <q-icon name="notifications_none" size="2rem" class="text-gray-400" />
-          </div>
-          <h4 class="text-sm font-medium text-gray-800 mb-1">Aucune notification</h4>
-          <p class="text-gray-500 text-xs">Vous êtes à jour !</p>
+        <div v-else-if="notifications.length === 0" class="text-center text-grey text-caption q-pa-sm">
+          Aucune notification.
         </div>
 
         <!-- Liste des notifications -->
-        <div v-else class="p-4 space-y-3">
-          <div
-            v-for="notification in notifications"
+        <q-list v-else class="p-4">
+          <q-item
+            v-for="(notification, index) in notifications"
             :key="notification.id"
-            class="notification-item bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
+            class="notification-item bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 q-mb-sm"
             :class="{
               'border-l-4 border-l-blue-500 bg-blue-50': notification.is_read == 0,
               'hover:bg-gray-50': notification.is_read == 1
             }"
+            clickable
             @click="markAsRead(notification.id)"
           >
-            <div class="flex items-start space-x-3">
-              <!-- Indicateur de statut -->
-              <div class="flex-shrink-0 mt-1">
-                <div 
-                  class="w-2 h-2 rounded-full"
-                  :class="notification.is_read == 0 ? 'bg-blue-500' : 'bg-gray-300'"
-                ></div>
-              </div>
-              
-              <!-- Contenu de la notification -->
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center justify-between mb-2">
-                  <h5 
-                    class="text-sm font-medium text-gray-900 truncate"
-                    :class="notification.is_read == 0 ? 'font-semibold' : ''"
-                  >
-                    {{ notification.user_name }}
-                  </h5>
-                  <span class="text-xs text-gray-500 flex-shrink-0 ml-2">
-                    {{ formatDate(notification.created_at) }}
-                  </span>
-                </div>
-                <p 
-                  class="text-sm text-gray-700 leading-relaxed"
-                  :class="notification.is_read == 0 ? 'font-medium' : ''"
-                >
-                  {{ notification.message }}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
+            <q-item-section avatar>
+              <div
+                class="w-2 h-2 rounded-full"
+                :class="notification.is_read == 0 ? 'bg-blue-500' : 'bg-gray-300'"
+              ></div>
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label
+                class="text-sm font-medium text-gray-900"
+                :class="notification.is_read == 0 ? 'font-semibold' : ''"
+              >
+                {{ notification.message }}
+              </q-item-label>
+              <q-item-label
+                caption
+                class="text-xs text-gray-500 mt-1"
+              >
+                {{ notification.direction }} • {{ formatDate(notification.created_at) }}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-separator
+            v-if="index < notifications.length - 1"
+            :key="`sep-${notification.id}`"
+            class="q-my-xs"
+          />
+        </q-list>
       </div>
     </q-menu>
   </q-btn>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { api } from 'boot/axios'
+import { useAuthStore } from 'stores/auth'
+
+const authStore = useAuthStore()
 
 // Données réactives
 const notifications = ref([])
 const loading = ref(false)
+const menuVisible = ref(false)
+
+// Utilisateur connecté
+const currentUser = computed(() => authStore.userProfile)
 
 // Méthode pour récupérer les notifications
 const fetchNotifications = async () => {
+  console.log('🔔 Déclenchement de fetchNotifications')
+  console.log('👤 Utilisateur connecté:', currentUser.value)
+  console.log('👤 Utilisateur NON connecté:', currentUser.value.id)
+
+  if (!currentUser.value?.id) {
+    console.warn('❌ Utilisateur non connecté')
+    return
+  }
+
   loading.value = true
   try {
-    const response = await api.get('api/rec/notifications')
+    console.log('📡 Appel API vers /api/rec/notifications avec id_recepteur:', currentUser.value.id)
+
+    const response = await api.get('/api/rec/notifications', {
+      params: {
+        id_recepteur: currentUser.value.id
+      }
+    })
+
+    console.log('✅ Réponse API reçue:', response.data)
     notifications.value = response.data
+
+    console.log('📋 Notifications stockées:', notifications.value)
   } catch (error) {
-    console.error('Erreur lors de la récupération des notifications:', error)
+    console.error('❌ Erreur lors de la récupération des notifications:', error)
+    console.error('📄 Détails de l\'erreur:', error.response?.data)
     notifications.value = []
   } finally {
     loading.value = false
@@ -131,7 +155,7 @@ const fetchNotifications = async () => {
 // Méthode pour marquer une notification comme lue
 const markAsRead = async (id) => {
   try {
-    await api.post(`api/rec/notifications/${id}/read`)
+    await api.put(`/api/rec/notifications/${id}/mark-as-read`)
 
     // Mettre à jour localement
     const notification = notifications.value.find(n => n.id === id)
@@ -146,7 +170,7 @@ const markAsRead = async (id) => {
 // Méthode pour marquer toutes les notifications comme lues
 const markAllAsRead = async () => {
   try {
-    await api.post('api/rec/notifications/mark-all-read')
+    await api.put('/api/rec/notifications/mark-all-as-read')
 
     // Mettre à jour toutes les notifications localement
     notifications.value.forEach(n => n.is_read = 1)
@@ -158,34 +182,27 @@ const markAllAsRead = async () => {
 // Formatage de la date
 const formatDate = (dateString) => {
   const date = new Date(dateString)
-  return date.toLocaleDateString('fr-FR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const notificationDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+
+  if (notificationDate.getTime() === today.getTime()) {
+    // Aujourd'hui - afficher seulement l'heure
+    return date.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } else {
+    // Autre jour - format court DD/MM à HH:MM
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit'
+    }) + ' à ' + date.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
 }
-
-// Fonction de rechargement automatique pendant les heures de travail
-const startAutoRefresh = () => {
-  setInterval(() => {
-    const now = new Date()
-    const hours = now.getHours()
-    const minutes = now.getMinutes()
-    const isWorkingTime = (hours > 8 && hours < 16) || (hours === 8 && minutes >= 0) || (hours === 16 && minutes <= 30)
-
-    if (isWorkingTime) {
-      fetchNotifications()
-    }
-  }, 60 * 60 * 1000) // toutes les 60 minutes
-}
-
-// Appel automatique au montage du composant
-onMounted(() => {
-  fetchNotifications()
-  startAutoRefresh()
-})
 </script>
 
 <style scoped>
@@ -293,12 +310,12 @@ onMounted(() => {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
   }
-  
+
   70% {
     transform: scale(1);
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0);
   }
-  
+
   100% {
     transform: scale(0.95);
     box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
@@ -354,15 +371,15 @@ onMounted(() => {
     min-width: 320px !important;
     max-width: 350px !important;
   }
-  
+
   .notification-header {
     padding: 1rem;
   }
-  
+
   .notification-content .p-4 {
     padding: 0.75rem;
   }
-  
+
   .notification-item {
     padding: 0.75rem;
   }
