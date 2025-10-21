@@ -32,8 +32,8 @@
                 <div class="orbit orbit-3"></div>
               </div>
             </div>
-            <div class="hidden sm:block text-lg font-bold text-gray-800">
-              EPAL
+            <div class="sm:block text-lg font-bold text-gray-800">
+              Entreprise Portuaire d'Alger
             </div>
           </div>
 

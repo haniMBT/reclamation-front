@@ -233,27 +233,6 @@
         </div>
       </div>
 
-      <!-- Stats Section -->
-      <div class="mt-16 sm:mt-24 bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl rounded-3xl p-8 border border-white/20">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-          <div class="group">
-            <div class="text-3xl font-bold text-white mb-2 transition-all duration-500 group-hover:scale-110">150+</div>
-            <div class="text-gray-300">Clients Satisfaits</div>
-          </div>
-          <div class="group">
-            <div class="text-3xl font-bold text-white mb-2 transition-all duration-500 group-hover:scale-110">24/7</div>
-            <div class="text-gray-300">Support Disponible</div>
-          </div>
-          <div class="group">
-            <div class="text-3xl font-bold text-white mb-2 transition-all duration-500 group-hover:scale-110">99.9%</div>
-            <div class="text-gray-300">Taux de Disponibilité</div>
-          </div>
-          <div class="group">
-            <div class="text-3xl font-bold text-white mb-2 transition-all duration-500 group-hover:scale-110">50+</div>
-            <div class="text-gray-300">Ports Connectés</div>
-          </div>
-        </div>
-      </div>
     </div>
   </q-page>
 </template>
