@@ -7,6 +7,16 @@
     size="md"
     class="notification-btn"
   >
+    <!-- Badge pour le nombre de notifications non lues -->
+    <q-badge
+      v-if="unreadCount > 0"
+      :label="unreadCount > 99 ? '99+' : unreadCount"
+      color="red"
+      floating
+      rounded
+      class="notification-badge"
+    />
+    
     <q-menu
       v-model="menuVisible"
       class="notification-menu"
@@ -147,7 +157,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth'
 import dayjs from 'dayjs'
@@ -169,11 +179,22 @@ const notifications = ref([])
 const loading = ref(false)
 const menuVisible = ref(false)
 
+// Variables pour l'optimisation des performances
+let notificationInterval = null
+let lastFetchTime = 0
+const FETCH_COOLDOWN = 5000 // 5 secondes de cooldown minimum entre les appels
+const POLLING_INTERVAL = 30000 // 30 secondes d'intervalle de polling
+
 // Utilisateur connecté
 const currentUser = computed(() => authStore.userProfile)
 
-// Méthode pour récupérer les notifications
-const fetchNotifications = async () => {
+// Nombre de notifications non lues
+const unreadCount = computed(() => {
+  return notifications.value.filter(notification => notification.is_read == 0).length
+})
+
+// Méthode pour récupérer les notifications avec optimisation
+const fetchNotifications = async (showLoading = true, forceRefresh = false) => {
   console.log('🔔 Déclenchement de fetchNotifications')
   console.log('👤 Utilisateur connecté:', currentUser.value)
 
@@ -182,7 +203,17 @@ const fetchNotifications = async () => {
     return
   }
 
-  loading.value = true
+  // Vérifier le cooldown pour éviter les appels trop fréquents
+  const now = Date.now()
+  if (!forceRefresh && (now - lastFetchTime) < FETCH_COOLDOWN) {
+    console.log('⏳ Cooldown actif, appel ignoré')
+    return
+  }
+
+  if (showLoading) {
+    loading.value = true
+  }
+  
   try {
     console.log('📡 Appel API vers /api/rec/notifications avec id_recepteur:', currentUser.value.id)
 
@@ -194,6 +225,7 @@ const fetchNotifications = async () => {
 
     console.log('✅ Réponse API reçue:', response.data)
     notifications.value = response.data.data
+    lastFetchTime = now
 
     console.log('📋 Notifications stockées:', notifications.value)
   } catch (error) {
@@ -201,7 +233,37 @@ const fetchNotifications = async () => {
     console.error('📄 Détails de l\'erreur:', error.response?.data)
     notifications.value = []
   } finally {
-    loading.value = false
+    if (showLoading) {
+      loading.value = false
+    }
+  }
+}
+
+// Méthode pour démarrer l'actualisation périodique optimisée
+const startNotificationPolling = () => {
+  // Charger les notifications immédiatement
+  fetchNotifications(true, true) // Force le premier chargement
+  
+  // Puis actualiser à intervalle régulier
+  notificationInterval = setInterval(() => {
+    // Vérifier si l'utilisateur est toujours connecté
+    if (currentUser.value?.id) {
+      fetchNotifications(false) // Ne pas afficher le loading pour les mises à jour automatiques
+    } else {
+      console.warn('⚠️ Utilisateur déconnecté, arrêt du polling')
+      stopNotificationPolling()
+    }
+  }, POLLING_INTERVAL)
+  
+  console.log(`🔄 Polling démarré avec un intervalle de ${POLLING_INTERVAL/1000} secondes`)
+}
+
+// Méthode pour arrêter l'actualisation périodique
+const stopNotificationPolling = () => {
+  if (notificationInterval) {
+    clearInterval(notificationInterval)
+    notificationInterval = null
+    console.log('🛑 Polling arrêté')
   }
 }
 
@@ -292,17 +354,51 @@ const formatDate = (dateString) => {
     })
   }
 }
+
+// Hooks de cycle de vie
+onMounted(() => {
+  console.log('🚀 Composant NotificationsMenu monté - Démarrage de l\'actualisation périodique')
+  startNotificationPolling()
+})
+
+onUnmounted(() => {
+  console.log('🛑 Composant NotificationsMenu démonté - Arrêt de l\'actualisation périodique')
+  stopNotificationPolling()
+})
 </script>
 
 <style scoped>
 /* Bouton de notification principal */
 .notification-btn {
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .notification-btn:hover {
   transform: scale(1.05);
   background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+/* Badge de notification */
+.notification-badge {
+  animation: pulse-badge 2s infinite;
+  font-weight: bold;
+  font-size: 11px;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+}
+
+@keyframes pulse-badge {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* Menu des notifications */
