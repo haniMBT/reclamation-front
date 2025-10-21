@@ -33,6 +33,8 @@
 
           <!-- Right side controls -->
           <div class="flex items-center gap-2">
+            <!-- Notifications Menu -->
+            <NotificationsMenu />
 
             <!-- User Profile Dropdown -->
             <q-btn-dropdown
@@ -273,6 +275,7 @@ import { useAuthStore } from "stores/auth";
 import moment from "moment/moment";
 import { api } from "boot/axios";
 import { useMeta, useQuasar } from "quasar";
+import NotificationsMenu from "src/components/reclamationClient/NotificationsMenu.vue";
 const userPhoto = computed(() => authStore.getUserPhoto);
 let drawer = ref(false);
 let visible = ref(true);
