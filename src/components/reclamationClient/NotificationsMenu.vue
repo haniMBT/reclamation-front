@@ -52,51 +52,94 @@
         </div>
 
         <!-- État vide -->
-        <div v-else-if="notifications.length === 0" class="text-center text-grey text-caption q-pa-sm">
-          Aucune notification.
+        <div v-else-if="notifications.length === 0" class="text-center py-8">
+          <div class="bg-white rounded-full p-4 shadow-sm inline-block mb-4">
+            <q-icon name="notifications_none" size="32px" color="grey-5" />
+          </div>
+          <h4 class="text-sm font-medium text-gray-800 mb-1">Aucune notification disponible</h4>
+          <p class="text-gray-500 text-xs">Vous êtes à jour !</p>
         </div>
 
         <!-- Liste des notifications -->
-        <q-list v-else class="p-4">
+        <q-list v-else class="p-4 space-y-2">
           <q-item
-            v-for="(notification, index) in notifications"
+            v-for="notification in notifications"
             :key="notification.id"
-            class="notification-item bg-white rounded-lg shadow-sm border border-gray-200 cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 q-mb-sm"
+            class="notification-item bg-white rounded-lg shadow-sm border cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5"
             :class="{
-              'border-l-4 border-l-blue-500 bg-blue-50': notification.is_read == 0,
-              'hover:bg-gray-50': notification.is_read == 1
+              'border-l-4 border-l-blue-500 bg-blue-50 border-blue-200': notification.is_read == 0,
+              'border-gray-200 hover:bg-gray-50': notification.is_read == 1
             }"
             clickable
             @click="markAsRead(notification.id)"
           >
+            <!-- Avatar de l'expéditeur -->
             <q-item-section avatar>
-              <div
-                class="w-2 h-2 rounded-full"
-                :class="notification.is_read == 0 ? 'bg-blue-500' : 'bg-gray-300'"
-              ></div>
+              <div class="flex flex-col items-center">
+                <q-avatar
+                  size="40px"
+                  :color="notification.is_read == 0 ? 'blue-6' : 'grey-5'"
+                  text-color="white"
+                  class="mb-1"
+                >
+                  {{ getSenderInitials(notification.sender) }}
+                </q-avatar>
+                <div
+                  class="w-2 h-2 rounded-full"
+                  :class="notification.is_read == 0 ? 'bg-blue-500' : 'bg-gray-300'"
+                ></div>
+              </div>
             </q-item-section>
 
+            <!-- Contenu de la notification -->
             <q-item-section>
+              <!-- Nom de l'expéditeur -->
               <q-item-label
-                class="text-sm font-medium text-gray-900"
-                :class="notification.is_read == 0 ? 'font-semibold' : ''"
+                class="text-sm font-medium text-gray-900 mb-1"
+                :class="notification.is_read == 0 ? 'font-semibold text-blue-900' : ''"
               >
-                {{ notification.message }}
+                🧍‍♂️ {{ getSenderName(notification.sender) }}
               </q-item-label>
+
+              <!-- Message court -->
+              <q-item-label
+                class="text-sm text-gray-700 mb-2"
+                :class="notification.is_read == 0 ? 'font-medium' : ''"
+              >
+                💬 {{ truncateMessage(notification.message) }}
+              </q-item-label>
+
+              <!-- Date relative et direction -->
               <q-item-label
                 caption
-                class="text-xs text-gray-500 mt-1"
+                class="text-xs text-gray-500 flex items-center"
               >
-                {{ notification.direction }} • {{ formatDate(notification.created_at) }}
+                <q-icon name="schedule" size="12px" class="mr-1" />
+                🕒 {{ getRelativeTime(notification.created_at) }}
+                <span class="mx-2">•</span>
+                {{ notification.direction }}
               </q-item-label>
             </q-item-section>
-          </q-item>
 
-          <q-separator
-            v-if="index < notifications.length - 1"
-            :key="`sep-${notification.id}`"
-            class="q-my-xs"
-          />
+            <!-- Indicateur de statut -->
+            <q-item-section side>
+              <div class="flex flex-col items-center">
+                <q-icon
+                  v-if="notification.is_read == 0"
+                  name="fiber_manual_record"
+                  color="blue-6"
+                  size="8px"
+                  class="mb-1"
+                />
+                <q-chip
+                  :color="notification.is_read == 0 ? 'blue-1' : 'grey-3'"
+                  :text-color="notification.is_read == 0 ? 'blue-8' : 'grey-6'"
+                  size="xs"
+                  :label="notification.is_read == 0 ? 'Nouveau' : 'Lu'"
+                />
+              </div>
+            </q-item-section>
+          </q-item>
         </q-list>
       </div>
     </q-menu>
@@ -107,6 +150,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { api } from 'boot/axios'
 import { useAuthStore } from 'stores/auth'
+import moment from 'moment'
+
+// Configuration de moment en français
+moment.locale('fr')
 
 const authStore = useAuthStore()
 
@@ -122,7 +169,6 @@ const currentUser = computed(() => authStore.userProfile)
 const fetchNotifications = async () => {
   console.log('🔔 Déclenchement de fetchNotifications')
   console.log('👤 Utilisateur connecté:', currentUser.value)
-  console.log('👤 Utilisateur NON connecté:', currentUser.value.id)
 
   if (!currentUser.value?.id) {
     console.warn('❌ Utilisateur non connecté')
@@ -140,7 +186,7 @@ const fetchNotifications = async () => {
     })
 
     console.log('✅ Réponse API reçue:', response.data)
-    notifications.value = response.data
+    notifications.value = response.data.data
 
     console.log('📋 Notifications stockées:', notifications.value)
   } catch (error) {
@@ -150,6 +196,36 @@ const fetchNotifications = async () => {
   } finally {
     loading.value = false
   }
+}
+
+// Méthode pour obtenir le nom de l'expéditeur
+const getSenderName = (sender) => {
+  if (!sender) return 'Système'
+  return sender.name || sender.Nom || sender.Prenom || 'Utilisateur inconnu'
+}
+
+// Méthode pour obtenir les initiales de l'expéditeur
+const getSenderInitials = (sender) => {
+  if (!sender) return 'S'
+  const name = getSenderName(sender)
+  const words = name.split(' ')
+  if (words.length >= 2) {
+    return (words[0][0] + words[1][0]).toUpperCase()
+  }
+  return name.substring(0, 2).toUpperCase()
+}
+
+// Méthode pour tronquer le message
+const truncateMessage = (message) => {
+  if (!message) return ''
+  const maxLength = 80
+  return message.length > maxLength ? message.substring(0, maxLength) + '...' : message
+}
+
+// Méthode pour obtenir le temps relatif
+const getRelativeTime = (dateString) => {
+  if (!dateString) return ''
+  return moment(dateString).fromNow()
 }
 
 // Méthode pour marquer une notification comme lue
@@ -179,7 +255,7 @@ const markAllAsRead = async () => {
   }
 }
 
-// Formatage de la date
+// Formatage de la date (conservé pour compatibilité)
 const formatDate = (dateString) => {
   const date = new Date(dateString)
   const now = new Date()
