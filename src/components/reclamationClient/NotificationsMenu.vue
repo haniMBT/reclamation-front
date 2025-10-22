@@ -16,7 +16,7 @@
       rounded
       class="notification-badge"
     />
-    
+
     <q-menu
       v-model="menuVisible"
       class="notification-menu"
@@ -213,7 +213,7 @@ const fetchNotifications = async (showLoading = true, forceRefresh = false) => {
   if (showLoading) {
     loading.value = true
   }
-  
+
   try {
     console.log('📡 Appel API vers /api/rec/notifications avec id_recepteur:', currentUser.value.id)
 
@@ -243,7 +243,7 @@ const fetchNotifications = async (showLoading = true, forceRefresh = false) => {
 const startNotificationPolling = () => {
   // Charger les notifications immédiatement
   fetchNotifications(true, true) // Force le premier chargement
-  
+
   // Puis actualiser à intervalle régulier
   notificationInterval = setInterval(() => {
     // Vérifier si l'utilisateur est toujours connecté
@@ -254,7 +254,7 @@ const startNotificationPolling = () => {
       stopNotificationPolling()
     }
   }, POLLING_INTERVAL)
-  
+
   console.log(`🔄 Polling démarré avec un intervalle de ${POLLING_INTERVAL/1000} secondes`)
 }
 
