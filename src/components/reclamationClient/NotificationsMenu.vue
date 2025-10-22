@@ -24,7 +24,6 @@
       transition-show="scale"
       transition-hide="scale"
       @show="fetchNotifications"
-      persistent
     >
       <!-- Header du menu -->
       <div class="notification-header bg-white border-b border-gray-200 px-6 py-4">
