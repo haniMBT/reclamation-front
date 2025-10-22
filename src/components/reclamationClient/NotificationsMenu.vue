@@ -20,7 +20,7 @@
     <q-menu
       v-model="menuVisible"
       class="notification-menu"
-      style="min-width: 380px; max-width: 420px;"
+      style="min-width: 480px; max-width: 550px;"
       transition-show="scale"
       transition-hide="scale"
       @show="fetchNotifications"
@@ -552,8 +552,8 @@ onUnmounted(() => {
 /* Responsive design */
 @media (max-width: 480px) {
   .notification-menu {
-    min-width: 320px !important;
-    max-width: 350px !important;
+    min-width: 360px !important;
+    max-width: 400px !important;
   }
 
   .notification-header {
