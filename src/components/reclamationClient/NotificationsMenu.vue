@@ -111,12 +111,18 @@
               </q-item-label>
 
               <!-- Message court -->
-              <q-item-label
-                class="text-sm text-gray-700 mb-2"
-                :class="notification.is_read == 0 ? 'font-medium' : ''"
+            <q-item-label
+              class="text-sm text-gray-700 mb-2"
+              :class="notification.is_read == 0 ? 'font-medium' : ''"
+              style="overflow: visible; position: relative; z-index: 10;"
+            >
+              <span
+                class="message-container cursor-help"
+                :title="notification.message && notification.message.length > 80 ? notification.message : ''"
               >
                 💬 {{ truncateMessage(notification.message) }}
-              </q-item-label>
+              </span>
+            </q-item-label>
 
               <!-- Date relative et direction -->
               <q-item-label
@@ -632,6 +638,21 @@ onUnmounted(() => {
 
 .duration-200 {
   transition-duration: 200ms;
+}
+
+/* Styles personnalisés pour le tooltip de notification */
+.message-container {
+  display: inline-block;
+}
+
+.cursor-help {
+  cursor: help;
+}
+
+.cursor-help:hover {
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-decoration-color: #6b7280;
 }
 
 .space-y-3 > * + * {
