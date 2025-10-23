@@ -91,7 +91,7 @@
                   text-color="white"
                   class="mb-1"
                 >
-                  {{ getSenderInitials(notification.sender) }}
+                  {{ getSenderInitials(notification) }}
                 </q-avatar>
                 <div
                   class="w-2 h-2 rounded-full"
@@ -107,7 +107,7 @@
                 class="text-sm font-medium text-gray-900 mb-1"
                 :class="notification.is_read == 0 ? 'font-semibold text-blue-900' : ''"
               >
-                🧍‍♂️ {{ getSenderName(notification.sender) }}
+                🧍‍♂️ {{ getSenderName(notification) }}
               </q-item-label>
 
               <!-- Message court -->
@@ -200,8 +200,8 @@ const unreadCount = computed(() => {
 
 // Méthode pour récupérer les notifications avec optimisation
 const fetchNotifications = async (showLoading = true, forceRefresh = false) => {
-  console.log('🔔 Déclenchement de fetchNotifications')
-  console.log('👤 Utilisateur connecté:', currentUser.value)
+  // console.log('🔔 Déclenchement de fetchNotifications')
+  // console.log('👤 Utilisateur connecté:', currentUser.value)
 
   if (!currentUser.value?.id) {
     console.warn('❌ Utilisateur non connecté')
@@ -211,7 +211,7 @@ const fetchNotifications = async (showLoading = true, forceRefresh = false) => {
   // Vérifier le cooldown pour éviter les appels trop fréquents
   const now = Date.now()
   if (!forceRefresh && (now - lastFetchTime) < FETCH_COOLDOWN) {
-    console.log('⏳ Cooldown actif, appel ignoré')
+    // console.log('⏳ Cooldown actif, appel ignoré')
     return
   }
 
@@ -220,7 +220,7 @@ const fetchNotifications = async (showLoading = true, forceRefresh = false) => {
   }
 
   try {
-    console.log('📡 Appel API vers /api/rec/notifications avec id_recepteur:', currentUser.value.id)
+    // console.log('📡 Appel API vers /api/rec/notifications avec id_recepteur:', currentUser.value.id)
 
     const response = await api.get('/api/rec/notifications', {
       params: {
@@ -228,11 +228,11 @@ const fetchNotifications = async (showLoading = true, forceRefresh = false) => {
       }
     })
 
-    console.log('✅ Réponse API reçue:', response.data)
+    // console.log('✅ Réponse API reçue:', response.data)
     notifications.value = response.data.data
     lastFetchTime = now
 
-    console.log('📋 Notifications stockées:', notifications.value)
+    // console.log('📋 Notifications stockées:', notifications.value)
   } catch (error) {
     console.error('❌ Erreur lors de la récupération des notifications:', error)
     console.error('📄 Détails de l\'erreur:', error.response?.data)
@@ -260,7 +260,7 @@ const startNotificationPolling = () => {
     }
   }, POLLING_INTERVAL)
 
-  console.log(`🔄 Polling démarré avec un intervalle de ${POLLING_INTERVAL/1000} secondes`)
+  // console.log(`🔄 Polling démarré avec un intervalle de ${POLLING_INTERVAL/1000} secondes`)
 }
 
 // Méthode pour arrêter l'actualisation périodique
@@ -268,25 +268,53 @@ const stopNotificationPolling = () => {
   if (notificationInterval) {
     clearInterval(notificationInterval)
     notificationInterval = null
-    console.log('🛑 Polling arrêté')
+    // console.log('🛑 Polling arrêté')
   }
 }
 
 // Méthode pour obtenir le nom de l'expéditeur
-const getSenderName = (sender) => {
-  if (!sender) return 'Système'
-  return sender.name || sender.Nom || sender.Prenom || 'Utilisateur inconnu'
+const getSenderName = (notif) => {
+  // Règle 1: Si receiver.direction est null, toujours afficher "EPAL"
+  if (!notif.recepteur?.direction) {
+    return 'EPAL'
+  }
+
+  // Règle 2: Si receiver.direction n'est pas null ET sender.direction n'est pas null
+  if (notif.sender?.direction) {
+    // Afficher le nom de la direction du sender
+    return notif.sender?.direction || notif.sender?.direction.toString().trim()
+  }
+
+  // Règle 3: Si sender.direction est null, afficher le nom complet du sender
+  return notif.sender?.name || notif.sender?.Nom || notif.sender?.Prenom || 'Utilisateur inconnu'
 }
 
 // Méthode pour obtenir les initiales de l'expéditeur
-const getSenderInitials = (sender) => {
-  if (!sender) return 'S'
-  const name = getSenderName(sender)
-  const words = name.split(' ')
+const getSenderInitials = (notif) => {
+  // Règle 1: Si receiver.direction est null, toujours afficher "EPAL"
+
+  if (!notif.recepteur?.direction) {
+    return 'EPAL'
+  }
+
+  // Règle 2: Si receiver.direction n'est pas null ET sender.direction n'est pas null
+  if (notif.sender?.direction) {
+    // Afficher les initiales de la direction du sender
+    const directionName = notif.sender.direction || notif.sender.direction.toString().trim()
+    const words = directionName.split(' ')
+    if (words.length >= 2) {
+      return (words[0][0] + words[1][0]).toUpperCase()
+    }
+    return directionName.substring(0, 2).toUpperCase()
+  }
+
+  // Règle 3: Si sender.direction est null, afficher les initiales du nom complet du sender
+  const senderName = notif.sender?.name || notif.sender?.Nom || notif.sender?.Prenom || 'Utilisateur inconnu'
+  const words = senderName.split(' ')
   if (words.length >= 2) {
     return (words[0][0] + words[1][0]).toUpperCase()
   }
-  return name.substring(0, 2).toUpperCase()
+  return senderName.substring(0, 2).toUpperCase()
 }
 
 // Méthode pour tronquer le message
@@ -362,12 +390,12 @@ const formatDate = (dateString) => {
 
 // Hooks de cycle de vie
 onMounted(() => {
-  console.log('🚀 Composant NotificationsMenu monté - Démarrage de l\'actualisation périodique')
+  // console.log('🚀 Composant NotificationsMenu monté - Démarrage de l\'actualisation périodique')
   startNotificationPolling()
 })
 
 onUnmounted(() => {
-  console.log('🛑 Composant NotificationsMenu démonté - Arrêt de l\'actualisation périodique')
+  // console.log('🛑 Composant NotificationsMenu démonté - Arrêt de l\'actualisation périodique')
   stopNotificationPolling()
 })
 </script>
