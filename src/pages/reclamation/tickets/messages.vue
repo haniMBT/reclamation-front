@@ -1282,7 +1282,7 @@
         <q-card-section class="q-pt-md">
           <q-select
             v-model="selectedRemoveDirections"
-            :options="directionOptions"
+            :options="directionOptionsForRemoval"
             label="Sélectionner les directions à supprimer"
             multiple
             use-chips
@@ -1555,6 +1555,17 @@ const canShowCloseButton = computed(() => (
   ticket_direction.value.type_orientation=='ticket' &&
   (hasMessageVersClient.value || ticket.value?.status=='Recours' || (ticket.value?.privilege_crateur?.role=='employe_Répondeur' && ticket.value?.ticket_direction_crateur!=null))
 ) && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
+
+// Directions disponibles pour suppression (exclut la direction de l'utilisateur connecté)
+const directionOptionsForRemoval = computed(() => {
+  if (!authStore.user.direction) {
+    return directionOptions.value
+  }
+
+  return directionOptions.value.filter(direction =>
+    direction.value !== authStore.user.direction
+  )
+})
 
 // Attachments
 const hasNewMessageAttachments = computed(() => (newMessage.value.attachments?.length || 0) > 0)
