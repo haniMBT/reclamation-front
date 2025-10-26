@@ -35,6 +35,20 @@
         </div>
       </div>
 
+      <!-- Alerte recours hors délai -->
+      <q-banner v-if="isRecoursHorsDelai" class="bg-orange-50 border border-orange-200 rounded-lg mb-6" color="warning">
+        <template #avatar>
+          <q-icon name="warning" class="text-orange-600" size="1.5rem" />
+        </template>
+        <div class="text-orange-800">
+          <p class="font-medium">⚠️ Ce recours a été effectué après la période autorisée (7 jours après la clôture).</p>
+          <p class="text-sm mt-1">
+            Date de clôture : {{ formatDate(ticket?.closed_at) }} |
+            Date du recours : {{ formatDate(ticket?.date_recours) }}
+          </p>
+        </div>
+      </q-banner>
+
       <!-- Section des directions du ticket -->        <!--condition si il est concerne par cet reclamation  -->
       <div v-if="showAssociatedDirections" class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="flex items-center justify-between mb-4">
@@ -1545,6 +1559,35 @@ const hasRecourAttachments = computed(() => (recourMessage.value.attachments?.le
 const hasTicketClosedAt = computed(() => !!ticket.value?.closed_at)
 const hasTicketStatus = computed(() => !!ticket.value?.status)
 const hasTicketConclusion = computed(() => !!ticket.value?.conclusion)
+
+// Vérification recours hors délai
+const isRecoursHorsDelai = computed(() => {
+  // Vérifier si le ticket est en statut "Recours"
+  if (ticket.value?.status !== 'Recours') {
+    return false
+  }
+
+  // Vérifier si les dates nécessaires sont présentes
+  if (!ticket.value?.closed_at || !ticket.value?.date_recours) {
+    return false
+  }
+
+  try {
+    // Convertir les dates
+    const dateCloture = new Date(ticket.value.closed_at)
+    const dateRecours = new Date(ticket.value.date_recours)
+
+    // Calculer la date limite (date de clôture + 7 jours)
+    const dateLimite = new Date(dateCloture)
+    dateLimite.setDate(dateLimite.getDate() + 7)
+
+    // Vérifier si le recours a été effectué après la période autorisée
+    return dateRecours > dateLimite
+  } catch (error) {
+    console.error('Erreur lors du calcul du délai de recours:', error)
+    return false
+  }
+})
 
 // Message sélectionné
 const hasSelectedMessage = computed(() => !!selectedMessage.value)
