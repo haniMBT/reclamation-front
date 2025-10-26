@@ -7,9 +7,16 @@
           <q-icon name="message" size="2rem" class="text-blue-600 mr-3" />
           <div>
             <h1 class="text-2xl font-bold text-gray-800 mb-1">Messages du Ticket</h1>
-            <p class="text-gray-600 text-sm" v-if="hasCurrentTicket">
-              <!-- Ticket ID: {{ currentTicketId }} -->
-            </p>
+            <div v-if="hasCurrentTicket">
+              <p class="text-gray-600 text-sm">
+                <!-- Ticket ID: {{ currentTicketId }} -->
+              </p>
+              <!-- Affichage conditionnel du créateur -->
+              <p class="text-blue-600 text-sm" v-if="createur">
+                <q-icon name="person" size="sm" class="mr-1" />
+                Créé par : {{ createur.nom_complet }}
+              </p>
+            </div>
             <p class="text-red-600 text-sm" v-else>
               Aucun ticket sélectionné .
             </p>
@@ -1367,6 +1374,7 @@ const ticket_direction = ref(false)
 const ticket = ref(false)
 const privilege = ref(false)
 const messages = ref([])
+const createur = ref(null) // Informations du créateur du ticket
 const showNewMessageDialog = ref(false)
 const showMessageDetail = ref(false)
 const selectedMessage = ref(null)
@@ -1657,6 +1665,7 @@ const loadMessages = async () => {
       ticket_direction.value = response.data.ticket_direction || null
       ticket.value = response.data.ticket || null
       privilege.value = response.data.privilege || null
+      createur.value = response.data.createur || null // Récupérer les infos du créateur
       if(!showCloseDialog.value){
         closeConclusion.value = ticket.value.conclusion
       }

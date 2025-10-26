@@ -121,6 +121,11 @@
                   <q-icon name="subject" size="sm" class="mr-1" />
                   {{ ticket.objet }}
                 </p>
+                <!-- Affichage conditionnel du créateur -->
+                <p class="text-blue-600 text-sm mb-2" v-if="ticket.createur">
+                  <q-icon name="person" size="sm" class="mr-1" />
+                  Créé par : {{ ticket.createur.nom_complet }}
+                </p>
               </div>
               <div class="flex flex-col items-end space-y-1">
                 <q-badge
