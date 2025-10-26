@@ -191,7 +191,6 @@
             row-key="id"
             :loading="loading"
             :pagination="pagination"
-            @request="onRequest"
             class="messages-table"
             flat
           >
@@ -1454,8 +1453,7 @@ const pagination = ref({
   sortBy: 'date_envoie',
   descending: true,
   page: 1,
-  rowsPerPage: 10,
-  rowsNumber: 0
+  rowsPerPage: 10
 })
 
 // Computed
@@ -1610,16 +1608,7 @@ const goBack = () => {
   router.push('/reclamations/allTicket')
 }
 
-const onRequest = (props) => {
-  const { page, rowsPerPage, sortBy, descending } = props.pagination
 
-  pagination.value.page = page
-  pagination.value.rowsPerPage = rowsPerPage
-  pagination.value.sortBy = sortBy
-  pagination.value.descending = descending
-
-  loadMessages()
-}
 
 // Clôturer la réclamation
 const closeTicket = async () => {
@@ -1671,11 +1660,8 @@ const loadMessages = async () => {
       if(!showCloseDialog.value){
         closeConclusion.value = ticket.value.conclusion
       }
-      // Mettre à jour le nombre total de lignes pour la pagination
-      pagination.value.rowsNumber = messages.value.length
     } else {
       messages.value = []
-      pagination.value.rowsNumber = 0
       $q.notify({
         type: 'warning',
         message: response.data.message || 'Aucun message trouvé'
@@ -1684,7 +1670,6 @@ const loadMessages = async () => {
   } catch (error) {
     console.error('Erreur lors du chargement des messages:', error)
     messages.value = []
-    pagination.value.rowsNumber = 0
     $q.notify({
       type: 'negative',
       message: 'Erreur lors du chargement des messages'
