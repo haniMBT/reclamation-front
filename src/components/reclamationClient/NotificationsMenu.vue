@@ -286,7 +286,7 @@ const getSenderName = (notif) => {
   }
 
   // Règle 3: Si sender.direction est null, afficher le nom complet du sender
-  return notif.sender?.name || notif.sender?.Nom || notif.sender?.Prenom || 'Utilisateur inconnu'
+  return  notif.sender?.Nom +' '+ notif.sender?.Prenom || 'Utilisateur inconnu'
 }
 
 // Méthode pour obtenir les initiales de l'expéditeur
