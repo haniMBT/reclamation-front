@@ -405,7 +405,7 @@
                                 <div>
                                   <label class="block text-xs font-medium text-gray-600 mb-1">Type de champ</label>
                                   <q-select
-                                    v-model="info.type_champ"
+                                    v-model="info.type"
                                     :options="['date', 'texte', 'montant', 'numéro']"
                                     outlined
                                     dense
@@ -629,7 +629,7 @@
                                 <div>
                                   <label class="block text-xs font-medium text-gray-600 mb-1">Type de champ</label>
                                   <q-select
-                                    v-model="info.type_champ"
+                                    v-model="info.type"
                                     :options="['date', 'texte', 'montant', 'numéro']"
                                     outlined
                                     dense
@@ -1356,7 +1356,7 @@ const openEditTicket = (ticket) => {
       id: info.id || Date.now() + Math.random(),
       libelle: info.libelle,
       key_attribut: info.key_attribut,
-      type_champ: info.type_champ || 'texte'
+      type: info.type || 'texte'
     }))
   };
   myerrors.value = null;
@@ -1392,7 +1392,7 @@ const sendData = async () => {
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut,
-      type_champ: info.type_champ
+      type: info.type
     }))
   };
 
@@ -1440,7 +1440,7 @@ const updateData = async () => {
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut,
-      type_champ: info.type_champ
+      type: info.type
     }))
   };
 
@@ -1474,7 +1474,7 @@ const addInfoGenerale = () => {
     id: Date.now() + Math.random(), // ID unique pour vuedraggable
     libelle: '',
     key_attribut: false,
-    type_champ: 'texte'
+    type: 'texte'
   });
 };
 
