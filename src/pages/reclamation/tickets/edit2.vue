@@ -231,6 +231,7 @@
                     v-model="info.value"
                     outlined
                     dense
+                    type="number"
                     :placeholder="`Entrez le numéro pour ${info.libelle.toLowerCase()}`"
                     :required="info.key_attribut"
                     class="w-full"
@@ -279,13 +280,13 @@
           </div>
 
           <!-- Documents à fournir Section -->
-          <div v-if="ticketData.documentAFournir" class="mb-6">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div v-if="ticketData.base_ticket.documentAFournir" class="mb-6">
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div class="flex items-start">
-                <q-icon name="description" class="text-blue-600 mr-3 mt-0.5" />
-                <div class="text-sm text-blue-800">
+                <q-icon name="description" class="text-yellow-900 mr-3 mt-0.5" />
+                <div class="text-sm text-yellow-900">
                   <p class="font-medium mb-2">Documents à fournir :</p>
-                  <div class="text-blue-700" v-html="ticketData.documentAFournir"></div>
+                  <div class="text-yellow-900" v-html="ticketData.base_ticket.documentAFournir"></div>
                 </div>
               </div>
             </div>
@@ -359,7 +360,7 @@
                 @update:model-value="onNewFilesSelected"
               >
                 <template v-slot:prepend>
-                  <q-icon name="attach_file" class="text-blue-600" />
+                  <q-icon name="attach_file" class="text-yellow-600" />
                 </template>
                 <template v-slot:hint>
                   Formats acceptés: Images, PDF, Word. Taille max: 10Mo par fichier
@@ -368,7 +369,7 @@
 
               <q-btn
                 label="Ajouter"
-                color="blue-6"
+                color="yellow-9"
                 outline
                 :disable="!newFiles || newFiles.length === 0"
                 @click="addFiles"
@@ -393,7 +394,7 @@
                     <q-icon
                       :name="getFileIcon(file.type)"
                       size="1.5rem"
-                      class="text-blue-600 mr-3"
+                      class="text-yellow-600 mr-3"
                     />
                     <div>
                       <div class="text-sm font-medium text-gray-800">{{ file.name }}</div>
