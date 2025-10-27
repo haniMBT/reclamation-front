@@ -496,7 +496,8 @@ const submitForm = async () => {
       info_general_id: info.id,
       libelle: info.libelle,
       value: formData[info.libelle] || '',
-      key_attribut: info.key_attirubut || false
+      key_attribut: info.key_attirubut || false,
+      type: info.type || null
     })) || []
 
     const payload = {
