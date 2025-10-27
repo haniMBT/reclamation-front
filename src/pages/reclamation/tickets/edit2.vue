@@ -198,7 +198,7 @@
           </div>
 
           <!-- Informations générales -->
-          <div v-if="infosGenerales.length > 0" class="mb-6">
+          <div v-if="form.info_generales.length > 0" class="mb-6">
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div class="flex items-center mb-4">
                 <q-icon name="info" class="text-yellow-600 mr-3" size="1.5rem" />
@@ -206,16 +206,66 @@
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div v-for="info in infosGenerales" :key="info.id" class="space-y-2">
+                <div v-for="info in form.info_generales" :key="info.info_general_id" class="space-y-2">
                   <label class="block text-sm font-medium text-gray-700">
                     {{ info.libelle }}
                     <span v-if="info.key_attribut" class="text-red-500">*</span>
                   </label>
                   <q-input
-                    v-model="form.infosGenerales[info.key_attribut]"
+                    v-if="info.type == 'date'"
+                    v-model="info.value"
+                    type="date"
                     outlined
                     dense
-                    :placeholder="`Saisir ${info.libelle.toLowerCase()}`"
+                    :placeholder="`Sélectionnez la date pour ${info.libelle.toLowerCase()}`"
+                    :required="info.key_attribut"
+                    class="w-full"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="event" class="text-yellow-600" />
+                    </template>
+                  </q-input>
+
+                  <q-input
+                    v-else-if="info.type == 'numéro'"
+                    v-model="info.value"
+                    outlined
+                    dense
+                    :placeholder="`Entrez le numéro pour ${info.libelle.toLowerCase()}`"
+                    :required="info.key_attribut"
+                    class="w-full"
+                    inputmode="numeric"
+                    pattern="[0-9 ]*"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="pin" class="text-yellow-600" />
+                    </template>
+                  </q-input>
+
+                  <q-input
+                    v-else-if="info.type == 'montant'"
+                    v-model="info.value"
+                    outlined
+                    dense
+                    :placeholder="`Entrez le montant pour ${info.libelle.toLowerCase()}`"
+                    :required="info.key_attribut"
+                    class="w-full"
+                    @keypress="filterAmountKeypress"
+                    @input="sanitizeAmountInputEdit(info.key_attribut, $event)"
+                    inputmode="text"
+                    pattern="[0-9\s.,]*"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="attach_money" class="text-yellow -600" />
+                    </template>
+                  </q-input>
+
+                  <q-input
+                    v-else
+                    v-model="info.value"
+                    outlined
+                    dense
+                    :placeholder="`Entrez ${info.libelle.toLowerCase()}`"
                     :required="info.key_attribut"
                     class="w-full"
                   >
@@ -431,16 +481,7 @@ const form = ref({
 
 // Fonction de synchronisation bidirectionnelle
 const syncInfoGenerales = () => {
-  // Synchroniser de infosGenerales vers info_generales
-  if (form.value.info_generales && form.value.info_generales.length > 0) {
-    form.value.info_generales.forEach(info => {
-      if (form.value.infosGenerales[info.key_attribut] !== undefined) {
-        info.value = form.value.infosGenerales[info.key_attribut]
-      }
-    })
-  }
-
-  // Synchroniser de info_generales vers infosGenerales
+  // Synchroniser UNIQUEMENT de info_generales vers infosGenerales (compatibilité)
   if (form.value.info_generales && form.value.info_generales.length > 0) {
     form.value.info_generales.forEach(info => {
       form.value.infosGenerales[info.key_attribut] = info.value
@@ -448,8 +489,8 @@ const syncInfoGenerales = () => {
   }
 }
 
-// Watcher pour synchroniser automatiquement
-watch(() => form.value.infosGenerales, () => {
+// Watcher pour synchroniser automatiquement (array -> dict)
+watch(() => form.value.info_generales, () => {
   syncInfoGenerales()
 }, { deep: true })
 
@@ -466,9 +507,10 @@ const isFormValid = computed(() => {
     return false
   }
 
-  // Vérifier les informations générales obligatoires
-  for (const info of infosGenerales.value) {
-    if (info.key_attribut && (!form.value.infosGenerales[info.key_attribut] || form.value.infosGenerales[info.key_attribut].trim() === '')) {
+  // Vérifier les informations générales obligatoires via form.info_generales
+  for (const info of form.value.info_generales) {
+    const val = (info.value ?? '').toString()
+    if (info.key_attribut && (val.trim() === '')) {
       return false
     }
   }
@@ -514,7 +556,7 @@ const loadTicketData = async () => {
       }
 
       // Informations générales disponibles - récupérer depuis baseTicket
-      if (data.base_ticket && data.base_ticket.infos_generales) {
+      if (data.infos_generales && data.base_ticket.infos_generales) {
       console.log('Infos générales du ticket de base:', data.base_ticket.infos_generales);
 
         infosGenerales.value = data.base_ticket.infos_generales
@@ -547,7 +589,7 @@ const loadTicketData = async () => {
 const initializeFormFromTicketData = (data) => {
   // Objet de la réclamation
   form.value.objet = data.objet || ''
-  
+
   // Description - les données sont directement dans data, pas dans data.ticket
   form.value.description = data.description || ''
 
@@ -582,33 +624,68 @@ const initializeFormFromTicketData = (data) => {
   // Informations générales - créer des objets complets avec tous les champs
   form.value.info_generales = []
 
-  if (ticketInfosGenerales.value && ticketInfosGenerales.value.length > 0) {
-    // Pré-remplir avec les valeurs existantes du ticket
-    ticketInfosGenerales.value.forEach(ticketInfo => {
-      // Trouver l'info générale correspondante dans la définition du ticket de base
-      const baseInfo = infosGenerales.value.find(info => info.id === ticketInfo.info_general_id)
-      if (baseInfo) {
-        form.value.info_generales.push({
-          info_general_id: ticketInfo.info_general_id,
-          libelle: baseInfo.libelle,
-          value: ticketInfo.value || '',
-          key_attribut: baseInfo.key_attribut
-        })
-        // Maintenir la compatibilité avec l'ancien format
-        form.value.infosGenerales[baseInfo.key_attribut] = ticketInfo.value || ''
+  if (data.infos_generales && data.infos_generales.length > 0) {
+    // Construire une map des définitions du ticket de base pour enrichir (key_attribut, type, libelle)
+    const baseMap = (data.base_ticket?.infos_generales || []).reduce((acc, base) => {
+      const id = base.id ?? base.info_general_id
+      if (id) acc[id] = base
+      return acc
+    }, {})
+
+    // Utiliser directement les objets info_generales du ticket, enrichis avec la base si nécessaire
+    form.value.info_generales = data.infos_generales.map(info => {
+      const id = info.info_general_id ?? info.id
+      const base = id ? baseMap[id] || {} : {}
+      const key = info.key_attribut ?? base.key_attribut ?? ''
+      const type = info.type ?? base.type ?? null
+      const libelle = info.libelle ?? base.libelle ?? ''
+      const rawVal = (info.value ?? info.valeur ?? '')
+      return {
+        info_general_id: id,
+        libelle,
+        value: rawVal,
+        key_attribut: key,
+        type
       }
     })
-  } else {
-    // Initialiser avec des valeurs vides si pas de données existantes
-    infosGenerales.value.forEach(info => {
+
+    // Maintenir la compatibilité avec l'ancien format dictionnaire et formater les montants pour l'affichage
+    form.value.info_generales.forEach(info => {
+      if (info.key_attribut) {
+        const displayVal = info.type === 'montant' ? formatAmountDisplay(info.value ?? '') : (info.value ?? '')
+        form.value.infosGenerales[info.key_attribut] = displayVal
+      }
+    })
+    // Normaliser l'affichage selon le type et synchroniser vers le dictionnaire
+    form.value.info_generales.forEach(info => {
+      if (info.key_attribut) {
+        let displayVal = info.value ?? ''
+        if (info.type === 'date') {
+          displayVal = normalizeDateDisplay(displayVal)
+        } else if (info.type === 'montant') {
+          displayVal = formatAmountDisplay(displayVal)
+        } else if (info.type === 'numéro') {
+          displayVal = displayVal.toString().replace(/[^\d]/g, '')
+        }
+        // Mettre à jour la source principale
+        info.value = displayVal
+        // Compatibilité dict
+        form.value.infosGenerales[info.key_attribut] = displayVal
+      }
+    })
+  } else if (data.base_ticket?.infos_generales && data.base_ticket.infos_generales.length > 0) {
+    // Fallback: initialiser depuis les définitions du ticket de base si aucune donnée spécifique n'est fournie
+    data.base_ticket.infos_generales.forEach(base => {
       form.value.info_generales.push({
-        info_general_id: info.id,
-        libelle: info.libelle,
+        info_general_id: base.id ?? base.info_general_id,
+        libelle: base.libelle,
         value: '',
-        key_attribut: info.key_attribut
+        key_attribut: base.key_attribut ?? '',
+        type: base.type ?? null
       })
-      // Maintenir la compatibilité avec l'ancien format
-      form.value.infosGenerales[info.key_attribut] = ''
+      if (base.key_attribut) {
+        form.value.infosGenerales[base.key_attribut] = ''
+      }
     })
   }
 
@@ -730,7 +807,7 @@ const submitForm = async () => {
 
     // Ajouter l'objet
     formData.append('objet', form.value.objet)
-    
+
     // Ajouter la description
     formData.append('description', form.value.description)
 
@@ -765,7 +842,8 @@ const submitForm = async () => {
         .map(info => ({
           id: info.info_general_id,
           libelle: info.libelle,
-          valeur: info.value
+          valeur: info.value,
+          type: info.type || null
         }))
 
       console.log('form.value.info_generales:', form.value.info_generales);
@@ -942,6 +1020,120 @@ onMounted(async () => {
   await loadTicketData()
   loading.value = false
 })
+
+// Utilitaires pour la saisie des montants
+const filterAmountKeypress = (evt) => {
+  const key = evt.key ?? ''
+  const allowed = /[0-9\s.,]/
+  if (!allowed.test(key)) {
+    evt.preventDefault()
+  }
+}
+
+// Formater un montant pour l'affichage initial (groupement des milliers avec '.' et décimales ',')
+const formatAmountDisplay = (val) => {
+  let raw = (val ?? '').toString()
+  raw = raw.replace(/[^\d.,\s]/g, '')
+  raw = raw.replace(/\s+/g, '')
+
+  const lastComma = raw.lastIndexOf(',')
+  const lastDot = raw.lastIndexOf('.')
+  const lastSepIdx = Math.max(lastComma, lastDot)
+
+  let intPart = raw
+  let decPart = ''
+  if (lastSepIdx !== -1) {
+    intPart = raw.slice(0, lastSepIdx)
+    decPart = raw.slice(lastSepIdx + 1).replace(/[^\d]/g, '')
+  }
+
+  intPart = intPart.replace(/[^\d]/g, '')
+  intPart = intPart.replace(/^0+(?=\d)/, '')
+  if (intPart.length === 0) intPart = '0'
+
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+  let formatted = grouped
+  if (decPart.length > 0) {
+    if (decPart.length > 2) decPart = decPart.slice(0, 2)
+    else if (decPart.length < 2) decPart = decPart.padEnd(2, '0')
+    formatted = `${grouped},${decPart}`
+  }
+
+  return formatted
+}
+// Normaliser une date en format YYYY-MM-DD pour l'affichage dans un input de type date
+const normalizeDateDisplay = (val) => {
+  let s = (val ?? '').toString().trim()
+  if (s.length === 0) return ''
+  // Remplacer '/' par '-'
+  s = s.replace(/\//g, '-')
+  // Couper la partie temps si présente
+  if (s.includes('T')) s = s.split('T')[0]
+  if (s.includes(' ')) s = s.split(' ')[0]
+  const parts = s.split('-').filter(Boolean)
+  if (parts.length !== 3) return s
+  let y, m, d
+  // Détection du format: si premier segment a 4 chiffres => YYYY-MM-DD, sinon DD-MM-YYYY
+  if (/^\d{4}$/.test(parts[0])) {
+    y = parts[0]
+    m = parts[1]
+    d = parts[2]
+  } else if (/^\d{4}$/.test(parts[2])) {
+    // DD-MM-YYYY -> convertir
+    y = parts[2]
+    m = parts[1]
+    d = parts[0]
+  } else {
+    // Format inconnu, retourner tel quel
+    return s
+  }
+  // Pad des composantes
+  m = m.padStart(2, '0')
+  d = d.padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+const sanitizeAmountInputEdit = (keyAttr, val) => {
+  let raw = (val ?? '').toString()
+  // garder chiffres et séparateurs , . et espaces
+  raw = raw.replace(/[^\d.,\s]/g, '')
+  // retirer espaces
+  raw = raw.replace(/\s+/g, '')
+
+  // détecter le dernier séparateur décimal (.,)
+  const lastComma = raw.lastIndexOf(',')
+  const lastDot = raw.lastIndexOf('.')
+  const lastSepIdx = Math.max(lastComma, lastDot)
+
+  let intPart = raw
+  let decPart = ''
+  if (lastSepIdx !== -1) {
+    intPart = raw.slice(0, lastSepIdx)
+    decPart = raw.slice(lastSepIdx + 1).replace(/[^\d]/g, '')
+  }
+
+  // nettoyer la partie entière et enlever les zéros en tête
+  intPart = intPart.replace(/[^\d]/g, '')
+  intPart = intPart.replace(/^0+(?=\d)/, '')
+  if (intPart.length === 0) intPart = '0'
+
+  // regrouper par milliers avec '.'
+  const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+
+  let formatted = grouped
+  if (decPart.length > 0) {
+    // tronquer/padder à 2 décimales
+    if (decPart.length > 2) decPart = decPart.slice(0, 2)
+    else if (decPart.length < 2) decPart = decPart.padEnd(2, '0')
+    formatted = `${grouped},${decPart}`
+  }
+
+  // affecter la valeur formatée au dictionnaire pour compatibilité
+  form.value.infosGenerales[keyAttr] = formatted
+  // et mettre à jour la source principale
+  const item = form.value.info_generales.find(i => i.key_attribut === keyAttr)
+  if (item) item.value = formatted
+}
 </script>
 
 <style scoped>
