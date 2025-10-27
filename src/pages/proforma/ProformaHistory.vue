@@ -281,16 +281,6 @@ const enhancedStats = computed(() => {
       badgeClass: 'badge-orange',
       trend: '🚫'
     },
-    {
-      value: proformaStore.formatMontant(avgAmount),
-      label: 'Moyenne TTC',
-      icon: 'trending_up',
-      cardClass: 'amount-card-enhanced',
-      iconClass: 'cosmic-purple-enhanced',
-      numberClass: 'text-purple-8',
-      badgeClass: 'badge-purple',
-      trend: '💰'
-    }
   ]
 })
 
