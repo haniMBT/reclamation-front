@@ -181,16 +181,19 @@
                   </template>
                 </q-input>
 
-                <!-- Champ MONTANT (formatage à la saisie) -->
+                <!-- Champ MONTANT (restriction de saisie) -->
                 <q-input
                   v-else-if="info.type == 'montant'"
-                  v-model="formattedValues[info.libelle]"
+                  v-model="formData[info.libelle]"
                   outlined
                   dense
                   :placeholder="`Entrez le montant pour ${info.libelle.toLowerCase()}`"
                   :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
                   :error="!!validationErrors[info.libelle]"
-                  @update:model-value="val => handleMontantInput(info.libelle, val)"
+                  @keypress="filterAmountKeypress"
+                  @input="sanitizeAmountInput(info.libelle, $event)"
+                  inputmode="text"
+                  pattern="[0-9\\s.,]*"
                 >
                   <template #prepend>
                     <q-icon name="attach_money" class="text-blue-600" />
@@ -379,7 +382,6 @@ const showModal = ref(false)
 const selectedTicket = ref(null)
 const submitting = ref(false)
 const formData = reactive({})
-const formattedValues = reactive({})
 const showDuplicateModal = ref(false)
 const duplicateMessage = ref('')
 const validationErrors = ref({})
@@ -418,12 +420,10 @@ const selectTicket = (ticket) => {
 
   // Initialiser le formulaire avec les champs dynamiques
   Object.keys(formData).forEach(key => delete formData[key])
-  Object.keys(formattedValues).forEach(key => delete formattedValues[key])
 
   // Ajouter les champs basés sur les infos générales
   ticket.infos_generales?.forEach(info => {
     formData[info.libelle] = ''
-    formattedValues[info.libelle] = ''
   })
 
   // Réinitialiser les erreurs de validation à l'ouverture du modal
@@ -467,41 +467,7 @@ const getFieldErrors = (backendFieldName, frontendFieldName) => {
   return errors
 }
 
- // Formatage de montant: affichage avec séparateurs de milliers (1.000.000) et décimales avec virgule
-const formatAmount = (input) => {
-  if (input === null || input === undefined) {
-    return { display: '', raw: '' }
-  }
-  let s = String(input)
-  // supprimer espaces
-  s = s.replace(/\s+/g, '')
-  // uniformiser décimales: utiliser le point pour "raw", conserver la virgule pour l'affichage
-  s = s.replace(/,/g, '.')
-  // garder seulement chiffres et un seul point
-  s = s.replace(/[^0-9.]/g, '')
-  const firstDot = s.indexOf('.')
-  if (firstDot !== -1) {
-    // supprimer les points supplémentaires
-    s = s.substring(0, firstDot + 1) + s.substring(firstDot + 1).replace(/\./g, '')
-  }
-  let [intPart, decPart] = s.split('.')
-  intPart = intPart || ''
-  // enlever les zéros en tête inutiles
-  intPart = intPart.replace(/^0+(?=\d)/, '')
-  // formatage des milliers pour l'affichage
-  const displayInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
-  const display = decPart !== undefined && decPart !== '' ? `${displayInt},${decPart}` : displayInt
-  const raw = decPart !== undefined && decPart !== '' ? `${intPart}.${decPart}` : intPart
-  return { display, raw }
-}
-
-const handleMontantInput = (fieldName, val) => {
-  const { display, raw } = formatAmount(val)
-  formattedValues[fieldName] = display
-  formData[fieldName] = raw
-  clearFieldError(fieldName)
-}
-
+// (formatage montant retiré conformément aux nouvelles exigences)
 
 const submitForm = async () => {
   // Réinitialiser les erreurs de validation
@@ -649,6 +615,29 @@ const closeDefinitionModal = () => {
 onMounted(() => {
   fetchTickets()
 })
+
+const allowedAmountCharRegex = /[0-9\s.,]/
+
+const filterAmountKeypress = (e) => {
+  // Autoriser raccourcis (copier/coller, etc.)
+  if (e.ctrlKey || e.metaKey || e.altKey) return
+  const key = e.key
+  // Autoriser touches de navigation/édition
+  const allowedNonChar = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Tab', 'Home', 'End', 'Enter']
+  if (allowedNonChar.includes(key)) return
+  // Autoriser uniquement chiffres, espace, virgule et point
+  if (key.length === 1 && !allowedAmountCharRegex.test(key)) {
+    e.preventDefault()
+  }
+}
+
+const sanitizeAmountInput = (fieldName, e) => {
+  const v = e?.target?.value ?? ''
+  // Nettoyer toute insertion/paste non autorisée
+  const cleaned = v.replace(/[^0-9\s.,]/g, '')
+  formData[fieldName] = cleaned
+  clearFieldError(fieldName)
+}
 </script>
 
 <style scoped>
