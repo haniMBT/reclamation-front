@@ -383,7 +383,7 @@
                                 <q-icon name="drag_indicator" class="text-gray-400" size="sm" />
                               </div>
 
-                              <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <!-- Libellé -->
                                 <div>
                                   <label class="block text-xs font-medium text-gray-600 mb-1">
@@ -399,6 +399,22 @@
                                       <q-icon name="text_fields" class="text-gray-500" size="sm" />
                                     </template>
                                   </q-input>
+                                </div>
+
+                                <!-- Type de champ -->
+                                <div>
+                                  <label class="block text-xs font-medium text-gray-600 mb-1">Type de champ</label>
+                                  <q-select
+                                    v-model="info.type_champ"
+                                    :options="['date', 'texte', 'montant', 'numéro']"
+                                    outlined
+                                    dense
+                                    placeholder="Sélectionnez le type"
+                                  >
+                                    <template #prepend>
+                                      <q-icon name="category" class="text-gray-500" size="sm" />
+                                    </template>
+                                  </q-select>
                                 </div>
 
                                 <!-- Key attribut -->
@@ -591,7 +607,7 @@
 
                             <!-- Contenu de l'info générale -->
                             <div class="flex-1 space-y-3">
-                              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <!-- Libellé -->
                                 <div>
                                   <label class="block text-xs font-medium text-gray-600 mb-1">
@@ -607,6 +623,22 @@
                                       <q-icon name="text_fields" class="text-gray-500" size="sm" />
                                     </template>
                                   </q-input>
+                                </div>
+
+                                <!-- Type de champ -->
+                                <div>
+                                  <label class="block text-xs font-medium text-gray-600 mb-1">Type de champ</label>
+                                  <q-select
+                                    v-model="info.type_champ"
+                                    :options="['date', 'texte', 'montant', 'numéro']"
+                                    outlined
+                                    dense
+                                    placeholder="Sélectionnez le type"
+                                  >
+                                    <template #prepend>
+                                      <q-icon name="category" class="text-gray-500" size="sm" />
+                                    </template>
+                                  </q-select>
                                 </div>
 
                                 <!-- Key attribut -->
@@ -1323,7 +1355,8 @@ const openEditTicket = (ticket) => {
     infos_generales: ticket.infos_generales.map(info => ({
       id: info.id || Date.now() + Math.random(),
       libelle: info.libelle,
-      key_attribut: info.key_attribut
+      key_attribut: info.key_attribut,
+      type_champ: info.type_champ || 'texte'
     }))
   };
   myerrors.value = null;
@@ -1356,7 +1389,11 @@ const sendData = async () => {
     direction: form.value.direction,
     documentAfornir: form.value.documentAfornir,
     definition: form.value.definition,
-    infos_generales: form.value.infos_generales
+    infos_generales: form.value.infos_generales.map(info => ({
+      libelle: info.libelle,
+      key_attribut: info.key_attribut,
+      type_champ: info.type_champ
+    }))
   };
 
   try {
@@ -1402,7 +1439,8 @@ const updateData = async () => {
     definition: form.value.definition,
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
-      key_attribut: info.key_attribut
+      key_attribut: info.key_attribut,
+      type_champ: info.type_champ
     }))
   };
 
@@ -1435,7 +1473,8 @@ const addInfoGenerale = () => {
   form.value.infos_generales.push({
     id: Date.now() + Math.random(), // ID unique pour vuedraggable
     libelle: '',
-    key_attribut: false
+    key_attribut: false,
+    type_champ: 'texte'
   });
 };
 
