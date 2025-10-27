@@ -146,7 +146,60 @@
                   <span v-if="info.key_attirubut" class="text-red-500">*</span>
                   <q-icon v-if="info.key_attirubut" name="star" class="text-amber-500 ml-1" size="sm" />
                 </label>
+                <!-- Champ DATE -->
                 <q-input
+                  v-if="info.type == 'date'"
+                  v-model="formData[info.libelle]"
+                  type="date"
+                  outlined
+                  dense
+                  :placeholder="`Sélectionnez la date pour ${info.libelle.toLowerCase()}`"
+                  :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
+                  :error="!!validationErrors[info.libelle]"
+                  @input="clearFieldError(info.libelle)"
+                >
+                  <template #prepend>
+                    <q-icon name="event" class="text-blue-600" />
+                  </template>
+                </q-input>
+
+                <!-- Champ NUMÉRO (entier) -->
+                <q-input
+                  v-else-if="info.type == 'numéro'"
+                  v-model="formData[info.libelle]"
+                  type="number"
+                  step="1"
+                  outlined
+                  dense
+                  :placeholder="`Entrez le numéro pour ${info.libelle.toLowerCase()}`"
+                  :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
+                  :error="!!validationErrors[info.libelle]"
+                  @input="clearFieldError(info.libelle)"
+                >
+                  <template #prepend>
+                    <q-icon name="pin" class="text-blue-600" />
+                  </template>
+                </q-input>
+
+                <!-- Champ MONTANT (formatage à la saisie) -->
+                <q-input
+                  v-else-if="info.type == 'montant'"
+                  v-model="formattedValues[info.libelle]"
+                  outlined
+                  dense
+                  :placeholder="`Entrez le montant pour ${info.libelle.toLowerCase()}`"
+                  :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
+                  :error="!!validationErrors[info.libelle]"
+                  @update:model-value="val => handleMontantInput(info.libelle, val)"
+                >
+                  <template #prepend>
+                    <q-icon name="attach_money" class="text-blue-600" />
+                  </template>
+                </q-input>
+
+                <!-- Champ TEXTE (par défaut) -->
+                <q-input
+                  v-else
                   v-model="formData[info.libelle]"
                   outlined
                   dense
@@ -154,7 +207,7 @@
                   :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
                   :error="!!validationErrors[info.libelle]"
                   @input="clearFieldError(info.libelle)"
-                >
+                >ssssssss
                   <template #prepend>
                     <q-icon name="edit" class="text-blue-600" />
                   </template>
@@ -326,6 +379,7 @@ const showModal = ref(false)
 const selectedTicket = ref(null)
 const submitting = ref(false)
 const formData = reactive({})
+const formattedValues = reactive({})
 const showDuplicateModal = ref(false)
 const duplicateMessage = ref('')
 const validationErrors = ref({})
@@ -364,10 +418,12 @@ const selectTicket = (ticket) => {
 
   // Initialiser le formulaire avec les champs dynamiques
   Object.keys(formData).forEach(key => delete formData[key])
+  Object.keys(formattedValues).forEach(key => delete formattedValues[key])
 
   // Ajouter les champs basés sur les infos générales
   ticket.infos_generales?.forEach(info => {
     formData[info.libelle] = ''
+    formattedValues[info.libelle] = ''
   })
 
   // Réinitialiser les erreurs de validation à l'ouverture du modal
@@ -411,6 +467,40 @@ const getFieldErrors = (backendFieldName, frontendFieldName) => {
   return errors
 }
 
+ // Formatage de montant: affichage avec séparateurs de milliers (1.000.000) et décimales avec virgule
+const formatAmount = (input) => {
+  if (input === null || input === undefined) {
+    return { display: '', raw: '' }
+  }
+  let s = String(input)
+  // supprimer espaces
+  s = s.replace(/\s+/g, '')
+  // uniformiser décimales: utiliser le point pour "raw", conserver la virgule pour l'affichage
+  s = s.replace(/,/g, '.')
+  // garder seulement chiffres et un seul point
+  s = s.replace(/[^0-9.]/g, '')
+  const firstDot = s.indexOf('.')
+  if (firstDot !== -1) {
+    // supprimer les points supplémentaires
+    s = s.substring(0, firstDot + 1) + s.substring(firstDot + 1).replace(/\./g, '')
+  }
+  let [intPart, decPart] = s.split('.')
+  intPart = intPart || ''
+  // enlever les zéros en tête inutiles
+  intPart = intPart.replace(/^0+(?=\d)/, '')
+  // formatage des milliers pour l'affichage
+  const displayInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  const display = decPart !== undefined && decPart !== '' ? `${displayInt},${decPart}` : displayInt
+  const raw = decPart !== undefined && decPart !== '' ? `${intPart}.${decPart}` : intPart
+  return { display, raw }
+}
+
+const handleMontantInput = (fieldName, val) => {
+  const { display, raw } = formatAmount(val)
+  formattedValues[fieldName] = display
+  formData[fieldName] = raw
+  clearFieldError(fieldName)
+}
 
 
 const submitForm = async () => {
@@ -465,7 +555,7 @@ const submitForm = async () => {
     if (response.status === 201 && response.data.success) {
       // Sauvegarder les données dans le store
       const saveResult = ticketStore.saveTicket(response.data.data)
-      
+
       if (saveResult.success) {
         $q.notify({
           type: 'positive',
@@ -474,7 +564,7 @@ const submitForm = async () => {
         })
 
         closeModal()
-        
+
         // Rediriger vers create2.vue
          setTimeout(() => {
            router.push('/reclamations/ticket2')
