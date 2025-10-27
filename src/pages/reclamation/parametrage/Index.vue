@@ -89,7 +89,7 @@
                     size="sm"
                     flat
                     round
-                    v-if="privilege.suppression"
+                    v-if="privilege.suppression && ticket.possibilite_suppression === 1"
                     color="negative"
                     @click.stop="openDeleteTicket(ticket)"
                   >
@@ -1339,6 +1339,15 @@ const closeAddTicket = () => {
 };
 
 const openDeleteTicket = (ticket) => {
+  // Empêcher l'ouverture si le ticket est déjà utilisé
+  if (ticket?.possibilite_suppression === 0) {
+    $q.notify({
+      type: 'warning',
+      message: 'Ce ticket est déjà utilisé et ne peut pas être supprimé',
+      position: 'top'
+    });
+    return;
+  }
   selectedTicket.value = ticket;
   deleteTicket.value = true;
 };
@@ -1529,6 +1538,9 @@ const deleteData = async () => {
           break;
         case 403:
           errorMessage = 'Vous n\'avez pas les droits pour supprimer ce ticket';
+          break;
+        case 409:
+          errorMessage = error.response.data.message || 'Ce ticket est déjà utilisé et ne peut pas être supprimé';
           break;
         case 500:
           errorMessage = error.response.data.message || 'Erreur serveur lors de la suppression';
