@@ -161,6 +161,10 @@
                     </q-item-section>
                     <q-item-section>
                       <q-item-label class="font-medium">{{ info.libelle }}</q-item-label>
+                      <q-item-label caption class="text-blue-600">
+                        <q-icon name="category" size="xs" class="mr-1" />
+                        Type: {{ info.type || 'texte' }}
+                      </q-item-label>
                       <q-item-label v-if="info.key_attribut" caption class="text-amber-600">
                         <q-icon name="star" size="xs" class="mr-1" />
                         Information clé
