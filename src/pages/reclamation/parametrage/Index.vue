@@ -116,6 +116,20 @@
                   >
                     <q-tooltip>Modification globale des types et détails</q-tooltip>
                   </q-btn>
+
+                  <!-- Toggle Actif -->
+                  <div class="flex items-center ml-2" v-if="privilege?.modification==1 || privilege?.insertion==1">
+                    <q-toggle
+                      :model-value="ticket.is_active === true || ticket.is_active === 1"
+                      :disable="loading || loadingTickets"
+                      color="green"
+                      checked-icon="check_circle"
+                      unchecked-icon="cancel"
+                      @update:model-value="val => onToggleActive(ticket, val)"
+                      keep-color
+                    />
+                    <q-tooltip>{{ ticket.is_active ? 'Actif' : 'Inactif' }}</q-tooltip>
+                  </div>
                 </div>
               </div>
             </template>
@@ -1495,6 +1509,32 @@ const removeInfoGenerale = (id) => {
   const index = form.value.infos_generales.findIndex(info => info.id === id);
   if (index !== -1) {
     form.value.infos_generales.splice(index, 1);
+  }
+};
+
+// Toggle actif pour un ticket
+const onToggleActive = async (ticket, newVal) => {
+  const label = newVal ? 'activer' : 'désactiver';
+  const confirmed = await new Promise(resolve => {
+    $q.dialog({
+      title: 'Confirmation',
+      message: `Voulez-vous ${label} ce ticket pour la direction ${ticket.direction} ?`,
+      cancel: true,
+      persistent: true
+    }).onOk(() => resolve(true)).onCancel(() => resolve(false));
+  });
+  if (!confirmed) return;
+
+  loading.value = true;
+  try {
+    await api.patch(`/api/rec/parametrage/${ticket.id}/toggle`, { is_active: newVal });
+    await fetchData();
+    $q.notify({ type: 'positive', message: 'Etat du ticket mis à jour' });
+  } catch (error) {
+    console.error('Erreur lors du basculement:', error);
+    $q.notify({ type: 'negative', message: "Erreur lors du basculement de l'état" });
+  } finally {
+    loading.value = false;
   }
 };
 
