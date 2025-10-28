@@ -28,12 +28,6 @@
               </div>
               <div class="absolute inset-0 bg-gradient-to-br from-cyan-400/50 to-purple-600/50 rounded-2xl blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             </div>
-            <div class="ml-3">
-              <h1 class="text-xl font-bold text-white tracking-tight bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">
-                EPAL
-              </h1>
-              <p class="text-xs text-gray-300 hidden sm:block">Entreprise Portuaire d'Alger</p>
-            </div>
           </div>
           
           <!-- Bouton de connexion avec effet néon -->
