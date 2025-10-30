@@ -1677,21 +1677,6 @@ watch(searchTickets, () => {
   // This could be implemented with a computed property or by updating the table directly
 });
 
-// Helper to normalize direction values for q-select (emit-value + map-options)
-const normalizeDirections = (dir) => {
-  if (dir == null) return [];
-  const arr = Array.isArray(dir) ? dir : [dir];
-  return arr
-    .map(d => {
-      if (typeof d === 'string') return d;
-      if (d && typeof d === 'object') {
-        return d.DIRECTION ?? d.direction ?? d.value ?? d.label ?? '';
-      }
-      return '';
-    })
-    .filter(v => v !== '');
-};
-
 // Global Edit Methods
 const openGlobalEdit = (ticket) => {
   selectedTicket.value = ticket;
@@ -1700,14 +1685,14 @@ const openGlobalEdit = (ticket) => {
   globalEditForm.value.types = ticket.types ? ticket.types.map(type => ({
     id: type.id || Date.now() + Math.random(),
     libelle: type.libelle || '',
-    direction: normalizeDirections(type.direction),
+    direction: Array.isArray(type.direction) ? type.direction : (type.direction ? [type.direction] : []),
     statut_direction: type.statut_direction || null,
     expanded: false, // Accordéons fermés par défaut
     isDragging: false, // État de drag
     details: type.details ? type.details.map(detail => ({
       id: detail.id || Date.now() + Math.random(),
       libelle: detail.libelle || '',
-      direction: normalizeDirections(detail.direction),
+      direction: Array.isArray(detail.direction) ? detail.direction : (detail.direction ? [detail.direction] : []),
       statut_direction: detail.statut_direction || null,
       isDragging: false // État de drag pour les détails
     })) : []
