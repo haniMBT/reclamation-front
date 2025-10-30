@@ -211,7 +211,12 @@
                           <h5 class="font-semibold text-gray-900 mb-1">{{ type.libelle }}</h5>
                           <p class="text-sm text-gray-600 mb-2">
                             <q-icon name="business" size="xs" class="mr-1" />
-                            {{ type.direction || 'Non spécifiée' }}
+                            <template v-if="Array.isArray(type.direction) && type.direction.length">
+                              {{ type.direction.join(', ') }}
+                            </template>
+                            <template v-else>
+                              {{ type.direction || 'Non spécifiée' }}
+                            </template>
                           </p>
                           <q-badge
                             :color="getStatutColor(type.statut_direction)"
@@ -857,7 +862,10 @@
                               {{ type.libelle || `Type ${typeIndex + 1}` }}
                             </div>
                             <div class="text-xs text-gray-500 flex items-center space-x-2">
-                              <span v-if="type.direction" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                              <span v-if="Array.isArray(type.direction) && type.direction.length" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {{ type.direction.join(', ') }}
+                              </span>
+                              <span v-else-if="type.direction" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 {{ type.direction }}
                               </span>
                               <span v-if="type.statut_direction" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -926,10 +934,12 @@
                             option-label="DIRECTION"
                             emit-value
                             map-options
+                            multiple
+                            use-chips
                             outlined
                             dense
                             clearable
-                            placeholder="Sélectionnez une direction"
+                            placeholder="Sélectionnez une ou plusieurs directions"
                             class="bg-white"
                           >
                             <template #prepend>
@@ -937,7 +947,7 @@
                             </template>
                           </q-select>
                         </div>
-                        <div v-if="type.direction">
+                        <div v-if="Array.isArray(type.direction) ? type.direction.length > 0 : !!type.direction">
                           <label class="block text-xs font-medium text-gray-600 mb-1">
                             Statut Direction <span class="text-red-500">*</span>
                           </label>
@@ -1019,10 +1029,12 @@
                                     option-label="DIRECTION"
                                     emit-value
                                     map-options
+                                    multiple
+                                    use-chips
                                     outlined
                                     dense
                                     clearable
-                                    placeholder="Direction"
+                                    placeholder="Direction(s)"
                                     class="text-sm"
                                   >
                                     <template #before>
@@ -1033,7 +1045,7 @@
                                     </template>
                                   </q-select>
                                 </div>
-                                <div v-if="detail.direction">
+                                <div v-if="Array.isArray(detail.direction) ? detail.direction.length > 0 : !!detail.direction">
                                   <q-select
                                     v-model="detail.statut_direction"
                                     :options="['consultation', 'traitement']"
@@ -1216,8 +1228,9 @@ const isGlobalEditFormValid = computed(() => {
       return false;
     }
 
-    // Si direction définie, statut_direction obligatoire
-    if (type.direction && !type.statut_direction) {
+    // Si une ou plusieurs directions sont définies, statut_direction obligatoire
+    const hasTypeDirections = Array.isArray(type.direction) ? type.direction.length > 0 : !!type.direction;
+    if (hasTypeDirections && !type.statut_direction) {
       return false;
     }
 
@@ -1228,8 +1241,9 @@ const isGlobalEditFormValid = computed(() => {
         return false;
       }
 
-      // Si direction définie, statut_direction obligatoire
-      if (detail.direction && !detail.statut_direction) {
+      // Si une ou plusieurs directions sont définies, statut_direction obligatoire
+      const hasDetailDirections = Array.isArray(detail.direction) ? detail.direction.length > 0 : !!detail.direction;
+      if (hasDetailDirections && !detail.statut_direction) {
         return false;
       }
     }
@@ -1663,6 +1677,21 @@ watch(searchTickets, () => {
   // This could be implemented with a computed property or by updating the table directly
 });
 
+// Helper to normalize direction values for q-select (emit-value + map-options)
+const normalizeDirections = (dir) => {
+  if (dir == null) return [];
+  const arr = Array.isArray(dir) ? dir : [dir];
+  return arr
+    .map(d => {
+      if (typeof d === 'string') return d;
+      if (d && typeof d === 'object') {
+        return d.DIRECTION ?? d.direction ?? d.value ?? d.label ?? '';
+      }
+      return '';
+    })
+    .filter(v => v !== '');
+};
+
 // Global Edit Methods
 const openGlobalEdit = (ticket) => {
   selectedTicket.value = ticket;
@@ -1671,14 +1700,14 @@ const openGlobalEdit = (ticket) => {
   globalEditForm.value.types = ticket.types ? ticket.types.map(type => ({
     id: type.id || Date.now() + Math.random(),
     libelle: type.libelle || '',
-    direction: type.direction || null,
+    direction: normalizeDirections(type.direction),
     statut_direction: type.statut_direction || null,
     expanded: false, // Accordéons fermés par défaut
     isDragging: false, // État de drag
     details: type.details ? type.details.map(detail => ({
       id: detail.id || Date.now() + Math.random(),
       libelle: detail.libelle || '',
-      direction: detail.direction || null,
+      direction: normalizeDirections(detail.direction),
       statut_direction: detail.statut_direction || null,
       isDragging: false // État de drag pour les détails
     })) : []
@@ -1698,7 +1727,7 @@ const addType = () => {
   globalEditForm.value.types.push({
     id: Date.now() + Math.random(),
     libelle: '',
-    direction: null,
+    direction: [],
     statut_direction: null,
     expanded: true, // Nouveau type ouvert par défaut
     isDragging: false,
@@ -1717,7 +1746,7 @@ const addDetail = (typeIndex) => {
   globalEditForm.value.types[typeIndex].details.push({
     id: Date.now() + Math.random(),
     libelle: '',
-    direction: null,
+    direction: [],
     statut_direction: null,
     isDragging: false
   });
