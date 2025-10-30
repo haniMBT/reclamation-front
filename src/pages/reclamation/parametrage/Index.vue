@@ -320,7 +320,6 @@
                       option-value="DIRECTION"
                       option-label="DIRECTION"
                       emit-value
-                      map-options
                       outlined
                       dense
                       placeholder="Sélectionnez une direction"
@@ -549,7 +548,6 @@
                       option-value="DIRECTION"
                       option-label="DIRECTION"
                       emit-value
-                      map-options
                       outlined
                       dense
                       placeholder="Sélectionnez une direction"
@@ -932,8 +930,8 @@
                             :options="directions"
                             option-value="DIRECTION"
                             option-label="DIRECTION"
+                            @update:model-value="val => type.direction = normalizeDirections(val)"
                             emit-value
-                            map-options
                             multiple
                             use-chips
                             outlined
@@ -1027,8 +1025,8 @@
                                     :options="directions"
                                     option-value="DIRECTION"
                                     option-label="DIRECTION"
+                                    @update:model-value="val => detail.direction = normalizeDirections(val)"
                                     emit-value
-                                    map-options
                                     multiple
                                     use-chips
                                     outlined
@@ -1276,8 +1274,7 @@ const ticketsCols = ref([
     name: 'direction',
     label: 'Direction',
     align: 'left',
-    field: row => row.direction,
-    format: val => `${val}`,
+    field: row => Array.isArray(row.direction) ? row.direction.join(', ') : (row.direction || ''),
     sortable: true,
   },
   {
@@ -1658,7 +1655,7 @@ const detailColumns = ref([
   {
     name: 'direction',
     label: 'Direction',
-    field: 'direction',
+    field: row => Array.isArray(row.direction) ? row.direction.join(', ') : (row.direction || ''),
     align: 'left',
     sortable: true
   },
@@ -1677,6 +1674,22 @@ watch(searchTickets, () => {
   // This could be implemented with a computed property or by updating the table directly
 });
 
+// Helper to normalize direction values for q-select (emit-value + map-options)
+const normalizeDirections = (dir) => {
+  if (dir == null) return [];
+  const arr = Array.isArray(dir) ? dir : [dir];
+  return arr
+    .map(d => {
+      if (typeof d === 'string') return d.trim();
+      if (d && typeof d === 'object') {
+        const val = d.DIRECTION ?? d.direction ?? d.value; // Ne jamais utiliser label car il peut contenir des VNodes
+        return typeof val === 'string' ? val.trim() : '';
+      }
+      return '';
+    })
+    .filter(v => v.length > 0);
+};
+
 // Global Edit Methods
 const openGlobalEdit = (ticket) => {
   selectedTicket.value = ticket;
@@ -1685,14 +1698,14 @@ const openGlobalEdit = (ticket) => {
   globalEditForm.value.types = ticket.types ? ticket.types.map(type => ({
     id: type.id || Date.now() + Math.random(),
     libelle: type.libelle || '',
-    direction: Array.isArray(type.direction) ? type.direction : (type.direction ? [type.direction] : []),
+    direction: normalizeDirections(type.direction),
     statut_direction: type.statut_direction || null,
     expanded: false, // Accordéons fermés par défaut
     isDragging: false, // État de drag
     details: type.details ? type.details.map(detail => ({
       id: detail.id || Date.now() + Math.random(),
       libelle: detail.libelle || '',
-      direction: Array.isArray(detail.direction) ? detail.direction : (detail.direction ? [detail.direction] : []),
+      direction: normalizeDirections(detail.direction),
       statut_direction: detail.statut_direction || null,
       isDragging: false // État de drag pour les détails
     })) : []
