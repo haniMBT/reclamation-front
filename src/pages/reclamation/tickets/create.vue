@@ -258,74 +258,43 @@
 
     <!-- Modal d'alerte pour les doublons -->
     <q-dialog v-model="showDuplicateModal" persistent>
-      <q-card class="w-full" style="min-width: 500px; max-width: 600px;">
-        <q-card-section class="flex items-center bg-amber-50">
-          <q-icon name="warning" class="text-amber-600 mr-3" size="2.5rem" />
+      <q-card class="w-3/4" style="max-width: 1000px;">
+        <!-- En-tête simplifié -->
+        <q-card-section class="flex items-center bg-green-50">
+          <q-icon name="check_circle" class="text-green-600 mr-3" size="2.5rem" />
           <div>
-            <div class="text-xl font-semibold text-amber-900">Réclamation similaire détectée</div>
-            <div class="text-sm text-amber-700">Une vérification est nécessaire avant de continuer</div>
+            <div class="text-xl font-semibold text-green-900">Cette réclamation a déjà été traitée</div>
           </div>
         </q-card-section>
 
         <q-separator />
 
         <q-card-section class="q-pa-lg">
-          <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
-            <div class="flex items-start">
-              <q-icon name="info" class="text-amber-600 mr-3 mt-1" size="1.2rem" />
-              <div>
-                <h4 class="font-medium text-amber-900 mb-2">Information importante</h4>
-                <p class="text-amber-800 text-sm leading-relaxed">
-                  {{ duplicateMessage }}
-                </p>
-              </div>
-            </div>
+          <!-- Description détaillée -->
+          <div v-if="duplicateDescription" class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+            <div class="text-gray-800 leading-relaxed" v-html="duplicateDescription"></div>
           </div>
 
-          <!-- Bloc de conclusion et fichiers de clôture -->
+          <!-- Fichiers de clôture -->
           <div class="bg-white rounded-lg border border-green-200 p-4 mb-6">
-            <div class="flex items-start">
-              <q-icon name="check_circle" class="text-green-600 mr-3 mt-1" size="1.2rem" />
-              <div class="flex-1">
-                <h4 class="font-medium text-green-900 mb-2">Cette réclamation a déjà été traitée</h4>
-                <div v-if="duplicateConclusion || (duplicateFiles && duplicateFiles.length > 0)">
-                  <div v-if="duplicateConclusion" class="mb-3">
-                    <div class="text-gray-700 leading-relaxed" v-html="duplicateConclusion"></div>
-                  </div>
-                  <div v-if="duplicateFiles && duplicateFiles.length > 0">
-                    <div class="text-gray-900 mb-2">Pièces jointes de clôture ({{ duplicateFiles.length }})</div>
-                    <q-list bordered class="rounded-md">
-                      <q-item v-for="file in duplicateFiles" :key="file.id" clickable @click="downloadTicketFile(file)">
-                        <q-item-section>
-                          <q-item-label>{{ file.nom_fichier }}</q-item-label>
-                          <q-item-label caption class="text-gray-500">
-                            {{ formatFileSizeVoir(file.taille_fichier) }} • {{ file.type_fichier }}
-                          </q-item-label>
-                        </q-item-section>
-                        <q-item-section side>
-                          <q-btn dense flat icon="download" @click.stop="downloadTicketFile(file)" />
-                        </q-item-section>
-                      </q-item>
-                    </q-list>
-                  </div>
-                </div>
-                <div v-else class="text-gray-600">Aucune conclusion enregistrée</div>
-              </div>
+            <div class="text-gray-900 mb-2">Pièces jointes ({{ duplicateFiles.length }})</div>
+            <div v-if="duplicateFiles && duplicateFiles.length > 0">
+              <q-list bordered class="rounded-md">
+                <q-item v-for="file in duplicateFiles" :key="file.id" clickable @click="downloadTicketFile(file)">
+                  <q-item-section>
+                    <q-item-label>{{ file.nom_fichier }}</q-item-label>
+                    <q-item-label caption class="text-gray-500">
+                      {{ formatFileSizeVoir(file.taille_fichier) }} • {{ file.type_fichier }}
+                    </q-item-label>
+                  </q-item-section>
+                  <q-item-section side class="flex items-center space-x-1">
+                    <q-btn dense flat icon="visibility" @click.stop="viewTicketFile(file)" />
+                    <q-btn dense flat icon="download" @click.stop="downloadTicketFile(file)" />
+                  </q-item-section>
+                </q-item>
+              </q-list>
             </div>
-          </div>
-
-          <div class="bg-gray-50 rounded-lg p-4">
-            <h5 class="font-medium text-gray-900 mb-2">Que souhaitez-vous faire ?</h5>
-            <ul class="text-sm text-gray-700 space-y-1">
-              <li class="flex items-center">
-                <q-icon name="visibility" class="text-blue-500 mr-2" size="sm" />
-                <strong>Suivre :</strong> Consulter la réclamation existante
-              </li>
-              <li class="flex items-center">
-                <q-icon name="cancel" class="text-gray-500 mr-2" size="sm" />
-                <strong>Annuler :</strong> Revenir au formulaire pour modifier vos informations
-              </li>
-            </ul>
+            <div v-else class="text-gray-600">Aucune conclusion enregistrée</div>
           </div>
         </q-card-section>
 
@@ -418,6 +387,7 @@ const showDuplicateModal = ref(false)
 const duplicateMessage = ref('')
 const duplicateConclusion = ref(null)
 const duplicateFiles = ref([])
+const duplicateDescription = ref(null)
 const validationErrors = ref({})
 const showDefinitionModalRef = ref(false)
 const selectedDefinitionTicket = ref(null)
@@ -546,8 +516,10 @@ const submitForm = async () => {
     const response = await api.post('/api/rec/tickets/check-duplicate', payload)
 
     if (response.data.duplicate_found) {
-      duplicateMessage.value = response.data.message
-      duplicateConclusion.value = response.data.conclusion || null
+      // Supprimer l'ancienne alerte et utiliser le nouveau contenu
+      duplicateMessage.value = ''
+      duplicateConclusion.value = null
+      duplicateDescription.value = response.data.description || null
       duplicateFiles.value = response.data.files || []
       showDuplicateModal.value = true
       submitting.value = false
@@ -627,17 +599,15 @@ const closeDuplicateModal = () => {
   showDuplicateModal.value = false
   duplicateMessage.value = ''
   duplicateConclusion.value = null
+  duplicateDescription.value = null
   duplicateFiles.value = []
+  // Redirection vers la liste des réclamations
+  router.push('/reclamations/allTicket')
 }
 
 const proceedWithDuplicate = () => {
-  // Pour l'instant, ne fait rien comme demandé
-  closeDuplicateModal()
-  $q.notify({
-    type: 'info',
-    message: 'Fonctionnalité en cours de développement',
-    caption: 'Le suivi des doublons sera bientôt disponible'
-  })
+  // Fermer le modal et laisser le formulaire actif
+  showDuplicateModal.value = false
 }
 
 const showDefinitionModal = (ticket) => {
@@ -703,6 +673,20 @@ const downloadTicketFile = async (file) => {
   } catch (err) {
     console.error('Erreur téléchargement', err)
     $q.notify({ type: 'negative', message: 'Échec du téléchargement', caption: err.response?.data?.message || err.message })
+  }
+}
+
+const viewTicketFile = async (file) => {
+  try {
+    const response = await api.get(`/api/rec/tickets/files/${file.id}/download`, { responseType: 'blob' })
+    const blob = new Blob([response.data], { type: file.type_fichier || 'application/octet-stream' })
+    const blobUrl = window.URL.createObjectURL(blob)
+    window.open(blobUrl, '_blank')
+    // Révocation différée pour éviter la perte immédiate du contenu dans certains navigateurs
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 5000)
+  } catch (err) {
+    console.error('Erreur prévisualisation', err)
+    $q.notify({ type: 'negative', message: 'Impossible d’ouvrir le fichier', caption: err.response?.data?.message || err.message })
   }
 }
 </script>
