@@ -319,7 +319,7 @@
           >
             Annuler
           </q-btn>
-          <q-btn
+          <!-- <q-btn
             @click="proceedWithDuplicate"
             color="blue-6"
             no-caps
@@ -328,7 +328,7 @@
             icon="visibility"
           >
             Suivre
-          </q-btn>
+          </q-btn> -->
         </q-card-actions>
       </q-card>
     </q-dialog>
