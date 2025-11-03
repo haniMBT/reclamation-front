@@ -1331,6 +1331,83 @@
           <div class="text-negative text-caption q-mt-xs" v-if="!isConclusionValid">
             La conclusion est obligatoire.
           </div>
+
+          <!-- Upload de fichiers de conclusion -->
+          <div class="space-y-2 q-mt-lg">
+            <label class="block text-sm font-medium text-gray-700">
+              Fichiers de conclusion (optionnel)
+            </label>
+
+            <!-- Zone d'ajout de fichiers -->
+            <div class="flex gap-3 mb-3">
+              <q-file
+                v-model="closeFiles"
+                multiple
+                outlined
+                dense
+                accept="image/*,application/pdf,.doc,.docx,.txt"
+                max-file-size="10485760"
+                class="flex-1"
+                @rejected="onRejected"
+                @update:model-value="onCloseFilesSelected"
+              >
+                <template v-slot:prepend>
+                  <q-icon name="attach_file" class="text-red-600" />
+                </template>
+                <template v-slot:hint>
+                  Formats acceptés: Images, PDF, Word. Taille max: 10Mo par fichier
+                </template>
+              </q-file>
+
+              <q-btn
+                label="Ajouter"
+                color="red-6"
+                outline
+                :disable="!closeFiles || closeFiles.length === 0"
+                @click="addCloseFiles"
+                class="px-4"
+              >
+                <q-icon name="add" class="mr-1" />
+              </q-btn>
+            </div>
+
+            <!-- Liste des fichiers sélectionnés -->
+            <div v-if="hasCloseAttachments" class="mt-3">
+              <div class="text-sm font-medium text-gray-700 mb-2">
+                Fichiers sélectionnés ({{ closeAttachments.length }}) :
+              </div>
+              <div class="space-y-2">
+                <div
+                  v-for="(file, index) in closeAttachments"
+                  :key="index"
+                  class="flex items-center justify-between bg-gray-50 p-3 rounded-md border"
+                >
+                  <div class="flex items-center">
+                    <q-icon
+                      :name="getFileIcon(file.type)"
+                      size="1.5rem"
+                      class="text-red-600 mr-3"
+                    />
+                    <div>
+                      <div class="text-sm font-medium text-gray-800">{{ file.name }}</div>
+                      <div class="text-xs text-gray-500">{{ formatFileSize(file.size) }}</div>
+                    </div>
+                  </div>
+                  <q-btn
+                    icon="close"
+                    size="sm"
+                    flat
+                    round
+                    color="negative"
+                    @click="removeCloseFile(index)"
+                    class="ml-2"
+                  >
+                    <q-tooltip>Supprimer le fichier</q-tooltip>
+                  </q-btn>
+                </div>
+              </div>
+            </div>
+          </div>
         </q-card-section>
 
         <q-card-actions align="right">
@@ -1419,6 +1496,9 @@ const selectedRemoveDirections = ref([])
 const showCloseDialog = ref(false)
 const isClosing = ref(false)
 const closeConclusion = ref('')
+// Fichiers de conclusion (UI)
+const closeFiles = ref(null)
+const closeAttachments = ref([])
 
 
 
@@ -1620,6 +1700,7 @@ const hasTicketDetailsInfosGenerales = computed(() => !!ticketDetails.value?.inf
 const hasTicketDetailsDescription = computed(() => !!ticketDetails.value?.description)
 const hasTicketDetailsDocumentAFournir = computed(() => !!ticketDetails.value?.documentAFournir)
 const hasTicketDetailsFiles = computed(() => !!ticketDetails.value?.files && ticketDetails.value.files.length > 0)
+const hasCloseAttachments = computed(() => !!closeAttachments.value && closeAttachments.value.length > 0)
 
 // Méthodes
 const goBack = () => {
@@ -1643,14 +1724,31 @@ const closeTicket = async () => {
   }
   isClosing.value = true
   try {
-    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/close`, {
-      conclusion: closeConclusion.value,
-      status: 'clôturé'
+    // Ajouter les fichiers sélectionnés si présents
+    addCloseFiles()
+
+    const formData = new FormData()
+    formData.append('conclusion', closeConclusion.value)
+    formData.append('status', 'clôturé')
+
+    // Ajouter les fichiers de conclusion au FormData
+    closeAttachments.value.forEach((attachment) => {
+      if (attachment.file) {
+        formData.append('files[]', attachment.file)
+      }
+    })
+
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/close`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
     })
     if (response.data && response.data.success) {
       $q.notify({ type: 'positive', message: 'Réclamation clôturée avec succès', position: 'top' })
       showCloseDialog.value = false
       closeConclusion.value = ''
+      closeAttachments.value = []
+      closeFiles.value = null
       // Nettoyer le store et rediriger vers la liste
       ticketStore.clearTicket()
       router.push('/reclamations/allTicket')
@@ -1664,6 +1762,55 @@ const closeTicket = async () => {
     isClosing.value = false
   }
 }
+
+// Méthodes pour l'upload des fichiers de conclusion
+const onCloseFilesSelected = (files) => {
+  if (files && files.length > 0) {
+    console.log('Fichiers de conclusion sélectionnés:', files)
+  }
+}
+
+const addCloseFiles = () => {
+  if (closeFiles.value && closeFiles.value.length > 0) {
+    const filesCount = closeFiles.value.length
+
+    closeFiles.value.forEach(file => {
+      // Vérifier si le fichier n'est pas déjà dans la liste
+      const exists = closeAttachments.value.some(att =>
+        att.name === file.name && att.size === file.size
+      )
+
+      if (!exists) {
+        closeAttachments.value.push({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          file: file
+        })
+      }
+    })
+
+    // Réinitialiser la sélection
+    closeFiles.value = null
+
+    $q.notify({
+      type: 'positive',
+      message: `${filesCount} fichier(s) ajouté(s) à la conclusion`,
+      position: 'top'
+    })
+  }
+}
+
+const removeCloseFile = (index) => {
+  closeAttachments.value.splice(index, 1)
+  $q.notify({
+    type: 'info',
+    message: 'Fichier supprimé',
+    position: 'top'
+  })
+}
+
+
 const loadMessages = async () => {
   if (!currentTicketId.value) return
 
