@@ -807,6 +807,39 @@
               <div class="p-6 prose max-w-none">
                 <div v-html="ticket.conclusion"></div>
               </div>
+
+              <!-- Fichiers de conclusion -->
+              <div v-if="hasTicketConclusionFiles" class="px-6 pb-6">
+                <div class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <q-icon name="attach_file" class="text-purple-600 mr-2" />
+                  Pièces jointes de conclusion ({{ ticket.files.length }})
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                  <q-list class="space-y-2">
+                    <q-item v-for="file in ticket.files" :key="file.id" class="bg-white rounded-lg shadow-sm">
+                      <q-item-section avatar>
+                        <q-icon :name="getFileIconVoir(file.type_fichier)" class="text-purple-600" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label class="font-medium">{{ file.nom_fichier }}</q-item-label>
+                        <q-item-label caption class="text-gray-500">{{ formatFileSizeVoir(file.taille_fichier) }}</q-item-label>
+                      </q-item-section>
+                      <q-item-section side>
+                        <q-btn
+                          flat
+                          round
+                          icon="download"
+                          color="purple-6"
+                          @click="downloadTicketFile(file)"
+                          class="hover:bg-purple-50"
+                        >
+                          <q-tooltip>Télécharger</q-tooltip>
+                        </q-btn>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </div>
+              </div>
             </div>
 
             <div v-else class="flex flex-col items-center justify-center py-16">
@@ -1656,6 +1689,7 @@ const hasRecourAttachments = computed(() => (recourMessage.value.attachments?.le
 const hasTicketClosedAt = computed(() => !!ticket.value?.closed_at)
 const hasTicketStatus = computed(() => !!ticket.value?.status)
 const hasTicketConclusion = computed(() => !!ticket.value?.conclusion)
+const hasTicketConclusionFiles = computed(() => !!ticket.value?.files && ticket.value.files.length > 0)
 
 // Vérification recours hors délai
 const isRecoursHorsDelai = computed(() => {
