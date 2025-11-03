@@ -272,7 +272,14 @@
         <q-card-section class="q-pa-lg">
           <!-- Description détaillée -->
           <div v-if="duplicateDescription" class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+            <div class="text-gray-900 font-semibold mb-2">Description de la réclamation</div>
             <div class="text-gray-800 leading-relaxed" v-html="duplicateDescription"></div>
+          </div>
+
+          <!-- Conclusion -->
+          <div v-if="duplicateConclusion" class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+            <div class="text-gray-900 font-semibold mb-2">Conclusion de la réclamation</div>
+            <div class="text-gray-800 leading-relaxed" v-html="duplicateConclusion"></div>
           </div>
 
           <!-- Fichiers de clôture -->
@@ -289,7 +296,7 @@
                   </q-item-section>
                   <q-item-section side class="flex items-center space-x-1">
                     <q-btn dense flat icon="visibility" @click.stop="viewTicketFile(file)" />
-                    <q-btn dense flat icon="download" @click.stop="downloadTicketFile(file)" />
+                    <!-- <q-btn dense flat icon="download" @click.stop="downloadTicketFile(file)" /> -->
                   </q-item-section>
                 </q-item>
               </q-list>
@@ -518,7 +525,7 @@ const submitForm = async () => {
     if (response.data.duplicate_found) {
       // Supprimer l'ancienne alerte et utiliser le nouveau contenu
       duplicateMessage.value = ''
-      duplicateConclusion.value = null
+      duplicateConclusion.value = response.data.conclusion || null
       duplicateDescription.value = response.data.description || null
       duplicateFiles.value = response.data.files || []
       showDuplicateModal.value = true
