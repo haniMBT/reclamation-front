@@ -319,16 +319,16 @@
           >
             Annuler
           </q-btn>
-          <!-- <q-btn
+          <q-btn
             @click="proceedWithDuplicate"
             color="blue-6"
             no-caps
             unelevated
             class="px-6 ml-3"
-            icon="visibility"
+            icon="double_arrow"
           >
-            Suivre
-          </q-btn> -->
+            Nouvelle réclamation
+          </q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
