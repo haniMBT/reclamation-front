@@ -612,9 +612,54 @@ const closeDuplicateModal = () => {
   router.push('/reclamations/allTicket')
 }
 
-const proceedWithDuplicate = () => {
-  // Fermer le modal et laisser le formulaire actif
-  showDuplicateModal.value = false
+const proceedWithDuplicate = async () => {
+  try {
+    submitting.value = true
+
+    // Préparer les données pour l'API (même structure que submitForm)
+    const info_general_data = selectedTicket.value?.infos_generales?.map(info => ({
+      info_general_id: info.id,
+      libelle: info.libelle,
+      value: formData[info.libelle] || '',
+      key_attribut: info.key_attirubut || false,
+      type: info.type || null
+    })) || []
+
+    const payload = {
+      bticket_id: selectedTicket.value.id,
+      user_id: 1, // À remplacer par l'ID de l'utilisateur connecté
+      direction: 'ENTRANT',
+      status: 'OUVERT',
+      info_general_data,
+      ignore_duplicate: true
+    }
+
+    // Créer directement la réclamation sans re-vérification des doublons
+    const response = await api.post('/api/rec/tickets/check-duplicate', payload)
+
+    if (response.status === 201 && response.data?.success) {
+      // Sauvegarder les données et fermer le modal
+      const saveResult = ticketStore.saveTicket(response.data.data)
+      if (!saveResult.success) {
+        $q.notify({ type: 'warning', message: 'Ticket créé, mais la sauvegarde locale a échoué', caption: saveResult.error })
+      }
+
+      showDuplicateModal.value = false
+      closeModal()
+
+      // Rediriger vers la suite du processus de création
+      router.push('/reclamations/ticket2')
+      return
+    }
+
+    // Si la réponse n'est pas celle attendue
+    $q.notify({ type: 'negative', message: 'Création directe non aboutie', caption: response.data?.message || 'Réponse inattendue' })
+  } catch (err) {
+    console.error('Erreur création directe sans doublon:', err)
+    $q.notify({ type: 'negative', message: 'Erreur lors de la création directe', caption: err.response?.data?.message || err.message })
+  } finally {
+    submitting.value = false
+  }
 }
 
 const showDefinitionModal = (ticket) => {
