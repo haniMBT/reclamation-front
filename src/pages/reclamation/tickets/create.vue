@@ -263,45 +263,52 @@
         <q-card-section class="flex items-center bg-green-50">
           <q-icon name="check_circle" class="text-green-600 mr-3" size="2.5rem" />
           <div>
-            <div class="text-xl font-semibold text-green-900">Cette réclamation a déjà été traitée</div>
+            <div class="text-xl font-semibold text-green-900">⚠️ Cette réclamation (ou des réclamations similaires) ont déjà été traitées.</div>
           </div>
         </q-card-section>
 
         <q-separator />
 
         <q-card-section class="q-pa-lg">
-          <!-- Description détaillée -->
-          <div v-if="duplicateDescription" class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-            <div class="text-gray-900 font-semibold mb-2">Description de la réclamation</div>
-            <div class="text-gray-800 leading-relaxed" v-html="duplicateDescription"></div>
-          </div>
-
-          <!-- Conclusion -->
-          <div v-if="duplicateConclusion" class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-            <div class="text-gray-900 font-semibold mb-2">Conclusion de la réclamation</div>
-            <div class="text-gray-800 leading-relaxed" v-html="duplicateConclusion"></div>
-          </div>
-
-          <!-- Fichiers de clôture -->
-          <div class="bg-white rounded-lg border border-green-200 p-4 mb-6">
-            <div class="text-gray-900 mb-2">Pièces jointes ({{ duplicateFiles.length }})</div>
-            <div v-if="duplicateFiles && duplicateFiles.length > 0">
-              <q-list bordered class="rounded-md">
-                <q-item v-for="file in duplicateFiles" :key="file.id" clickable @click="downloadTicketFile(file)">
-                  <q-item-section>
-                    <q-item-label>{{ file.nom_fichier }}</q-item-label>
-                    <q-item-label caption class="text-gray-500">
-                      {{ formatFileSizeVoir(file.taille_fichier) }} • {{ file.type_fichier }}
-                    </q-item-label>
-                  </q-item-section>
-                  <q-item-section side class="flex items-center space-x-1">
-                    <q-btn dense flat icon="visibility" @click.stop="viewTicketFile(file)" />
-                    <!-- <q-btn dense flat icon="download" @click.stop="downloadTicketFile(file)" /> -->
-                  </q-item-section>
-                </q-item>
-              </q-list>
+          <!-- Liste des réclamations similaires traitées -->
+          <div v-if="duplicateTickets && duplicateTickets.length > 0" class="space-y-6">
+            <div v-for="t in duplicateTickets" :key="t.id" class="bg-white rounded-lg border border-gray-200 p-4">
+              <div class="text-gray-900 font-semibold mb-2">Réclamation n°{{ t.id }}</div>
+              <!-- Description en premier -->
+              <div v-if="t.description" class="mb-3">
+                <div class="text-gray-900 font-medium mb-1">Description de la réclamation</div>
+                <div class="text-gray-800 leading-relaxed" v-html="t.description"></div>
+              </div>
+              <!-- Conclusion ensuite -->
+              <div v-if="t.conclusion" class="mb-3">
+                <div class="text-gray-900 font-medium mb-1">Conclusion de la réclamation</div>
+                <div class="text-gray-800 leading-relaxed" v-html="t.conclusion"></div>
+              </div>
+              <!-- Fichiers en dernier -->
+              <div class="bg-gray-50 rounded-md border border-green-200 p-3">
+                <div class="text-gray-900 mb-2">Pièces jointes ({{ t.files?.length || 0 }})</div>
+                <div v-if="t.files && t.files.length > 0">
+                  <q-list bordered class="rounded-md">
+                    <q-item v-for="file in t.files" :key="file.id" clickable @click="downloadTicketFile(file)">
+                      <q-item-section>
+                        <q-item-label>{{ file.nom_fichier }}</q-item-label>
+                        <q-item-label caption class="text-gray-500">
+                          {{ formatFileSizeVoir(file.taille_fichier) }} • {{ file.type_fichier }}
+                        </q-item-label>
+                      </q-item-section>
+                      <q-item-section side class="flex items-center space-x-1">
+                        <q-btn dense flat icon="visibility" @click.stop="viewTicketFile(file)" />
+                        <q-btn dense flat icon="download" @click.stop="downloadTicketFile(file)" />
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </div>
+                <div v-else class="text-gray-600">Aucune conclusion enregistrée</div>
+              </div>
             </div>
-            <div v-else class="text-gray-600">Aucune conclusion enregistrée</div>
+          </div>
+          <div v-else class="bg-white rounded-lg border border-gray-200 p-4">
+            <div class="text-gray-700">Aucune réclamation traitée similaire n'a été trouvée.</div>
           </div>
         </q-card-section>
 
@@ -395,6 +402,7 @@ const duplicateMessage = ref('')
 const duplicateConclusion = ref(null)
 const duplicateFiles = ref([])
 const duplicateDescription = ref(null)
+const duplicateTickets = ref([])
 const validationErrors = ref({})
 const showDefinitionModalRef = ref(false)
 const selectedDefinitionTicket = ref(null)
@@ -525,6 +533,7 @@ const submitForm = async () => {
     if (response.data.duplicate_found) {
       // Supprimer l'ancienne alerte et utiliser le nouveau contenu
       duplicateMessage.value = ''
+      duplicateTickets.value = response.data.duplicates || []
       duplicateConclusion.value = response.data.conclusion || null
       duplicateDescription.value = response.data.description || null
       duplicateFiles.value = response.data.files || []
@@ -608,6 +617,7 @@ const closeDuplicateModal = () => {
   duplicateConclusion.value = null
   duplicateDescription.value = null
   duplicateFiles.value = []
+  duplicateTickets.value = []
   // Redirection vers la liste des réclamations
   router.push('/reclamations/allTicket')
 }
