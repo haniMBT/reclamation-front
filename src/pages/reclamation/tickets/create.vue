@@ -263,7 +263,7 @@
         <q-card-section class="flex items-center bg-green-50">
           <q-icon name="check_circle" class="text-green-600 mr-3" size="2.5rem" />
           <div>
-            <div class="text-xl font-semibold text-green-900">⚠️ Cette réclamation (ou des réclamations similaires) ont déjà été traitées.</div>
+            <div class="text-xl font-semibold text-green-900">⚠️ Notre système a détecté qu’une réclamation semblable a déjà été traitée.</div>
           </div>
         </q-card-section>
 
@@ -298,7 +298,7 @@
                       </q-item-section>
                       <q-item-section side class="flex items-center space-x-1">
                         <q-btn dense flat icon="visibility" @click.stop="viewTicketFile(file)" />
-                        <q-btn dense flat icon="download" @click.stop="downloadTicketFile(file)" />
+                        <!-- <q-btn dense flat icon="download" @click.stop="downloadTicketFile(file)" /> -->
                       </q-item-section>
                     </q-item>
                   </q-list>
