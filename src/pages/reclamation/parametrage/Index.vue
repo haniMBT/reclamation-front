@@ -39,6 +39,15 @@
             >
               Ajouter un ticket
             </q-btn>
+            <q-btn
+              icon="groups"
+              color="purple-6"
+              no-caps
+              class="px-6"
+              @click="openCommissionDialog"
+            >
+              Commission de recours
+            </q-btn>
             <q-input
               outlined
               dense
@@ -130,9 +139,104 @@
                     />
                     <q-tooltip>{{ ticket.is_active ? 'Actif' : 'Inactif' }}</q-tooltip>
                   </div>
-                </div>
+
+      <!-- Dialog Commission de recours -->
+      <q-dialog v-model="showCommissionDialog" persistent>
+        <q-card class="w-full" style="min-width: 70vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
+          <q-card-section class="flex items-center bg-purple-50 ">
+            <q-icon name="groups" class="text-purple-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-purple-900">Commission de recours</div>
+              <div class="text-sm text-purple-700">Sélectionnez le président et les membres, puis enregistrez</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div class="text-gray-700 font-medium mb-2">Président de la commission</div>
+                <q-select
+                  v-model="commissionPresidentId"
+                  :options="usersOptions"
+                  option-value="value"
+                  option-label="label"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  :error="!!commissionErrors.president"
+                  :error-message="commissionErrors.president"
+                  placeholder="Choisir le président"
+                />
               </div>
-            </template>
+              <div>
+                <div class="text-gray-700 font-medium mb-2">Membres de la commission</div>
+                <q-select
+                  v-model="commissionMemberIds"
+                  :options="filteredUsersOptions"
+                  option-value="value"
+                  option-label="label"
+                  emit-value
+                  map-options
+                  outlined
+                  dense
+                  multiple
+                  use-chips
+                  placeholder="Choisir les membres"
+                />
+              </div>
+            </div>
+
+            <div class="mt-6">
+              <div class="text-gray-700 font-medium mb-2">Composition actuelle</div>
+              <q-table
+                :rows="commissionRows"
+                :columns="commissionColumns"
+                row-key="id"
+                flat
+                dense
+                :rows-per-page-options="[5,10,20,0]"
+              >
+                <template #body-cell-role="props">
+                  <q-td :props="props">
+                    <q-badge :color="props.row.role === 'président' ? 'purple-6' : 'grey-7'" :label="props.row.role" />
+                  </q-td>
+                </template>
+              </q-table>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+                <q-card-actions class="p-6 bg-gray-50">
+                  <q-space />
+                  <q-btn
+                    @click="closeCommissionDialog"
+                    color="grey-6"
+                    outline
+                    no-caps
+                    class="px-6"
+                  >
+                    Annuler
+                  </q-btn>
+                  <q-btn
+                    @click="saveCommission"
+                    color="purple-6"
+                    no-caps
+                    unelevated
+                    class="px-6 ml-3"
+                    :loading="commissionSubmitting"
+                  >
+                    Enregistrer la composition
+                  </q-btn>
+                </q-card-actions>
+              </q-card>
+            </q-dialog>
+          </div>
+        </div>
+      </template>
 
             <div class="p-6 bg-gray-50">
               <!-- Document à fournir -->
@@ -1328,6 +1432,12 @@ const fetchData = async () => {
     directions_visibilite.value = response.data.directions_visibilite || [];
     directions.value = response.data.directions || [];
     privilege.value = response.data.privilege || null;
+    usersRaw.value = response.data.users || [];
+    commissionRaw.value = response.data.commission_recours || [];
+    // Pré-populer les sélections si une composition existe
+    const president = commissionRaw.value.find(r => r.role === 'président');
+    commissionPresidentId.value = president ? president.user_id : null;
+    commissionMemberIds.value = commissionRaw.value.filter(r => r.role === 'membre').map(r => r.user_id);
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error);
     $q.notify({
@@ -1336,6 +1446,85 @@ const fetchData = async () => {
     });
   } finally {
     loadingTickets.value = false;
+  }
+};
+
+// Commission de recours: état UI
+const showCommissionDialog = ref(false);
+const usersRaw = ref([]);
+const commissionRaw = ref([]);
+const commissionPresidentId = ref(null);
+const commissionMemberIds = ref([]);
+const commissionSubmitting = ref(false);
+const commissionErrors = ref({});
+
+// Options pour QSelect
+const usersOptions = computed(() => {
+  return (usersRaw.value || []).map(u => ({
+    value: u.id,
+    label: `${u.Prenom ?? ''} ${u.Nom ?? ''}`.trim() || (u.id ?? ''),
+    meta: u
+  }));
+});
+
+const filteredUsersOptions = computed(() => {
+  return usersOptions.value.filter(opt => opt.value !== commissionPresidentId.value);
+});
+
+// Tableau commission
+const commissionColumns = [
+  { name: 'nom', label: 'Nom', field: row => row.nom, align: 'left' },
+  { name: 'prenom', label: 'Prénom', field: row => row.prenom, align: 'left' },
+  //{ name: 'email', label: 'Email', field: row => row.email, align: 'left' },
+ // { name: 'matricule', label: 'Matricule', field: row => row.matricule, align: 'left' },
+ // { name: 'direction', label: 'Direction', field: row => row.direction, align: 'left' },
+  { name: 'role', label: 'Rôle', field: row => row.role, align: 'left' },
+];
+
+const commissionRows = computed(() => commissionRaw.value || []);
+
+const openCommissionDialog = () => {
+  commissionErrors.value = {};
+  showCommissionDialog.value = true;
+};
+
+const closeCommissionDialog = () => {
+  showCommissionDialog.value = false;
+};
+
+const saveCommission = async () => {
+  commissionErrors.value = {};
+  if (!commissionPresidentId.value) {
+    commissionErrors.value.president = 'Le président est obligatoire';
+    $q.notify({ type: 'warning', message: commissionErrors.value.president });
+    return;
+  }
+  // éviter le doublon président dans membres
+  const members = (commissionMemberIds.value || []).filter(id => id !== commissionPresidentId.value);
+
+  commissionSubmitting.value = true;
+  try {
+    const payload = {
+      president_id: commissionPresidentId.value,
+      member_ids: members
+    };
+    const resp = await api.post('/api/rec/parametrage/commission-recours', payload);
+    if (resp.data?.success) {
+      commissionRaw.value = resp.data.commission_recours || [];
+      $q.notify({ type: 'positive', message: resp.data.message || 'Composition enregistrée' });
+      closeCommissionDialog();
+    } else {
+      $q.notify({ type: 'negative', message: resp.data?.message || 'Échec de l’enregistrement' });
+    }
+  } catch (err) {
+    console.error('Erreur enregistrement commission', err);
+    const msg = err.response?.data?.message || err.message;
+    $q.notify({ type: 'negative', message: 'Erreur lors de l’enregistrement', caption: msg });
+    if (err.response?.status === 422) {
+      commissionErrors.value = err.response?.data?.errors || {};
+    }
+  } finally {
+    commissionSubmitting.value = false;
   }
 };
 
