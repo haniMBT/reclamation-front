@@ -140,7 +140,8 @@
                     <q-tooltip>{{ ticket.is_active ? 'Actif' : 'Inactif' }}</q-tooltip>
                   </div>
 
-      <!-- Dialog Commission de recours -->
+      <!-- Dialog Commission de recours  -->
+      <!-- seamless rendre le font noraml -->
       <q-dialog v-model="showCommissionDialog" persistent>
         <q-card class="w-full" style="min-width: 70vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
           <q-card-section class="flex items-center bg-purple-50 ">
