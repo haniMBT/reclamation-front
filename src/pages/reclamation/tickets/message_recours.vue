@@ -180,7 +180,7 @@
               icon="check_circle"
               color="red-6"
               no-caps
-               v-if="canShowCloseButton"
+               v-if="isPresidentRecours && canShowCloseButton"
               @click="openCloseDialog"
               :disable="!currentTicketId"
               class="px-6 q-ml-sm"
@@ -1525,23 +1525,6 @@ const isMembreRecours = ref(false)
 const isPresidentRecours = ref(false)
 const currentUserId = computed(() => authStore.user?.id || authStore.userProfile?.id)
 
-const detectCommissionRole = async () => {
-  try {
-    const resp = await api.get('/api/rec/parametrage')
-    const commission = resp.data?.commission_recours || []
-    const me = commission.find(m => m.user_id === currentUserId.value)
-    if (me) {
-      isMembreRecours.value = true
-      isPresidentRecours.value = (me.role === 'président')
-    } else {
-      isMembreRecours.value = false
-      isPresidentRecours.value = false
-    }
-  } catch (e) {
-    isMembreRecours.value = false
-    isPresidentRecours.value = false
-  }
-}
 const directionsNonConcerneOptions = ref([])
 const showAddDirectionDialog = ref(false)
 const selectedAdditionalDirections = ref([])
@@ -1873,6 +1856,9 @@ const loadMessages = async () => {
       ticket_direction.value = response.data.ticket_direction || null
       ticket.value = response.data.ticket || null
       privilege.value = response.data.privilege || null
+      // Commission flags from loadMessages
+      isMembreRecours.value = !!response.data.is_commission_member
+      isPresidentRecours.value = !!response.data.is_commission_president
       createur.value = response.data.createur || null // Récupérer les infos du créateur
       if(!showCloseDialog.value){
         closeConclusion.value = ticket.value.conclusion
