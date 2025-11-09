@@ -38,6 +38,7 @@ const routes = [
       { path: 'ticket2', name: 'tickets-create2', component: () => import('src/pages/reclamation/tickets/create2.vue') },
       { path: 'tickets/edit/:id', name: 'tickets-edit', component: () => import('src/pages/reclamation/tickets/edit2.vue') },
       { path: 'tickets/messages', name: 'tickets-messages', component: () => import('src/pages/reclamation/tickets/messages.vue') },
+      { path: 'tickets/messages_recours', name: 'tickets-messages-recours', component: () => import('src/pages/reclamation/tickets/message_recours.vue') },
       { path: 'parametrage', component: () => import('src/pages/reclamation/parametrage/Index.vue') }
     ]
   },

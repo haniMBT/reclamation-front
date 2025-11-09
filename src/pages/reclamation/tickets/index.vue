@@ -256,6 +256,7 @@ const ticketStore = useTicketStore()
 // État réactif
 const tickets = ref([])
 const privilege = ref(null)
+const isCommissionMember = ref(false)
 const loading = ref(false)
 const searchQuery = ref('')
 const dateFrom = ref('')
@@ -285,6 +286,7 @@ const fetchTickets = async (props = {}) => {
 
     if (response.data.success) {
       privilege.value = response.data.data.privilege
+      isCommissionMember.value = !!response.data.data.is_commission_member
       tickets.value = response.data.data.items
       pagination.page = response.data.data.meta.current_page
       pagination.rowsPerPage = response.data.data.meta.per_page
@@ -369,7 +371,11 @@ const viewMessages = (ticket) => {
   // Enregistrer l'ID du ticket dans le store Pinia
   ticketStore.setTicketForMessages(ticket.id)
   // Naviguer vers la page des messages
-  router.push('/reclamations/tickets/messages')
+  if (isCommissionMember.value && (ticket.status === 'Recours' || ticket.status === 'Recours clôturé')) {
+    router.push('/reclamations/tickets/messages_recours')
+  } else {
+    router.push('/reclamations/tickets/messages')
+  }
 }
 
 const deleteTicket = (ticket) => {
@@ -434,8 +440,8 @@ watch([dateFrom, dateTo], () => {
 }, { debounce: 500 })
 
 // Lifecycle
-onMounted(() => {
-  fetchTickets()
+onMounted(async () => {
+  await fetchTickets()
 })
 </script>
 
