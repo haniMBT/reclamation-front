@@ -872,7 +872,7 @@
             <div class="text-sm text-green-700 space-y-1">
               <div>
                 <q-icon name="person" size="xs" class="q-mr-xs" />
-                Direction d'envoi: {{ selectedMessage.direction_envoi }}
+                Emetteur : {{ selectedMessage.direction_envoi }}
                 <span class="q-mx-sm">•</span>
                 <q-icon name="schedule" size="xs" class="q-mr-xs" />
                 {{ formatDate(selectedMessage.date_envoie) }}
@@ -1560,7 +1560,7 @@ const columns = [
   },
   {
     name: 'direction_envoi',
-    label: 'Direction Envoi',
+    label: 'Emetteur',
     align: 'left',
     field: 'direction_envoi',
     sortable: true
