@@ -1472,6 +1472,15 @@ const filteredUsersOptions = computed(() => {
   return usersOptions.value.filter(opt => opt.value !== commissionPresidentId.value);
 });
 
+// Assurer la règle: si un utilisateur est sélectionné à la fois comme membre et président,
+// il est considéré président et retiré des membres.
+watch(commissionPresidentId, (newVal) => {
+  if (!newVal) return;
+  commissionMemberIds.value = (commissionMemberIds.value || []).filter(id => id !== newVal);
+});
+
+// La déduplication se fera au moment de l'enregistrement pour éviter les boucles réactives
+
 // Tableau commission
 const commissionColumns = [
   { name: 'nom', label: 'Nom', field: row => row.nom, align: 'left' },
@@ -1500,8 +1509,9 @@ const saveCommission = async () => {
     $q.notify({ type: 'warning', message: commissionErrors.value.president });
     return;
   }
-  // éviter le doublon président dans membres
-  const members = (commissionMemberIds.value || []).filter(id => id !== commissionPresidentId.value);
+  // Dédupliqué + éviter le doublon président dans membres
+  const members = Array.from(new Set(commissionMemberIds.value || []))
+    .filter(id => id !== commissionPresidentId.value);
 
   commissionSubmitting.value = true;
   try {
