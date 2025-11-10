@@ -322,15 +322,15 @@
                 />
               </div>
 
-              <!-- Sélection multiple des directions -->
+              <!-- Sélection multiple des membres de la commission (remplace directions dans message_recours.vue) -->
               <div class="space-y-2">
                 <label class="block text-sm font-medium text-gray-700">
-                  Directions destinataires *
+                  Membres de la commission destinataires *
                 </label>
                 <q-select
-                  v-model="newMessage.directions"
-                  :options="directionOptions"
-                  label="Sélectionnez une ou plusieurs directions"
+                  v-model="selectedCommissionMembers"
+                  :options="commissionMemberOptions"
+                  label="Sélectionnez un ou plusieurs membres"
                   multiple
                   outlined
                   use-chips
@@ -338,16 +338,17 @@
                   option-value="value"
                   emit-value
                   map-options
-                  :loading="loadingDirections"
+                  :loading="loadingCommissionMembers"
                   stack-label
+                  @update:model-value="onCommissionMembersChange"
                 >
                   <template #prepend>
-                    <q-icon name="business" class="text-blue-600" />
+                    <q-icon name="groups" class="text-blue-600" />
                   </template>
                   <template v-slot:no-option>
                     <q-item>
                       <q-item-section class="text-grey">
-                        Aucune direction disponible
+                        Aucun membre de la commission disponible
                       </q-item-section>
                     </q-item>
                   </template>
@@ -1519,6 +1520,10 @@ const recourMessage = ref({
 const newFiles = ref(null)
 const loadingDirections = ref(false)
 const directionOptions = ref([])
+// Commission selection state (used to derive directions for backend)
+const selectedCommissionMembers = ref([])
+const commissionMemberOptions = ref([])
+const loadingCommissionMembers = ref(false)
 
 // Commission de recours: détection et overrides d'autorisations pour la page recours
 const isMembreRecours = ref(false)
@@ -1615,6 +1620,35 @@ if(ticket.value.reply_permission=='employe_Répondeur'){
   }else{
       reponse= false;
   }
+}
+
+// Charger les membres de la commission (options pour sélection destinataires)
+const loadCommissionMembers = async () => {
+  loadingCommissionMembers.value = true
+  try {
+    const resp = await api.get('/api/rec/parametrage')
+    const commission = resp.data?.commission_recours || []
+    commissionMemberOptions.value = commission.map(m => ({
+      value: m.user_id,
+      label: `${m.prenom ?? ''} ${m.nom ?? ''}`.trim() || m.user_id,
+      direction: m.direction ?? null,
+      role: m.role
+    }))
+  } catch (e) {
+    commissionMemberOptions.value = []
+  } finally {
+    loadingCommissionMembers.value = false
+  }
+}
+
+const onCommissionMembersChange = (vals) => {
+  // Deriver les directions depuis les membres sélectionnés (unicité)
+  const dirSet = new Set()
+  ;(vals || []).forEach(val => {
+    const opt = commissionMemberOptions.value.find(o => o.value === val)
+    if (opt?.direction) dirSet.add(opt.direction)
+  })
+  newMessage.value.directions = Array.from(dirSet)
 }
 
   return reponse;
@@ -1748,7 +1782,7 @@ const closeTicket = async () => {
   if (!currentTicketId.value) return
   // Sécurité: rafraîchir et revalider la condition de clôture
   await loadMessages()
-  await loadDirections()
+  await loadCommissionMembers()
   if (!canShowCloseButton.value) {
     $q.notify({ type: 'warning', message: 'Clôture non autorisée dans l’état actuel du ticket', position: 'top' })
     // Fermer le q-dialog
@@ -1859,6 +1893,14 @@ const loadMessages = async () => {
       // Commission flags from loadMessages
       isMembreRecours.value = !!response.data.is_commission_member
       isPresidentRecours.value = !!response.data.is_commission_president
+      // Options membres commission depuis loadMessages
+      const commission = response.data?.commission_recours || []
+      commissionMemberOptions.value = commission.map(m => ({
+        value: m.user_id,
+        label: `${m.prenom ?? ''} ${m.nom ?? ''}`.trim() || m.user_id,
+        direction: m.direction ?? null,
+        role: m.role
+      }))
       createur.value = response.data.createur || null // Récupérer les infos du créateur
       if(!showCloseDialog.value){
         closeConclusion.value = ticket.value.conclusion
@@ -1917,7 +1959,6 @@ const closeMessageDetail = () => {
 }
 
 const sendMessage = async () => {
-  console.log('Envoi du message:', newMessage.value);
 
   // Rafraîchir et revalider avant envoi
   if (!currentTicketId.value) {
@@ -1952,6 +1993,18 @@ const sendMessage = async () => {
      const formData = new FormData()
      formData.append('titre', newMessage.value.subject)
      formData.append('description', newMessage.value.content)
+
+     // Deriver les directions à partir des membres sélectionnés si nécessaire
+     if (!newMessage.value.directions || newMessage.value.directions.length === 0) {
+       const dirSet = new Set()
+       console.log('Envoi du message:', newMessage.value);
+       console.log('selectedCommissionMembers', selectedCommissionMembers.value);
+       (selectedCommissionMembers.value || []).forEach(val => {
+         const opt = commissionMemberOptions.value.find(o => o.value === val)
+         if (opt?.label) dirSet.add(opt.label)
+        })
+       newMessage.value.directions = Array.from(dirSet)
+     }
      formData.append('directions', JSON.stringify(newMessage.value.directions))
 
     // Ajouter les fichiers au FormData
@@ -1972,6 +2025,7 @@ const sendMessage = async () => {
         type: 'positive',
         message: 'Message envoyé avec succès'
       })
+      console.log('ddddddddddddddddddddddddddd', response);
 
       // Réinitialiser le formulaire
        newMessage.value = {
@@ -1990,7 +2044,7 @@ const sendMessage = async () => {
        await loadMessages()
     }
   } catch (error) {
-    console.error('Erreur lors de l\'envoi du message:', error)
+    console.error('Erreur ssssssssslors de l\'envoi du message:', error)
     const errorMessage = error.response?.data?.message || 'Erreur lors de l\'envoi du message'
     $q.notify({
       type: 'negative',
@@ -2400,7 +2454,6 @@ const formatFileSize = (bytes) => {
  // Ouverture des autres dialogues via fonctions dédiées (sécurisées)
  const openNewMessageDialog = async () => {
    await loadMessages()
-   await loadDirections()
    if (!currentTicketId.value) {
      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
      return
