@@ -1968,7 +1968,6 @@ const sendMessage = async () => {
     return
   }
   await loadMessages()
-  await loadDirections()
   if (!canShowNewMessageButton.value) {
     $q.notify({ type: 'warning', message: 'Création de message non autorisée dans cet état', position: 'top' })
     // Fermer le q-dialog
@@ -1976,10 +1975,18 @@ const sendMessage = async () => {
     return
   }
 
+  // Validation UI: sujet, contenu et destinataires
   if (!newMessage.value.subject || !newMessage.value.content) {
     $q.notify({
       type: 'negative',
       message: 'Veuillez remplir tous les champs obligatoires'
+    })
+    return
+  }
+  if (!selectedCommissionMembers.value || selectedCommissionMembers.value.length === 0) {
+    $q.notify({
+      type: 'negative',
+      message: 'Veuillez sélectionner au moins un destinataire (membre commission)'
     })
     return
   }
@@ -1994,18 +2001,8 @@ const sendMessage = async () => {
      formData.append('titre', newMessage.value.subject)
      formData.append('description', newMessage.value.content)
 
-     // Deriver les directions à partir des membres sélectionnés si nécessaire
-     if (!newMessage.value.directions || newMessage.value.directions.length === 0) {
-       const dirSet = new Set()
-       console.log('Envoi du message:', newMessage.value);
-       console.log('selectedCommissionMembers', selectedCommissionMembers.value);
-       (selectedCommissionMembers.value || []).forEach(val => {
-         const opt = commissionMemberOptions.value.find(o => o.value === val)
-         if (opt?.label) dirSet.add(opt.label)
-        })
-       newMessage.value.directions = Array.from(dirSet)
-     }
-     formData.append('directions', JSON.stringify(newMessage.value.directions))
+     // Envoyer les destinataires (membres sélectionnés) au backend recours
+     formData.append('recipients', JSON.stringify(selectedCommissionMembers.value))
 
     // Ajouter les fichiers au FormData
     newMessage.value.attachments.forEach((attachment, index) => {
@@ -2014,7 +2011,7 @@ const sendMessage = async () => {
       }
     })
 
-    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages`, formData, {
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/messages-recours`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
@@ -2025,16 +2022,15 @@ const sendMessage = async () => {
         type: 'positive',
         message: 'Message envoyé avec succès'
       })
-      console.log('ddddddddddddddddddddddddddd', response);
 
       // Réinitialiser le formulaire
        newMessage.value = {
          title: '',
-         content: '',
-         description: '',
-         directions: [],
-         attachments: []
+       content: '',
+       description: '',
+       attachments: []
        }
+       selectedCommissionMembers.value = []
        newFiles.value = null
 
        // Fermer le dialog
