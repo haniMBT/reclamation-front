@@ -1782,7 +1782,7 @@ const closeTicket = async () => {
   if (!currentTicketId.value) return
   // Sécurité: rafraîchir et revalider la condition de clôture
   await loadMessages()
-  await loadCommissionMembers()
+  // await loadCommissionMembers()
   if (!canShowCloseButton.value) {
     $q.notify({ type: 'warning', message: 'Clôture non autorisée dans l’état actuel du ticket', position: 'top' })
     // Fermer le q-dialog
