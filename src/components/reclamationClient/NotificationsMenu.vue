@@ -342,10 +342,27 @@ const markAsRead = async (notif) => {
     if (notification) {
       notification.is_read = 1
     }
-     // Enregistrer l'ID du ticket dans le store Pinia
-      ticketStore.setTicketForMessages(tticket_id)
-      // Naviguer vers la page des messages
-      router.push('/reclamations/tickets/messages')
+
+    // Récupérer les informations nécessaires via les API existantes
+    // - Vérifier si l'utilisateur est membre de la commission
+    // - Obtenir le statut du ticket
+    let targetRoute = '/reclamations/tickets/messages'
+    try {
+      const resp = await api.get(`/api/rec/tickets/${tticket_id}/messages`)
+      const isCommissionMember = resp.data?.is_commission_member === true
+      const ticketStatus = resp.data?.ticket?.status || null
+
+      if (isCommissionMember && (ticketStatus === 'Recours' || ticketStatus === 'Recours clôturé')) {
+        targetRoute = '/reclamations/tickets/messages_recours'
+      }
+    } catch (e) {
+      // En cas d'erreur, on retombe sur la route par défaut
+      console.warn('Impossible de récupérer les infos du ticket pour la redirection:', e?.message || e)
+    }
+
+    // Enregistrer l'ID du ticket dans le store Pinia et naviguer
+    ticketStore.setTicketForMessages(tticket_id)
+    router.push(targetRoute)
   } catch (error) {
     console.error('Erreur lors du marquage comme lu:', error)
   }
