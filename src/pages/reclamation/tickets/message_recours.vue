@@ -100,11 +100,35 @@
             {{ direction.label }}
           </q-chip>
         </div>
-        <div v-if="isLoadingDirections" class="flex items-center justify-center py-4">
-          <q-spinner color="green" size="2em" />
-          <span class="ml-2 text-gray-600">Chargement des directions...</span>
+      <div v-if="isLoadingDirections" class="flex items-center justify-center py-4">
+        <q-spinner color="green" size="2em" />
+        <span class="ml-2 text-gray-600">Chargement des directions...</span>
+      </div>
+    </div>
+
+    <!-- Section des membres de la commission de recours -->
+    <div v-if="commissionMemberOptions.length > 0" class="bg-white rounded-lg shadow-sm p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center">
+          <q-icon name="groups" size="1.5rem" class="text-blue-600 mr-3" />
+          <h2 class="text-lg font-semibold text-gray-800">Membres de la commission de recours</h2>
         </div>
       </div>
+      <div class="flex flex-wrap gap-2">
+        <q-chip
+          v-for="membre in commissionMemberOptions"
+          :key="membre.value"
+          :color="membre.role === 'président' ? 'blue-7' : 'blue'"
+          text-color="white"
+          :icon="membre.role === 'président' ? 'workspace_premium' : 'person'"
+          class="text-sm"
+        >
+          {{ membre.label }}
+          <span v-if="membre.direction" class="ml-2 opacity-80">• {{ membre.direction }}</span>
+          <span v-if="membre.role" class="ml-2 opacity-80">• {{ membre.role }}</span>
+        </q-chip>
+      </div>
+    </div>
 
       <!-- Liste des messages -->
       <div v-if="hasCurrentTicket">
