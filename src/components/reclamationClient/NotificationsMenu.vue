@@ -188,8 +188,8 @@ const menuVisible = ref(false)
 let notificationInterval = null
 let lastFetchTime = 0
 const FETCH_COOLDOWN = 5000 // 5 secondes de cooldown minimum entre les appels
-// Intervalle strict de 30 minutes
-const POLLING_INTERVAL = 30 * 60 * 1000 // 30 minutes
+// Intervalle strict de 1 minute (pour test)
+const POLLING_INTERVAL = 1 * 60 * 1000 // 1 minute
 // Fenêtre horaire autorisée: 08:30 à 18:00
 const WINDOW_START_HOUR = 8
 const WINDOW_START_MIN = 30
@@ -266,11 +266,11 @@ const isWithinWindow = (date) => {
   return date >= start && date <= end
 }
 
-const getNextHalfHourBoundary = (date) => {
+const getNextOneMinuteBoundary = (date) => {
   const d = new Date(date)
-  const minutes = d.getMinutes()
-  const nextMin = minutes < 30 ? 30 : 60
-  d.setMinutes(nextMin, 0, 0)
+  // Aligner sur le début de la prochaine minute
+  d.setSeconds(0, 0)
+  d.setMinutes(d.getMinutes() + 1)
   return d
 }
 
@@ -287,7 +287,7 @@ const getNextRunTime = () => {
     tomorrow.setHours(WINDOW_START_HOUR, WINDOW_START_MIN, 0, 0)
     return tomorrow
   }
-  const nextBoundary = getNextHalfHourBoundary(now)
+  const nextBoundary = getNextOneMinuteBoundary(now)
   return nextBoundary <= end ? nextBoundary : null
 }
 
@@ -308,17 +308,17 @@ const startNotificationPolling = () => {
       if (currentUser.value?.id && isWithinWindow(new Date())) {
         fetchNotifications(false)
       }
-      // Démarrer l'intervalle strict de 30 minutes, contrôlé par la fenêtre
-      notificationInterval = setInterval(() => {
-        const nowTick = new Date()
-        if (currentUser.value?.id && isWithinWindow(nowTick)) {
-          fetchNotifications(false)
-        } else {
-          // Hors fenêtre: arrêter l'intervalle et replanifier le prochain démarrage
-          stopNotificationPolling()
-          scheduleNext()
-        }
-      }, POLLING_INTERVAL)
+  // Démarrer l'intervalle strict de 5 minutes, contrôlé par la fenêtre
+  notificationInterval = setInterval(() => {
+    const nowTick = new Date()
+    if (currentUser.value?.id && isWithinWindow(nowTick)) {
+      fetchNotifications(false)
+    } else {
+      // Hors fenêtre: arrêter l'intervalle et replanifier le prochain démarrage
+      stopNotificationPolling()
+      scheduleNext()
+    }
+  }, POLLING_INTERVAL)
     }, Math.max(0, delay))
   }
 
