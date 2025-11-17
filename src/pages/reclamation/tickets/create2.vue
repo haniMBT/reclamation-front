@@ -352,12 +352,6 @@ const isFormValid = computed(() => {
     return false
   }
 
-  // Vérifier qu'au moins un type est sélectionné
-  const hasSelectedType = Object.values(form.value.selectedTypes).some(selected => selected)
-  if (!hasSelectedType) {
-    return false
-  }
-
   return true
 })
 
@@ -494,11 +488,7 @@ const validateForm = () => {
     errors.value.description = 'La description détaillée est requise'
   }
 
-  // Validation : au moins un type doit être sélectionné
-  const hasSelectedType = Object.values(form.value.selectedTypes).some(selected => selected)
-  if (!hasSelectedType) {
-    errors.value.types = 'Veuillez sélectionner au moins un type de réclamation'
-  }
+  // La sélection de type n'est plus obligatoire
 
   return Object.keys(errors.value).length === 0
 }
