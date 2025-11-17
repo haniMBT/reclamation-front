@@ -210,7 +210,7 @@
                   :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
                   :error="!!validationErrors[info.libelle]"
                   @input="clearFieldError(info.libelle)"
-                >ssssssss
+                >
                   <template #prepend>
                     <q-icon name="edit" class="text-blue-600" />
                   </template>
