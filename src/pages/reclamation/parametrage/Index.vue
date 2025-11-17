@@ -42,6 +42,7 @@
             <q-btn
               icon="groups"
               color="purple-6"
+              v-if="privilege_pcr.role=='Admin' && privilege_pcr.modification && privilege_pcr.insertion"
               no-caps
               class="px-6"
               @click="openCommissionDialog"
@@ -1271,6 +1272,7 @@ const tickets = ref([]);
 const directions_visibilite = ref([]);
 const directions = ref([]);
 const privilege = ref('');
+const privilege_pcr = ref('');
 const searchTickets = ref('');
 const addTicket = ref(false);
 const editTicket = ref(false);
@@ -1433,6 +1435,7 @@ const fetchData = async () => {
     directions_visibilite.value = response.data.directions_visibilite || [];
     directions.value = response.data.directions || [];
     privilege.value = response.data.privilege || null;
+    privilege_pcr.value = response.data.privilege_pcr || null;
     usersRaw.value = response.data.users || [];
     commissionRaw.value = response.data.commission_recours || [];
     // Pré-populer les sélections si une composition existe
