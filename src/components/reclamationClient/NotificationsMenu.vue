@@ -188,7 +188,14 @@ const menuVisible = ref(false)
 let notificationInterval = null
 let lastFetchTime = 0
 const FETCH_COOLDOWN = 5000 // 5 secondes de cooldown minimum entre les appels
-const POLLING_INTERVAL = 30000 // 30 secondes d'intervalle de polling
+// Intervalle strict de 30 minutes
+const POLLING_INTERVAL = 30 * 60 * 1000 // 30 minutes
+// Fenêtre horaire autorisée: 08:30 à 18:00
+const WINDOW_START_HOUR = 8
+const WINDOW_START_MIN = 30
+const WINDOW_END_HOUR = 18
+const WINDOW_END_MIN = 0
+let alignTimeout = null
 
 // Utilisateur connecté
 const currentUser = computed(() => authStore.userProfile)
@@ -244,23 +251,84 @@ const fetchNotifications = async (showLoading = true, forceRefresh = false) => {
   }
 }
 
-// Méthode pour démarrer l'actualisation périodique optimisée
+// Helpers pour la fenêtre horaire et l'alignement strict
+const getTodayWindow = () => {
+  const now = new Date()
+  const start = new Date(now)
+  start.setHours(WINDOW_START_HOUR, WINDOW_START_MIN, 0, 0)
+  const end = new Date(now)
+  end.setHours(WINDOW_END_HOUR, WINDOW_END_MIN, 0, 0)
+  return { start, end }
+}
+
+const isWithinWindow = (date) => {
+  const { start, end } = getTodayWindow()
+  return date >= start && date <= end
+}
+
+const getNextHalfHourBoundary = (date) => {
+  const d = new Date(date)
+  const minutes = d.getMinutes()
+  const nextMin = minutes < 30 ? 30 : 60
+  d.setMinutes(nextMin, 0, 0)
+  return d
+}
+
+const getNextRunTime = () => {
+  const now = new Date()
+  const { start, end } = getTodayWindow()
+  if (now < start) {
+    return start
+  }
+  if (now > end) {
+    // Planifier pour demain 08:30 si le composant reste monté
+    const tomorrow = new Date(now)
+    tomorrow.setDate(now.getDate() + 1)
+    tomorrow.setHours(WINDOW_START_HOUR, WINDOW_START_MIN, 0, 0)
+    return tomorrow
+  }
+  const nextBoundary = getNextHalfHourBoundary(now)
+  return nextBoundary <= end ? nextBoundary : null
+}
+
+// Méthode pour démarrer l'actualisation périodique optimisée (strict 30 min, fenêtre 08:30–18:00)
 const startNotificationPolling = () => {
-  // Charger les notifications immédiatement
-  fetchNotifications(true, true) // Force le premier chargement
+  stopNotificationPolling() // Nettoyage préalable
 
-  // Puis actualiser à intervalle régulier
-  notificationInterval = setInterval(() => {
-    // Vérifier si l'utilisateur est toujours connecté
-    if (currentUser.value?.id) {
-      fetchNotifications(false) // Ne pas afficher le loading pour les mises à jour automatiques
-    } else {
-      console.warn('⚠️ Utilisateur déconnecté, arrêt du polling')
-      stopNotificationPolling()
+  const scheduleNext = () => {
+    const nextRun = getNextRunTime()
+    if (!nextRun) {
+      // En dehors de la fenêtre, rien à faire pour aujourd'hui
+      return
     }
-  }, POLLING_INTERVAL)
+    const now = new Date()
+    const delay = nextRun.getTime() - now.getTime()
+    // Programmer l'exécution alignée sur la prochaine demi-heure
+    alignTimeout = setTimeout(() => {
+      if (currentUser.value?.id && isWithinWindow(new Date())) {
+        fetchNotifications(false)
+      }
+      // Démarrer l'intervalle strict de 30 minutes, contrôlé par la fenêtre
+      notificationInterval = setInterval(() => {
+        const nowTick = new Date()
+        if (currentUser.value?.id && isWithinWindow(nowTick)) {
+          fetchNotifications(false)
+        } else {
+          // Hors fenêtre: arrêter l'intervalle et replanifier le prochain démarrage
+          stopNotificationPolling()
+          scheduleNext()
+        }
+      }, POLLING_INTERVAL)
+    }, Math.max(0, delay))
+  }
 
-  // console.log(`🔄 Polling démarré avec un intervalle de ${POLLING_INTERVAL/1000} secondes`)
+  // Si l'utilisateur vient de rafraîchir la page et que nous sommes dans la fenêtre,
+  // déclencher immédiatement une récupération (forceRefresh) en plus de l'alignement.
+  if (currentUser.value?.id && isWithinWindow(new Date())) {
+    fetchNotifications(true, true)
+  }
+
+  scheduleNext()
 }
 
 // Méthode pour arrêter l'actualisation périodique
@@ -269,6 +337,10 @@ const stopNotificationPolling = () => {
     clearInterval(notificationInterval)
     notificationInterval = null
     // console.log('🛑 Polling arrêté')
+  }
+  if (alignTimeout) {
+    clearTimeout(alignTimeout)
+    alignTimeout = null
   }
 }
 
