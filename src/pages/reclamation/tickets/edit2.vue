@@ -106,7 +106,7 @@
           <!-- Types et détails sous forme de checkboxes -->
           <div v-if="ticketTypes.length > 0" class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Type(s) de réclamation *
+              Type(s) de réclamation
             </label>
 
             <div class="space-y-4">
@@ -502,11 +502,11 @@ const isFormValid = computed(() => {
     return false
   }
 
-  // Vérifier qu'au moins un type est sélectionné
-  const hasSelectedType = Object.values(form.value.selectedTypes).some(selected => selected)
-  if (!hasSelectedType) {
-    return false
-  }
+  // Les types ne sont pas obligatoires en modification
+  // const hasSelectedType = Object.values(form.value.selectedTypes).some(selected => selected)
+  // if (!hasSelectedType) {
+  //   return false
+  // }
 
   // Vérifier les informations générales obligatoires via form.info_generales
   for (const info of form.value.info_generales) {
@@ -720,10 +720,11 @@ const validateForm = () => {
     errors.value.description = 'La description est obligatoire'
   }
 
-  const hasSelectedType = Object.values(form.value.selectedTypes).some(selected => selected)
-  if (!hasSelectedType) {
-    errors.value.types = 'Veuillez sélectionner au moins un type de réclamation'
-  }
+  // Les types ne sont pas obligatoires en modification, pas d'erreur si vide
+  //  const hasSelectedType = Object.values(form.value.selectedTypes).some(selected => selected)
+  // if (!hasSelectedType) {
+  //   errors.value.types = 'Veuillez sélectionner au moins un type de réclamation'
+  // }
 
   return Object.keys(errors.value).length === 0
 }
