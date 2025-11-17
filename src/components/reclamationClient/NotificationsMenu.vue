@@ -188,8 +188,8 @@ const menuVisible = ref(false)
 let notificationInterval = null
 let lastFetchTime = 0
 const FETCH_COOLDOWN = 5000 // 5 secondes de cooldown minimum entre les appels
-// Intervalle strict de 1 minute (pour test)
-const POLLING_INTERVAL = 1 * 60 * 1000 // 1 minute
+// Intervalle strict de 5 minutes
+const POLLING_INTERVAL = 5 * 60 * 1000 // 5 minutes
 // Fenêtre horaire autorisée: 08:30 à 18:00
 const WINDOW_START_HOUR = 8
 const WINDOW_START_MIN = 30
@@ -266,11 +266,12 @@ const isWithinWindow = (date) => {
   return date >= start && date <= end
 }
 
-const getNextOneMinuteBoundary = (date) => {
+const getNextFiveMinuteBoundary = (date) => {
   const d = new Date(date)
-  // Aligner sur le début de la prochaine minute
-  d.setSeconds(0, 0)
-  d.setMinutes(d.getMinutes() + 1)
+  const minutes = d.getMinutes()
+  const remainder = minutes % 5
+  const add = remainder === 0 ? 5 : (5 - remainder)
+  d.setMinutes(minutes + add, 0, 0)
   return d
 }
 
@@ -287,7 +288,7 @@ const getNextRunTime = () => {
     tomorrow.setHours(WINDOW_START_HOUR, WINDOW_START_MIN, 0, 0)
     return tomorrow
   }
-  const nextBoundary = getNextOneMinuteBoundary(now)
+  const nextBoundary = getNextFiveMinuteBoundary(now)
   return nextBoundary <= end ? nextBoundary : null
 }
 
