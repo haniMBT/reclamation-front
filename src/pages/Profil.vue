@@ -45,18 +45,6 @@
                 Compte actif
               </div>
             </div>
-
-            <!-- Stats rapides -->
-            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200">
-              <div class="text-center">
-                <div class="text-2xl font-bold text-gray-800">127</div>
-                <div class="text-xs text-gray-600">Connexions</div>
-              </div>
-              <div class="text-center">
-                <div class="text-2xl font-bold text-gray-800">45</div>
-                <div class="text-xs text-gray-600">Actions</div>
-              </div>
-            </div>
           </div>
         </div>
 
