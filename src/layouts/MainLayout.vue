@@ -260,7 +260,7 @@
           </q-expansion-item>
 
           <!-- Réclamation client avec effet néon -->
-          <q-item to="/under-development" clickable v-ripple class="stellar-menu-item nebula-card" data-category="support">
+          <!-- <q-item to="/under-development" clickable v-ripple class="stellar-menu-item nebula-card" data-category="support">
             <q-item-section avatar>
               <div class="neon-container">
                 <div class="neon-sign neon-orange">
@@ -280,10 +280,31 @@
               </div>
             </q-item-section>
             <div class="stellar-badge">📢</div>
-          </q-item>
+          </q-item> -->
+
+           <q-expansion-item >
+            <template v-slot:header="{ expanded }">
+              <q-item-section avatar>
+                <q-icon size="lg">
+                  <img src="/images/menu/complain.png" />
+                </q-icon>
+              </q-item-section>
+
+              <q-item-section>
+                <q-item-section-label>Réclamation client</q-item-section-label>
+              </q-item-section>
+            </template>
+            <q-expansion-item :header-inset-level="1" label="Liste des réclamations old" expand-icon="0" to="/reclamations/all" />
+            <q-expansion-item :header-inset-level="1" label="Nouvelle réclamation old" expand-icon="0" to="/reclamations/client" />
+            <q-expansion-item :header-inset-level="1" label="Nature old" expand-icon="0" to="/reclamations/nature" />
+            <q-expansion-item :header-inset-level="1" label="Liste des réclamations" expand-icon="0" to="/reclamations/allTicket" />
+            <q-expansion-item :header-inset-level="1" label="Nouvelle réclamation" expand-icon="0" to="/reclamations/ticket" />
+            <q-expansion-item :header-inset-level="1" label="Parametrage" expand-icon="0" to="/reclamations/parametrage" />
+
+          </q-expansion-item>
 
           <!-- Gestion des utilisateurs avec effet data-stream -->
-          <q-item to="/under-development" clickable v-ripple class="stellar-menu-item nebula-card" data-category="management">
+          <!-- <q-item to="/under-development" clickable v-ripple class="stellar-menu-item nebula-card" data-category="management">
             <q-item-section avatar>
               <div class="datastream-container">
                 <div class="datastream datastream-teal">
@@ -304,7 +325,36 @@
               </div>
             </q-item-section>
             <div class="stellar-badge">👥</div>
-          </q-item>
+          </q-item> -->
+           <q-expansion-item>
+            <template v-slot:header="{ expanded }">
+              <q-item-section avatar>
+                <q-icon size="md">
+                  <img src="/images/menu/gestion_des_utilisateurs.png" />
+                </q-icon>
+              </q-item-section>
+
+              <q-item-section> Gestion des utilisateurs </q-item-section>
+            </template>
+            <q-expansion-item
+              :header-inset-level="1"
+              label="Utilisateurs"
+              expand-icon="0"
+              to="/utilisateur"
+            />
+            <q-expansion-item
+              :header-inset-level="1"
+              label="Privilèges"
+              expand-icon="0"
+              to="/privilege"
+            />
+            <q-expansion-item
+              :header-inset-level="1"
+              label="Volet d'application"
+              expand-icon="0"
+              to="/volets"
+            />
+          </q-expansion-item>
         </q-list>
       </q-scroll-area>
     </q-drawer>
