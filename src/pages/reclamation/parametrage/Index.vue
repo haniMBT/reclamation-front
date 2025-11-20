@@ -545,14 +545,20 @@
                                   </q-select>
                                 </div>
 
-                                <!-- Key attribut -->
-                                <div class="flex items-center">
-                                    <q-checkbox
-                                          v-model="info.key_attribut"
-                                          color="blue-6"
-                                          label="Information clé"
-                                          class="text-xs font-medium text-gray-600"
-                                    />
+                                <!-- Attributs: Information clé & Champ obligatoire -->
+                                <div class="flex items-center space-x-6">
+                                  <q-checkbox
+                                    v-model="info.key_attribut"
+                                    color="blue-6"
+                                    label="Information clé"
+                                    class="text-xs font-medium text-gray-600"
+                                  />
+                                  <q-checkbox
+                                    v-model="info.obligatoire"
+                                    color="red-6"
+                                    label="Champ obligatoire"
+                                    class="text-xs font-medium text-gray-600"
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -1597,6 +1603,7 @@ const openEditTicket = (ticket) => {
       id: info.id || Date.now() + Math.random(),
       libelle: info.libelle,
       key_attribut: info.key_attribut,
+      obligatoire: info.obligatoire || false,
       type: info.type || 'texte'
     }))
   };
@@ -1633,6 +1640,7 @@ const sendData = async () => {
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut,
+      obligatoire: info.obligatoire,
       type: info.type
     }))
   };
@@ -1681,6 +1689,7 @@ const updateData = async () => {
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut,
+      obligatoire: info.obligatoire,
       type: info.type
     }))
   };
@@ -1715,6 +1724,7 @@ const addInfoGenerale = () => {
     id: Date.now() + Math.random(), // ID unique pour vuedraggable
     libelle: '',
     key_attribut: false,
+    obligatoire: false,
     type: 'texte'
   });
 };
