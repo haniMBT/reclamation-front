@@ -279,17 +279,21 @@
                         size="1.2rem"
                       />
                     </q-item-section>
-                    <q-item-section>
-                      <q-item-label class="font-medium">{{ info.libelle }}</q-item-label>
-                      <q-item-label caption class="text-blue-600">
-                        <q-icon name="category" size="xs" class="mr-1" />
-                        Type: {{ info.type || 'texte' }}
-                      </q-item-label>
-                      <q-item-label v-if="info.key_attribut" caption class="text-amber-600">
-                        <q-icon name="star" size="xs" class="mr-1" />
-                        Information clé
-                      </q-item-label>
-                    </q-item-section>
+                  <q-item-section>
+                    <q-item-label class="font-medium">{{ info.libelle }}</q-item-label>
+                    <q-item-label caption class="text-blue-600">
+                      <q-icon name="category" size="xs" class="mr-1" />
+                      Type: {{ info.type || 'texte' }}
+                    </q-item-label>
+                    <q-item-label v-if="info.obligatoire" caption class="text-red-600">
+                      <q-icon name="priority_high" size="xs" class="mr-1" />
+                      Champ obligatoire
+                    </q-item-label>
+                    <q-item-label v-if="info.key_attribut" caption class="text-amber-600">
+                      <q-icon name="star" size="xs" class="mr-1" />
+                      Information clé
+                    </q-item-label>
+                  </q-item-section>
                   </q-item>
                 </q-list>
                 <div v-else class="text-center py-4 text-gray-500 bg-white rounded border border-dashed">
