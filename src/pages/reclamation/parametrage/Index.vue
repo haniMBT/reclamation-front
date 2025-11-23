@@ -779,13 +779,19 @@
                                 </div>
 
                                 <!-- Key attribut -->
-                                <div class="flex items-center">
-                                    <q-checkbox
-                                          v-model="info.key_attribut"
-                                          color="orange-6"
-                                          label="Information clé"
-                                          class="text-xs font-medium text-gray-600"
-                                    />
+                                <div class="flex items-center space-x-6">
+                                  <q-checkbox
+                                    v-model="info.key_attribut"
+                                    color="orange-6"
+                                    label="Information clé"
+                                    class="text-xs font-medium text-gray-600"
+                                  />
+                                  <q-checkbox
+                                    v-model="info.obligatoire"
+                                    color="red-6"
+                                    label="Champ obligatoire"
+                                    class="text-xs font-medium text-gray-600"
+                                  />
                                 </div>
                               </div>
                             </div>
