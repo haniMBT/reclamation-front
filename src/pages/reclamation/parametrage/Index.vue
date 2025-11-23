@@ -49,6 +49,15 @@
             >
               Commission de recours
             </q-btn>
+            <q-btn
+              icon="settings_suggest"
+              color="blue-7"
+              no-caps
+              class="px-6"
+              @click="openDefaultDirectionsDialog"
+            >
+              Directions auto
+            </q-btn>
             <q-input
               outlined
               dense
@@ -615,6 +624,87 @@
               :disable="!isFormValid || loading"
               class="px-6"
             />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Dialog Directions automatiques -->
+      <q-dialog v-model="showDefaultDirectionsDialog" persistent>
+        <q-card class="w-full" style="min-width: 70vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
+          <q-card-section class="flex items-center bg-blue-50">
+            <q-icon name="settings_suggest" class="text-blue-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-blue-900">Directions automatiques</div>
+              <div class="text-sm text-blue-700">Configurer les directions par défaut par ticket</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+            <!-- Formulaire d'ajout -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <q-select
+                v-model="newDefaultDirection.direction"
+                :options="directionOptions"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                outlined
+                label="Direction"
+                dense
+              />
+              <q-select
+                v-model="newDefaultDirection.statut_direction"
+                :options="statutOptions"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                outlined
+                label="Statut"
+                dense
+              />
+              <q-select
+                v-model="newDefaultDirection.bticket_id"
+                :options="bticketOptions"
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                outlined
+                label="Libellé du ticket"
+                dense
+              />
+            </div>
+            <div class="flex justify-end mb-4">
+              <q-btn
+                label="Ajouter"
+                color="blue-6"
+                :loading="defaultDirectionsLoading"
+                :disable="!isDefaultDirectionFormValid || defaultDirectionsLoading"
+                @click="addDefaultDirection"
+                no-caps
+                class="px-6"
+              />
+            </div>
+
+            <!-- Tableau des directions auto -->
+            <q-table
+              :rows="defaultDirections"
+              :columns="defaultDirectionsColumns"
+              row-key="id"
+              flat
+              bordered
+              :loading="defaultDirectionsLoading"
+            />
+          </q-card-section>
+
+          <q-separator />
+          <q-card-actions class="p-4 bg-gray-50">
+            <q-space />
+            <q-btn label="Fermer" color="grey" flat no-caps class="px-6" @click="closeDefaultDirectionsDialog" />
           </q-card-actions>
         </q-card>
       </q-dialog>
@@ -1509,6 +1599,95 @@ const commissionColumns = [
  // { name: 'direction', label: 'Direction', field: row => row.direction, align: 'left' },
   { name: 'role', label: 'Rôle', field: row => row.role, align: 'left' },
 ];
+
+// Directions auto: état UI et données
+const showDefaultDirectionsDialog = ref(false);
+const defaultDirections = ref([]);
+const defaultDirectionsLoading = ref(false);
+const defaultDirectionsColumns = [
+  { name: 'direction', label: 'Direction', field: row => row.direction, align: 'left', sortable: true },
+  { name: 'statut_direction', label: 'Statut', field: row => row.statut_direction, align: 'left', sortable: true },
+  { name: 'bticket_libelle', label: 'Libellé du ticket', field: row => row.bticket_libelle, align: 'left', sortable: true }
+];
+
+// Formulaire d'ajout de direction auto
+const newDefaultDirection = ref({
+  direction: null,
+  statut_direction: null,
+  bticket_id: null
+});
+
+const statutOptions = [
+  { label: 'Consultation', value: 'consultation' },
+  { label: 'Traitement', value: 'traitement' }
+];
+
+const directionOptions = computed(() => {
+  return (directions.value || []).map(d => ({
+    label: d.DIRECTION ?? d.direction ?? d.label ?? String(d),
+    value: d.DIRECTION ?? d.direction ?? d.value ?? String(d)
+  }));
+});
+
+const bticketOptions = computed(() => {
+  return (tickets.value || []).map(t => ({
+    label: t.libelle,
+    value: t.id,
+    meta: t
+  }));
+});
+
+const isDefaultDirectionFormValid = computed(() => {
+  const f = newDefaultDirection.value;
+  return !!(f.direction && f.statut_direction && f.bticket_id);
+});
+
+const openDefaultDirectionsDialog = async () => {
+  await fetchDefaultDirections();
+  showDefaultDirectionsDialog.value = true;
+};
+
+const closeDefaultDirectionsDialog = () => {
+  showDefaultDirectionsDialog.value = false;
+};
+
+const fetchDefaultDirections = async () => {
+  defaultDirectionsLoading.value = true;
+  try {
+    const res = await api.get('/api/rec/default-directions');
+    defaultDirections.value = res.data?.data || [];
+    // Optionnel: rafraîchir directions/tickets si fournis
+    if (res.data?.directions) directions.value = res.data.directions;
+    // tickets déjà chargés via fetchData()
+  } catch (error) {
+    console.error('Erreur chargement directions auto:', error);
+    $q.notify({ type: 'negative', message: 'Erreur chargement des directions automatiques' });
+  } finally {
+    defaultDirectionsLoading.value = false;
+  }
+};
+
+const addDefaultDirection = async () => {
+  if (!isDefaultDirectionFormValid.value) return;
+  defaultDirectionsLoading.value = true;
+  try {
+    const payload = { ...newDefaultDirection.value };
+    const res = await api.post('/api/rec/default-directions', payload);
+    const created = res.data?.data;
+    if (created) {
+      defaultDirections.value = [created, ...defaultDirections.value];
+      $q.notify({ type: 'positive', message: res.data?.message || 'Direction automatique ajoutée' });
+      // reset form
+      newDefaultDirection.value = { direction: null, statut_direction: null, bticket_id: null };
+    }
+  } catch (error) {
+    console.error('Erreur ajout direction auto:', error);
+    const msg = error.response?.data?.message || 'Erreur lors de l\'ajout';
+    $q.notify({ type: 'negative', message: msg });
+  } finally {
+    defaultDirectionsLoading.value = false;
+  }
+};
 
 const commissionRows = computed(() => commissionRaw.value || []);
 
