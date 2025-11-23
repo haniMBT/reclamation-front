@@ -674,8 +674,9 @@
                 emit-value
                 map-options
                 outlined
-                label="Libellé du ticket"
+                label="Libellé du ticket (optionnel)"
                 dense
+                :clearable="true"
               />
             </div>
             <div class="flex justify-end mb-4">
@@ -1639,7 +1640,8 @@ const bticketOptions = computed(() => {
 
 const isDefaultDirectionFormValid = computed(() => {
   const f = newDefaultDirection.value;
-  return !!(f.direction && f.statut_direction && f.bticket_id);
+  // bticket_id est optionnel
+  return !!(f.direction && f.statut_direction);
 });
 
 const openDefaultDirectionsDialog = async () => {
