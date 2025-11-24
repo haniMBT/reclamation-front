@@ -602,6 +602,102 @@
                       <p class="text-sm">Aucune info générale ajoutée</p>
                     </div>
                   </div>
+
+                  <!-- Nouvelle section : Fichiers demandés -->
+                  <div class="border-t pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                      <label class="block text-sm font-medium text-gray-700">
+                        Fichiers demandés
+                      </label>
+                      <q-btn
+                        icon="add"
+                        color="blue-6"
+                        size="sm"
+                        outline
+                        @click="addFichierDemande"
+                        class="px-4"
+                      >
+                        Ajouter un fichier
+                      </q-btn>
+                    </div>
+
+                    <!-- Liste des fichiers demandés avec drag & drop -->
+                    <draggable
+                      v-if="form.files_demandes.length > 0"
+                      v-model="form.files_demandes"
+                      item-key="id"
+                      class="space-y-3"
+                      ghost-class="ghost"
+                      chosen-class="chosen"
+                      drag-class="drag"
+                      handle=".drag-handle"
+                    >
+                      <template #item="{ element: file }">
+                        <div class="row items-center justify-between space-x-4">
+                          <!-- Zone draggable à gauche -->
+                          <div class="flex-1 border border-gray-200 rounded-lg p-4 bg-gray-50 hover:shadow-md transition-shadow">
+                            <div class="flex items-start space-x-3">
+                              <!-- Handle de drag explicite -->
+                              <div class="flex items-center mt-2 drag-handle cursor-move">
+                                <q-icon name="drag_indicator" class="text-gray-400" size="sm" />
+                              </div>
+
+                              <div class="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Libellé du fichier demandé -->
+                                <div class="md:col-span-2">
+                                  <label class="block text-xs font-medium text-gray-600 mb-1">
+                                    Libellé du fichier
+                                  </label>
+                                  <q-input
+                                    v-model="file.libelle"
+                                    outlined
+                                    dense
+                                    placeholder="Entrez le libellé du fichier"
+                                  >
+                                    <template #prepend>
+                                      <q-icon name="description" class="text-gray-500" size="sm" />
+                                    </template>
+                                  </q-input>
+                                </div>
+
+                                <!-- Fichier obligatoire -->
+                                <div class="flex items-center">
+                                  <q-checkbox
+                                    v-model="file.obligatoire"
+                                    color="red-6"
+                                    label="Fichier obligatoire"
+                                    class="text-xs font-medium text-gray-600"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Bouton supprimer à droite (en dehors de la zone draggable) -->
+                          <div class="flex-shrink-0">
+                            <q-btn
+                              icon="delete"
+                              size="sm"
+                              flat
+                              round
+                              color="negative"
+                              @click.stop="removeFichierDemande(file.id)"
+                              @mousedown.prevent
+                              class="mt-1"
+                            >
+                              <q-tooltip>Supprimer ce fichier</q-tooltip>
+                            </q-btn>
+                          </div>
+                        </div>
+                      </template>
+                    </draggable>
+
+                    <!-- Message si aucun fichier demandé -->
+                    <div v-else class="text-center py-4 text-gray-500 border border-dashed border-gray-300 rounded-lg">
+                      <q-icon name="attach_file" size="1.5rem" class="mb-2" />
+                      <p class="text-sm">Aucun fichier demandé ajouté</p>
+                    </div>
+                  </div>
                 </div>
               </form>
           </q-card-section>
@@ -923,6 +1019,97 @@
                       <div v-else class="text-center py-4 text-gray-500 border border-dashed border-gray-300 rounded-lg">
                         <q-icon name="info" size="1.5rem" class="mb-2" />
                         <p class="text-sm">Aucune info générale ajoutée</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Section Fichiers demandés -->
+                  <div class="border-t pt-6">
+                    <div class="flex items-center justify-between mb-4">
+                      <label class="block text-sm font-medium text-gray-700">
+                        Fichiers demandés
+                      </label>
+                      <q-btn
+                        icon="add"
+                        label="Ajouter un fichier"
+                        color="orange-6"
+                        size="sm"
+                        @click="addFichierDemande"
+                        class="px-4"
+                      />
+                    </div>
+
+                    <div class="space-y-3">
+                      <!-- Liste des fichiers demandés avec drag & drop -->
+                      <draggable
+                        v-if="form.files_demandes.length > 0"
+                        v-model="form.files_demandes"
+                        item-key="id"
+                        handle=".drag-handle"
+                        class="space-y-3"
+                      >
+                        <template #item="{ element: file }">
+                          <div class="flex items-start space-x-3 p-4 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow">
+                            <!-- Handle de drag -->
+                            <div class="drag-handle cursor-move flex-shrink-0 mt-2">
+                              <q-icon name="drag_indicator" class="text-gray-400" size="sm" />
+                            </div>
+
+                            <!-- Contenu du fichier demandé -->
+                            <div class="flex-1 space-y-3">
+                              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <!-- Libellé du fichier -->
+                                <div class="md:col-span-2">
+                                  <label class="block text-xs font-medium text-gray-600 mb-1">
+                                    Libellé du fichier <span class="text-red-500">*</span>
+                                  </label>
+                                  <q-input
+                                    v-model="file.libelle"
+                                    outlined
+                                    dense
+                                    placeholder="Entrez le libellé du fichier"
+                                  >
+                                    <template #prepend>
+                                      <q-icon name="description" class="text-gray-500" size="sm" />
+                                    </template>
+                                  </q-input>
+                                </div>
+
+                                <!-- Obligatoire -->
+                                <div class="flex items-center">
+                                  <q-checkbox
+                                    v-model="file.obligatoire"
+                                    color="orange-6"
+                                    label="Fichier obligatoire"
+                                    class="text-xs font-medium text-gray-600"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <!-- Bouton supprimer -->
+                            <div class="flex-shrink-0">
+                              <q-btn
+                                icon="delete"
+                                size="sm"
+                                flat
+                                round
+                                color="negative"
+                                @click.stop="removeFichierDemande(file.id)"
+                                @mousedown.prevent
+                                class="mt-1"
+                              >
+                                <q-tooltip>Supprimer ce fichier</q-tooltip>
+                              </q-btn>
+                            </div>
+                          </div>
+                        </template>
+                      </draggable>
+
+                      <!-- Message si aucun fichier demandé -->
+                      <div v-else class="text-center py-4 text-gray-500 border border-dashed border-gray-300 rounded-lg">
+                        <q-icon name="attach_file" size="1.5rem" class="mb-2" />
+                        <p class="text-sm">Aucun fichier demandé ajouté</p>
                       </div>
                     </div>
                   </div>
@@ -1419,7 +1606,8 @@ const form = ref({
   libelle: '',
   direction: '',
   documentAfornir: '',
-  infos_generales: []
+  infos_generales: [],
+  files_demandes: []
 });
 
 // Validation du formulaire
@@ -1432,6 +1620,13 @@ const isFormValid = computed(() => {
   // Si des infos générales sont ajoutées, vérifier que chaque libellé est rempli
   for (const info of form.value.infos_generales) {
     if (!info.libelle) {
+      return false;
+    }
+  }
+
+  // Si des fichiers demandés sont ajoutés, vérifier que chaque libellé est rempli
+  for (const file of form.value.files_demandes) {
+    if (!file.libelle) {
       return false;
     }
   }
@@ -1790,7 +1985,8 @@ const openAddTicket = () => {
     direction: '',
     documentAfornir: '',
     definition: '',
-    infos_generales: []
+    infos_generales: [],
+    files_demandes: []
   };
   myerrors.value = null;
   addTicket.value = true;
@@ -1803,7 +1999,8 @@ const closeAddTicket = () => {
     direction: '',
     documentAfornir: '',
     definition: '',
-    infos_generales: []
+    infos_generales: [],
+    files_demandes: []
   };
   myerrors.value = null;
 };
@@ -1878,6 +2075,10 @@ const sendData = async () => {
       key_attribut: info.key_attribut,
       obligatoire: info.obligatoire,
       type: info.type
+    })),
+    files_demandes: form.value.files_demandes.map(file => ({
+      libelle: file.libelle,
+      obligatoire: file.obligatoire
     }))
   };
 
@@ -1927,6 +2128,10 @@ const updateData = async () => {
       key_attribut: info.key_attribut,
       obligatoire: info.obligatoire,
       type: info.type
+    })),
+    files_demandes: form.value.files_demandes.map(file => ({
+      libelle: file.libelle,
+      obligatoire: file.obligatoire
     }))
   };
 
@@ -1969,6 +2174,22 @@ const removeInfoGenerale = (id) => {
   const index = form.value.infos_generales.findIndex(info => info.id === id);
   if (index !== -1) {
     form.value.infos_generales.splice(index, 1);
+  }
+};
+
+// Méthodes pour la gestion des fichiers demandés
+const addFichierDemande = () => {
+  form.value.files_demandes.push({
+    id: Date.now() + Math.random(),
+    libelle: '',
+    obligatoire: false
+  });
+};
+
+const removeFichierDemande = (id) => {
+  const index = form.value.files_demandes.findIndex(file => file.id === id);
+  if (index !== -1) {
+    form.value.files_demandes.splice(index, 1);
   }
 };
 
