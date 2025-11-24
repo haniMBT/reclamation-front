@@ -699,7 +699,20 @@
               flat
               bordered
               :loading="defaultDirectionsLoading"
-            />
+            >
+              <template v-slot:body-cell-actions="props">
+                <q-td :props="props">
+                  <q-btn
+                    icon="delete"
+                    color="negative"
+                    flat
+                    round
+                    dense
+                    @click="confirmDeleteDefaultDirection(props.row)"
+                  />
+                </q-td>
+              </template>
+            </q-table>
           </q-card-section>
 
           <q-separator />
@@ -1608,7 +1621,8 @@ const defaultDirectionsLoading = ref(false);
 const defaultDirectionsColumns = [
   { name: 'direction', label: 'Direction', field: row => row.direction, align: 'left', sortable: true },
   { name: 'statut_direction', label: 'Statut', field: row => row.statut_direction, align: 'left', sortable: true },
-  { name: 'bticket_libelle', label: 'Libellé du ticket', field: row => row.bticket_libelle, align: 'left', sortable: true }
+  { name: 'bticket_libelle', label: 'Libellé du ticket', field: row => row.bticket_libelle, align: 'left', sortable: true },
+  { name: 'actions', label: 'Actions', field: 'actions', align: 'center' }
 ];
 
 // Formulaire d'ajout de direction auto
@@ -1685,6 +1699,37 @@ const addDefaultDirection = async () => {
   } catch (error) {
     console.error('Erreur ajout direction auto:', error);
     const msg = error.response?.data?.message || 'Erreur lors de l\'ajout';
+    $q.notify({ type: 'negative', message: msg });
+  } finally {
+    defaultDirectionsLoading.value = false;
+  }
+};
+
+const confirmDeleteDefaultDirection = (row) => {
+  $q.dialog({
+    title: 'Confirmer la suppression',
+    message: `Supprimer la direction automatique "${row.direction}" ?`,
+    ok: {
+      label: 'Supprimer',
+      color: 'negative'
+    },
+    cancel: {
+      label: 'Annuler',
+      color: 'grey'
+    },
+    persistent: true
+  }).onOk(() => deleteDefaultDirection(row.id));
+};
+
+const deleteDefaultDirection = async (id) => {
+  defaultDirectionsLoading.value = true;
+  try {
+    await api.delete(`/api/rec/default-directions/${id}`);
+    defaultDirections.value = defaultDirections.value.filter(d => d.id !== id);
+    $q.notify({ type: 'positive', message: 'Direction automatique supprimée' });
+  } catch (error) {
+    console.error('Erreur suppression direction auto:', error);
+    const msg = error.response?.data?.message || 'Erreur lors de la suppression';
     $q.notify({ type: 'negative', message: msg });
   } finally {
     defaultDirectionsLoading.value = false;
