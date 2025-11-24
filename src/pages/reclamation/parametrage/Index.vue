@@ -2038,7 +2038,14 @@ const openEditTicket = (ticket) => {
       key_attribut: info.key_attribut,
       obligatoire: info.obligatoire || false,
       type: info.type || 'texte'
-    }))
+    })),
+    files_demandes: Array.isArray(ticket.files_demandes)
+      ? ticket.files_demandes.map(file => ({
+          id: file.id || Date.now() + Math.random(),
+          libelle: file.libelle,
+          obligatoire: file.obligatoire || false
+        }))
+      : []
   };
   myerrors.value = null;
   editTicket.value = true;
@@ -2052,7 +2059,8 @@ const closeEditTicket = () => {
     direction: '',
     documentAfornir: '',
     definition: '',
-    infos_generales: []
+    infos_generales: [],
+    files_demandes: []
   };
   myerrors.value = null;
 };
