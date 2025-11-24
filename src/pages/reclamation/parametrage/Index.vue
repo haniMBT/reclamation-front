@@ -12,7 +12,7 @@
     </q-card>
   </div>
 
-  <div class="bg-gray-50" v-else-if="canAccessParametrage">
+  <div class="bg-gray-50" v-else-if="canAccessParametrage || privilege_pcr.role=='Admin'">
     <div class="container mx-auto px-4 py-8">
       <!-- Header Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -34,7 +34,7 @@
               color="blue-6"
               no-caps
               @click="openAddTicket"
-              v-if="privilege.insertion && directions.length > 0"
+              v-if="privilege.role=='Admin' && privilege.insertion && directions.length > 0"
               class="px-6"
             >
               Ajouter un ticket
@@ -42,7 +42,7 @@
             <q-btn
               icon="groups"
               color="purple-6"
-              v-if="privilege_pcr.role=='Admin' && privilege_pcr.modification && privilege_pcr.insertion"
+              v-if="privilege_pcr.role=='Admin' && privilege_pcr.modification==1 && privilege_pcr.insertion==1"
               no-caps
               class="px-6"
               @click="openCommissionDialog"
@@ -54,6 +54,7 @@
               color="blue-7"
               no-caps
               class="px-6"
+              v-if="privilege.role=='Admin' && privilege.insertion && directions.length > 0"
               @click="openDefaultDirectionsDialog"
             >
               Directions auto
@@ -83,7 +84,7 @@
       <!-- Table Section -->
       <div class="bg-white rounded-lg shadow-sm p-6">
         <!-- Liste des tickets avec affichage hiérarchisé -->
-        <div class="space-y-4">
+        <div class="space-y-4"  v-if="privilege.role=='Admin' && privilege.consultation==1">
           <q-expansion-item
             v-for="ticket in filteredTickets"
             :key="ticket.id"
@@ -108,7 +109,7 @@
                     size="sm"
                     flat
                     round
-                    v-if="privilege.suppression && ticket.possibilite_suppression === 1"
+                    v-if="privilege.role=='Admin' && privilege.suppression==1 && ticket.possibilite_suppression === 1"
                     color="negative"
                     @click.stop="openDeleteTicket(ticket)"
                   >
@@ -119,6 +120,7 @@
                     size="sm"
                     flat
                     round
+                    v-if="privilege.role=='Admin' && privilege.modification==1 && ticket.possibilite_suppression === 1"
                     color="primary"
                     @click.stop="openEditTicket(ticket)"
                   >
@@ -131,6 +133,7 @@
                     flat
                     round
                     color="purple-6"
+                    v-if="privilege.role=='Admin' && privilege.modification==1 && ticket.possibilite_suppression === 1"
                     @click.stop="openGlobalEdit(ticket)"
                   >
                     <q-tooltip>Modification globale des types et détails</q-tooltip>
@@ -143,6 +146,7 @@
                       :disable="loading || loadingTickets"
                       color="green"
                       checked-icon="check_circle"
+                      v-if="privilege.role=='Admin' && privilege.modification==1"
                       unchecked-icon="cancel"
                       @update:model-value="val => onToggleActive(ticket, val)"
                       keep-color
@@ -150,104 +154,12 @@
                     <q-tooltip>{{ ticket.is_active ? 'Actif' : 'Inactif' }}</q-tooltip>
                   </div>
 
-      <!-- Dialog Commission de recours  -->
-      <!-- seamless rendre le font noraml -->
-      <q-dialog v-model="showCommissionDialog" persistent>
-        <q-card class="w-full" style="min-width: 70vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
-          <q-card-section class="flex items-center bg-purple-50 ">
-            <q-icon name="groups" class="text-purple-600 mr-3" size="2rem" />
-            <div>
-              <div class="text-xl font-semibold text-purple-900">Commission de recours</div>
-              <div class="text-sm text-purple-700">Sélectionnez le président et les membres, puis enregistrez</div>
-            </div>
-          </q-card-section>
 
-          <q-separator />
-
-          <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div class="text-gray-700 font-medium mb-2">Président de la commission</div>
-                <q-select
-                  v-model="commissionPresidentId"
-                  :options="usersOptions"
-                  option-value="value"
-                  option-label="label"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  :error="!!commissionErrors.president"
-                  :error-message="commissionErrors.president"
-                  placeholder="Choisir le président"
-                />
+                </div>
               </div>
-              <div>
-                <div class="text-gray-700 font-medium mb-2">Membres de la commission</div>
-                <q-select
-                  v-model="commissionMemberIds"
-                  :options="filteredUsersOptions"
-                  option-value="value"
-                  option-label="label"
-                  emit-value
-                  map-options
-                  outlined
-                  dense
-                  multiple
-                  use-chips
-                  placeholder="Choisir les membres"
-                />
-              </div>
-            </div>
+            </template>
 
-            <div class="mt-6">
-              <div class="text-gray-700 font-medium mb-2">Composition actuelle</div>
-              <q-table
-                :rows="commissionRows"
-                :columns="commissionColumns"
-                row-key="id"
-                flat
-                dense
-                :rows-per-page-options="[5,10,20,0]"
-              >
-                <template #body-cell-role="props">
-                  <q-td :props="props">
-                    <q-badge :color="props.row.role === 'président' ? 'purple-6' : 'grey-7'" :label="props.row.role" />
-                  </q-td>
-                </template>
-              </q-table>
-            </div>
-          </q-card-section>
 
-          <q-separator />
-
-                <q-card-actions class="p-6 bg-gray-50">
-                  <q-space />
-                  <q-btn
-                    @click="closeCommissionDialog"
-                    color="grey-6"
-                    outline
-                    no-caps
-                    class="px-6"
-                  >
-                    Annuler
-                  </q-btn>
-                  <q-btn
-                    @click="saveCommission"
-                    color="purple-6"
-                    no-caps
-                    unelevated
-                    class="px-6 ml-3"
-                    :loading="commissionSubmitting"
-                  >
-                    Enregistrer la composition
-                  </q-btn>
-                </q-card-actions>
-              </q-card>
-            </q-dialog>
-          </div>
-        </div>
-      </template>
 
             <div class="p-6 bg-gray-50">
               <!-- Document à fournir -->
@@ -438,6 +350,102 @@
           </q-expansion-item>
         </div>
       </div>
+
+          <!-- Dialog Commission de recours  -->
+            <!-- seamless rendre le font noraml -->
+            <q-dialog v-model="showCommissionDialog" persistent>
+              <q-card class="w-full" style="min-width: 70vw; max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column;">
+                <q-card-section class="flex items-center bg-purple-50 ">
+                  <q-icon name="groups" class="text-purple-600 mr-3" size="2rem" />
+                  <div>
+                    <div class="text-xl font-semibold text-purple-900">Commission de recours</div>
+                    <div class="text-sm text-purple-700">Sélectionnez le président et les membres, puis enregistrez</div>
+                  </div>
+                </q-card-section>
+
+                <q-separator />
+
+                <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <div class="text-gray-700 font-medium mb-2">Président de la commission</div>
+                      <q-select
+                        v-model="commissionPresidentId"
+                        :options="usersOptions"
+                        option-value="value"
+                        option-label="label"
+                        emit-value
+                        map-options
+                        outlined
+                        dense
+                        :error="!!commissionErrors.president"
+                        :error-message="commissionErrors.president"
+                        placeholder="Choisir le président"
+                      />
+                    </div>
+                    <div>
+                      <div class="text-gray-700 font-medium mb-2">Membres de la commission</div>
+                      <q-select
+                        v-model="commissionMemberIds"
+                        :options="filteredUsersOptions"
+                        option-value="value"
+                        option-label="label"
+                        emit-value
+                        map-options
+                        outlined
+                        dense
+                        multiple
+                        use-chips
+                        placeholder="Choisir les membres"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="mt-6">
+                    <div class="text-gray-700 font-medium mb-2">Composition actuelle</div>
+                    <q-table
+                      :rows="commissionRows"
+                      :columns="commissionColumns"
+                      row-key="id"
+                      flat
+                      dense
+                      :rows-per-page-options="[5,10,20,0]"
+                    >
+                      <template #body-cell-role="props">
+                        <q-td :props="props">
+                          <q-badge :color="props.row.role === 'président' ? 'purple-6' : 'grey-7'" :label="props.row.role" />
+                        </q-td>
+                      </template>
+                    </q-table>
+                  </div>
+                </q-card-section>
+
+                <q-separator />
+
+                      <q-card-actions class="p-6 bg-gray-50">
+                        <q-space />
+                        <q-btn
+                          @click="closeCommissionDialog"
+                          color="grey-6"
+                          outline
+                          no-caps
+                          class="px-6"
+                        >
+                          Annuler
+                        </q-btn>
+                        <q-btn
+                          @click="saveCommission"
+                          color="purple-6"
+                          no-caps
+                          unelevated
+                          class="px-6 ml-3"
+                          :loading="commissionSubmitting"
+                        >
+                          Enregistrer la composition
+                        </q-btn>
+                      </q-card-actions>
+                    </q-card>
+              </q-dialog>
 
       <!-- Add Ticket Dialog -->
       <q-dialog v-model="addTicket" persistent>
@@ -850,6 +858,7 @@
                     round
                     dense
                     @click="confirmDeleteDefaultDirection(props.row)"
+                    v-if="privilege.suppression==1"
                   />
                 </q-td>
               </template>
@@ -1589,7 +1598,7 @@
     </q-card>
   </q-dialog>
 
-  <div v-if="!canAccessParametrage && !initialLoading" class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+  <div v-if="!(canAccessParametrage || privilege_pcr.role=='Admin') && !initialLoading" class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
     <q-card class="max-w-xl w-full bg-white shadow-sm border border-gray-200">
       <q-card-section class="flex items-center gap-4">
         <div class="bg-gray-100 p-3 rounded-full">
