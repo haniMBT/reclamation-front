@@ -251,13 +251,13 @@
 
             <div class="p-6 bg-gray-50">
               <!-- Document à fournir -->
-              <div v-if="ticket.documentAfornir" class="mb-6">
+              <!-- <div v-if="ticket.documentAfornir" class="mb-6">
                 <h4 class="text-sm font-medium text-gray-700 mb-2 flex items-center">
                   <q-icon name="description" class="mr-2 text-gray-500" />
                   Document à fournir
                 </h4>
                 <div class="bg-white p-3 rounded border text-sm" v-html="ticket.documentAfornir"></div>
-              </div>
+              </div> -->
 
               <!-- Définition -->
               <div v-if="ticket.definition" class="mb-6">
@@ -308,6 +308,51 @@
                 <div v-else class="text-center py-4 text-gray-500 bg-white rounded border border-dashed">
                   <q-icon name="info_outline" size="1.5rem" class="mb-2" />
                   <p class="text-sm">Aucune information générale</p>
+                </div>
+              </div>
+
+              <!-- Section Fichiers demandés -->
+              <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <q-icon name="attach_file" class="mr-2 text-indigo-500" />
+                  Fichiers demandés
+                  <q-badge
+                    v-if="(ticket.files_demandes?.length) || (ticket.filesDemandes?.length)"
+                    :label="(ticket.files_demandes?.length) || (ticket.filesDemandes?.length)"
+                    color="indigo-6"
+                    class="ml-2"
+                  />
+                </h4>
+                <q-list
+                  v-if="(ticket.files_demandes?.length) || (ticket.filesDemandes?.length)"
+                  bordered
+                  separator
+                  class="rounded bg-white"
+                >
+                  <q-item
+                    v-for="file in (ticket.files_demandes || ticket.filesDemandes)"
+                    :key="file.id || file.libelle"
+                    class="py-3"
+                  >
+                    <q-item-section avatar>
+                      <q-icon name="attach_file" class="text-blue-grey-5" size="1.2rem" />
+                    </q-item-section>
+                    <q-item-section>
+                      <q-item-label class="font-medium">{{ file.libelle }}</q-item-label>
+                      <q-item-label v-if="file.format_fichier" caption class="text-blue-600">
+                        <q-icon name="category" size="xs" class="mr-1" />
+                        Format: {{ file.format_fichier }}
+                      </q-item-label>
+                      <q-item-label v-if="file.obligatoire" caption class="text-red-600">
+                        <q-icon name="priority_high" size="xs" class="mr-1" />
+                        Fichier obligatoire
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
+                <div v-else class="text-center py-4 text-gray-500 bg-white rounded border border-dashed">
+                  <q-icon name="attach_file" size="1.5rem" class="mb-2" />
+                  <p class="text-sm">Aucun fichier demandé</p>
                 </div>
               </div>
 
@@ -451,7 +496,7 @@
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
                   </div>
 
-                  <div>
+                  <!-- <div v-if="false">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                       Document à fournir
                     </label>
@@ -465,7 +510,7 @@
                       ]"
                     />
                     <ErrorValidation v-if="myerrors?.documentAfornir" :myerrors="myerrors?.documentAfornir" />
-                  </div>
+                  </div> -->
 
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
@@ -876,7 +921,7 @@
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
                   </div>
 
-                  <div>
+                  <!-- <div v-if="false">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                       Document à fournir
                     </label>
@@ -890,7 +935,7 @@
                       ]"
                     />
                     <ErrorValidation v-if="myerrors?.documentAfornir" :myerrors="myerrors?.documentAfornir" />
-                  </div>
+                  </div> -->
 
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
