@@ -216,7 +216,7 @@
                   </template>
                 </q-input>
                 <!-- Erreurs pour les champs dynamiques -->
-                <div v-if="validationErrors[`info_general_data.${index}.value`] || validationErrors[info.libelle]" class="text-red-600 text-xs mt-1">
+                <div v-if="getFieldErrors(`info_general_data.${index}.value`, info.libelle).length" class="text-red-600 text-xs mt-1">
                   <div v-for="error in getFieldErrors(`info_general_data.${index}.value`, info.libelle)" :key="error" class="flex items-start mb-1">
                     <q-icon name="error_outline" size="12px" class="mr-1 mt-0.5 flex-shrink-0" />
                     <span>{{ error }}</span>
@@ -481,6 +481,18 @@ const getFieldErrors = (backendFieldName, frontendFieldName) => {
       ? validationErrors.value[frontendFieldName]
       : [validationErrors.value[frontendFieldName]]
     errors.push(...frontendErrors)
+  }
+
+  // Fallback: erreurs génériques "info_general_data" retournées par le backend
+  // Format attendu: tableau de messages contenant le libellé du champ manquant
+  const genericErrors = validationErrors.value?.info_general_data
+  if (genericErrors) {
+    const list = Array.isArray(genericErrors) ? genericErrors : Object.values(genericErrors)
+    list.forEach(msg => {
+      if (typeof msg === 'string' && frontendFieldName && msg.includes(frontendFieldName)) {
+        errors.push(msg)
+      }
+    })
   }
 
   return errors
