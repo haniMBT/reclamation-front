@@ -143,8 +143,8 @@
               >
                 <label class="block text-sm font-medium text-gray-700">
                   {{ info.libelle }}
-                  <span v-if="info.key_attirubut" class="text-red-500">*</span>
-                  <q-icon v-if="info.key_attirubut" name="star" class="text-amber-500 ml-1" size="sm" />
+                  <span v-if="info.obligatoire" class="text-red-500">*</span>
+                  <q-icon v-if="info.obligatoire" name="star" class="text-amber-500 ml-1" size="sm" />
                 </label>
                 <!-- Champ DATE -->
                 <q-input
@@ -154,7 +154,7 @@
                   outlined
                   dense
                   :placeholder="`Sélectionnez la date pour ${info.libelle.toLowerCase()}`"
-                  :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
+                  :rules="info.obligatoire ? [val => !!val || `${info.libelle} est requis`] : []"
                   :error="!!validationErrors[info.libelle]"
                   @input="clearFieldError(info.libelle)"
                 >
@@ -172,7 +172,7 @@
                   outlined
                   dense
                   :placeholder="`Entrez le numéro pour ${info.libelle.toLowerCase()}`"
-                  :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
+                  :rules="info.obligatoire ? [val => !!val || `${info.libelle} est requis`] : []"
                   :error="!!validationErrors[info.libelle]"
                   @input="clearFieldError(info.libelle)"
                 >
@@ -188,7 +188,7 @@
                   outlined
                   dense
                   :placeholder="`Entrez le montant pour ${info.libelle.toLowerCase()}`"
-                  :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
+                  :rules="info.obligatoire ? [val => !!val || `${info.libelle} est requis`] : []"
                   :error="!!validationErrors[info.libelle]"
                   @keypress="filterAmountKeypress"
                   @input="sanitizeAmountInput(info.libelle, $event)"
@@ -207,7 +207,7 @@
                   outlined
                   dense
                   :placeholder="`Entrez ${info.libelle.toLowerCase()}`"
-                  :rules="info.key_attirubut ? [val => !!val || `${info.libelle} est requis`] : []"
+                  :rules="info.obligatoire ? [val => !!val || `${info.libelle} est requis`] : []"
                   :error="!!validationErrors[info.libelle]"
                   @input="clearFieldError(info.libelle)"
                 >
@@ -505,7 +505,7 @@ const submitForm = async () => {
   validationErrors.value = {}
 
   // Validation des champs requis
-  const requiredFields = selectedTicket.value?.infos_generales?.filter(info => info.key_attirubut) || []
+  const requiredFields = selectedTicket.value?.infos_generales?.filter(info => info.obligatoire) || []
 
   for (const field of requiredFields) {
     if (!formData[field.libelle]) {
@@ -526,7 +526,7 @@ const submitForm = async () => {
     const info_general_data = selectedTicket.value?.infos_generales?.map(info => ({
       info_general_id: info.id,
       libelle: info.libelle,
-      value: formData[info.libelle] || '',
+      value: (formData[info.libelle] !== undefined && formData[info.libelle] !== null) ? formData[info.libelle] : '',
       key_attribut: info.key_attirubut || false,
       type: info.type || null
     })) || []
@@ -642,7 +642,7 @@ const proceedWithDuplicate = async () => {
     const info_general_data = selectedTicket.value?.infos_generales?.map(info => ({
       info_general_id: info.id,
       libelle: info.libelle,
-      value: formData[info.libelle] || '',
+      value: (formData[info.libelle] !== undefined && formData[info.libelle] !== null) ? formData[info.libelle] : '',
       key_attribut: info.key_attirubut || false,
       type: info.type || null
     })) || []
