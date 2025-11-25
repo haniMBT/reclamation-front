@@ -192,8 +192,8 @@
               ]"
               class="border rounded-md"
             />
-            <div v-if="errors.description" class="text-red-600 text-xs mt-1">
-              {{ errors.description }}
+            <div v-if="errors.description || (!form.description || form.description.trim() === '')" class="text-red-600 text-xs mt-1">
+              {{ errors.description || 'Ce champ est obligatoire' }}
             </div>
           </div>
 
@@ -274,13 +274,19 @@
                       <q-icon name="edit" class="text-yellow-600" />
                     </template>
                   </q-input>
+                  <div
+                    v-if="info.key_attribut && (info.value === null || info.value === undefined || (typeof info.value === 'string' && info.value.trim() === ''))"
+                    class="text-xs text-red-600"
+                  >
+                    Ce champ est obligatoire.
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- Documents à fournir Section -->
-          <div v-if="ticketData.base_ticket.documentAFournir" class="mb-6">
+          <div v-if="false" class="mb-6">
             <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div class="flex items-start">
                 <q-icon name="description" class="text-yellow-900 mr-3 mt-0.5" />
@@ -293,7 +299,7 @@
           </div>
 
           <!-- Fichiers demandés (édition par demande) -->
-          <div v-if="existingFiles.length > 0" class="mb-6">
+          <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Fichiers demandés
             </label>
@@ -327,47 +333,29 @@
                       </div>
                     </div>
 
-                    <div v-if="!findExistingFileForDemande(fd)" class="mt-2">
+                    <div v-if="!findExistingFileForDemande(fd) || deletedByDemande[fd.id]" class="mt-2">
                       <q-file
                         v-model="filesByDemande[fd.id]"
                         outlined
                         dense
+                        clearable
+                        use-chips
+                        class="w-full"
                         :accept="fd.format_fichier || 'image/*,application/pdf,.doc,.docx,.txt'"
                         max-file-size="10485760"
                         @rejected="onRejected"
+                        :error="fd.obligatoire && !findExistingFileForDemande(fd) && !filesByDemande[fd.id]"
+                        error-message="Ce document est obligatoire."
                       >
                         <template v-slot:prepend>
                           <q-icon name="attach_file" class="text-yellow-600" />
                         </template>
-                        <template v-slot:hint>
-                          Formats attendus: {{ fd.format_fichier || 'Images/PDF/Docs' }} — Taille max 10Mo
-                        </template>
                       </q-file>
-                      <div v-if="fd.obligatoire && !filesByDemande[fd.id]" class="text-red-600 text-xs mt-1">
+                      <div v-if="fd.obligatoire && !findExistingFileForDemande(fd) && !filesByDemande[fd.id]" class="text-red-600 text-xs mt-1">
                         Ce fichier est obligatoire.
                       </div>
                     </div>
-
-                    <div v-else-if="deletedByDemande[fd.id]" class="mt-2">
-                      <q-file
-                        v-model="filesByDemande[fd.id]"
-                        outlined
-                        dense
-                        :accept="fd.format_fichier || 'image/*,application/pdf,.doc,.docx,.txt'"
-                        max-file-size="10485760"
-                        @rejected="onRejected"
-                      >
-                        <template v-slot:prepend>
-                          <q-icon name="attach_file" class="text-yellow-600" />
-                        </template>
-                        <template v-slot:hint>
-                          Formats attendus: {{ fd.format_fichier || 'Images/PDF/Docs' }} — Taille max 10Mo
-                        </template>
-                      </q-file>
-                      <div v-if="fd.obligatoire && !filesByDemande[fd.id]" class="text-red-600 text-xs mt-1">
-                        Ce fichier est obligatoire.
-                      </div>
-                    </div>
+                    
                   </div>
                 </div>
               </div>
