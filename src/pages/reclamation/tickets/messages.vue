@@ -6,7 +6,19 @@
         <div class="flex items-center mb-4">
           <q-icon name="message" size="2rem" class="text-blue-600 mr-3" />
           <div>
-            <h1 class="text-2xl font-bold text-gray-800 mb-1">Messages du Ticket</h1>
+<h1 class="text-2xl font-bold text-gray-800 mb-1 flex items-center">
+  Messages du Ticket
+  <q-chip
+    v-if="hasTicketStatus"
+    square
+    dense
+    color="blue-6"
+    text-color="white"
+    class="ml-3"
+  >
+    {{ ticket.status }}
+  </q-chip>
+</h1>
             <div v-if="hasCurrentTicket">
               <p class="text-gray-600 text-sm">
                 <!-- Ticket ID: {{ currentTicketId }} -->
@@ -1220,6 +1232,7 @@
                         </div>
                         <div>
                           <p class="font-medium text-gray-800">{{ file.nom_fichier }}</p>
+                          <p v-if="file.libelle" class="text-sm text-gray-600">Demande : {{ file.libelle }}</p>
                           <p class="text-sm text-gray-500">{{ formatFileSizeVoir(file.taille_fichier) }}</p>
                         </div>
                       </div>
