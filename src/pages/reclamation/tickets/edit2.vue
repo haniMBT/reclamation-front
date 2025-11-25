@@ -292,128 +292,88 @@
             </div>
           </div>
 
-          <!-- Fichiers existants -->
+          <!-- Fichiers demandés (édition par demande) -->
           <div v-if="existingFiles.length > 0" class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Fichiers existants
+              Fichiers demandés
             </label>
-            <div class="space-y-2">
+            <div class="space-y-3">
               <div
-                v-for="(file, index) in existingFiles"
-                :key="file.id"
-                class="flex items-center justify-between bg-green-50 p-3 rounded-md border border-green-200"
+                v-for="fd in filesDemandes"
+                :key="fd.id"
+                class="border rounded-md p-3"
               >
-                <div class="flex items-center">
-                  <q-icon
-                    :name="getFileIcon(file.type_fichier)"
-                    size="1.5rem"
-                    class="text-green-600 mr-3"
-                  />
+                <div class="flex items-start justify-between">
                   <div>
-                    <div class="text-sm font-medium text-gray-800">{{ file.nom_fichier }}</div>
-                    <div class="text-xs text-gray-500">{{ formatFileSize(file.taille_fichier) }}</div>
-                  </div>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <q-btn
-                    icon="download"
-                    size="sm"
-                    flat
-                    round
-                    color="primary"
-                    @click="downloadFile(file)"
-                  >
-                    <q-tooltip>Télécharger</q-tooltip>
-                  </q-btn>
-                  <q-btn
-                    icon="delete"
-                    size="sm"
-                    flat
-                    round
-                    color="negative"
-                    @click="removeExistingFile(file.id)"
-                  >
-                    <q-tooltip>Supprimer</q-tooltip>
-                  </q-btn>
-                </div>
-              </div>
-            </div>
-          </div>
+                    <div class="text-sm font-medium text-gray-800">
+                      {{ fd.libelle }}
+                      <span v-if="fd.obligatoire" class="text-red-600">*</span>
+                    </div>
+                    <div v-if="findExistingFileForDemande(fd)" class="mt-2 flex items-center justify-between bg-green-50 p-2 rounded border border-green-200">
+                      <div class="flex items-center">
+                        <q-icon :name="getFileIcon(findExistingFileForDemande(fd).type_fichier)" size="1.25rem" class="text-green-600 mr-2" />
+                        <div>
+                          <div class="text-sm text-gray-800">{{ findExistingFileForDemande(fd).nom_fichier }}</div>
+                          <div class="text-xs text-gray-500">{{ formatFileSize(findExistingFileForDemande(fd).taille_fichier) }}</div>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <q-btn icon="download" size="sm" flat round color="primary" @click="downloadFile(findExistingFileForDemande(fd))">
+                          <q-tooltip>Télécharger</q-tooltip>
+                        </q-btn>
+                        <q-btn icon="delete" size="sm" flat round color="negative" @click="removeExistingFileForDemande(fd)">
+                          <q-tooltip>Supprimer</q-tooltip>
+                        </q-btn>
+                      </div>
+                    </div>
 
-          <!-- Nouveaux fichiers joints -->
-          <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-2">
-              Ajouter de nouveaux fichiers (optionnel)
-            </label>
+                    <div v-if="!findExistingFileForDemande(fd)" class="mt-2">
+                      <q-file
+                        v-model="filesByDemande[fd.id]"
+                        outlined
+                        dense
+                        :accept="fd.format_fichier || 'image/*,application/pdf,.doc,.docx,.txt'"
+                        max-file-size="10485760"
+                        @rejected="onRejected"
+                      >
+                        <template v-slot:prepend>
+                          <q-icon name="attach_file" class="text-yellow-600" />
+                        </template>
+                        <template v-slot:hint>
+                          Formats attendus: {{ fd.format_fichier || 'Images/PDF/Docs' }} — Taille max 10Mo
+                        </template>
+                      </q-file>
+                      <div v-if="fd.obligatoire && !filesByDemande[fd.id]" class="text-red-600 text-xs mt-1">
+                        Ce fichier est obligatoire.
+                      </div>
+                    </div>
 
-            <!-- Zone d'ajout de fichiers -->
-            <div class="flex gap-3 mb-3">
-              <q-file
-                v-model="newFiles"
-                multiple
-                outlined
-                dense
-                accept="image/*,application/pdf,.doc,.docx,.txt"
-                max-file-size="10485760"
-                class="flex-1"
-                @rejected="onRejected"
-                @update:model-value="onNewFilesSelected"
-              >
-                <template v-slot:prepend>
-                  <q-icon name="attach_file" class="text-yellow-600" />
-                </template>
-                <template v-slot:hint>
-                  Formats acceptés: Images, PDF, Word. Taille max: 10Mo par fichier
-                </template>
-              </q-file>
-
-              <q-btn
-                label="Ajouter"
-                color="yellow-9"
-                outline
-                :disable="!newFiles || newFiles.length === 0"
-                @click="addFiles"
-                class="px-4"
-              >
-                <q-icon name="add" class="mr-1" />
-              </q-btn>
-            </div>
-
-            <!-- Liste des nouveaux fichiers sélectionnés -->
-            <div v-if="form.files.length > 0" class="mt-3">
-              <div class="text-sm font-medium text-gray-700 mb-2">
-                Nouveaux fichiers sélectionnés ({{ form.files.length }}) :
-              </div>
-              <div class="space-y-2">
-                <div
-                  v-for="(file, index) in form.files"
-                  :key="index"
-                  class="flex items-center justify-between bg-gray-50 p-3 rounded-md border"
-                >
-                  <div class="flex items-center">
-                    <q-icon
-                      :name="getFileIcon(file.type)"
-                      size="1.5rem"
-                      class="text-yellow-600 mr-3"
-                    />
-                    <div>
-                      <div class="text-sm font-medium text-gray-800">{{ file.name }}</div>
-                      <div class="text-xs text-gray-500">{{ formatFileSize(file.size) }}</div>
+                    <div v-else-if="deletedByDemande[fd.id]" class="mt-2">
+                      <q-file
+                        v-model="filesByDemande[fd.id]"
+                        outlined
+                        dense
+                        :accept="fd.format_fichier || 'image/*,application/pdf,.doc,.docx,.txt'"
+                        max-file-size="10485760"
+                        @rejected="onRejected"
+                      >
+                        <template v-slot:prepend>
+                          <q-icon name="attach_file" class="text-yellow-600" />
+                        </template>
+                        <template v-slot:hint>
+                          Formats attendus: {{ fd.format_fichier || 'Images/PDF/Docs' }} — Taille max 10Mo
+                        </template>
+                      </q-file>
+                      <div v-if="fd.obligatoire && !filesByDemande[fd.id]" class="text-red-600 text-xs mt-1">
+                        Ce fichier est obligatoire.
+                      </div>
                     </div>
                   </div>
-                  <q-btn
-                    icon="close"
-                    size="sm"
-                    flat
-                    round
-                    color="negative"
-                    @click="removeFile(index)"
-                    class="ml-2"
-                  >
-                    <q-tooltip>Supprimer le fichier</q-tooltip>
-                  </q-btn>
                 </div>
               </div>
+            </div>
+            <div v-if="errors.files" class="text-red-600 text-xs mt-2">
+              {{ errors.files }}
             </div>
           </div>
 
@@ -468,6 +428,9 @@ const existingFiles = ref([])
 const newFiles = ref(null)
 const errors = ref({})
 const filesToDelete = ref([])
+// Gestion par demande (comme create2)
+const filesByDemande = ref({})
+const deletedByDemande = ref({})
 
 // Form data
 const form = ref({
@@ -496,6 +459,7 @@ watch(() => form.value.info_generales, () => {
 }, { deep: true })
 
 // Computed
+const filesDemandes = computed(() => ticketData.value?.base_ticket?.files_demandes || [])
 const isFormValid = computed(() => {
   // Vérifier que la description est remplie
   if (!form.value.description || form.value.description.trim() === '') {
@@ -516,6 +480,15 @@ const isFormValid = computed(() => {
     }
   }
 
+  // Vérifier les fichiers demandés obligatoires
+  for (const fd of filesDemandes.value) {
+    const hasExisting = !!findExistingFileForDemande(fd)
+    const hasNew = !!filesByDemande.value[fd.id]
+    if (fd.obligatoire && !hasExisting && !hasNew) {
+      return false
+    }
+  }
+
   return true
 })
 
@@ -529,6 +502,21 @@ watch(() => form.value.selectedTypes, (newSelectedTypes) => {
 }, { deep: true })
 
 // Methods
+const findExistingFileForDemande = (fd) => {
+  try {
+    return existingFiles.value.find(f => ((f.libelle || '').trim() === (fd.libelle || '').trim()) && !filesToDelete.value.includes(f.id)) || null
+  } catch (e) {
+    return null
+  }
+}
+
+const removeExistingFileForDemande = (fd) => {
+  const file = findExistingFileForDemande(fd)
+  if (file) {
+    removeExistingFile(file.id)
+    deletedByDemande.value[fd.id] = true
+  }
+}
 const loadTicketData = async () => {
   const ticketId = route.params.id
   if (!ticketId) {
@@ -570,6 +558,17 @@ const loadTicketData = async () => {
 
       // Fichiers existants
       existingFiles.value = data.files || []
+
+      // Initialiser les structures par demande
+      const demandes = data.base_ticket?.files_demandes || []
+      const initMap = {}
+      const initDeleted = {}
+      demandes.forEach(fd => {
+        initMap[fd.id] = null
+        initDeleted[fd.id] = false
+      })
+      filesByDemande.value = initMap
+      deletedByDemande.value = initDeleted
 
       // Pré-remplir le formulaire
       initializeFormFromTicketData(data)
@@ -726,6 +725,19 @@ const validateForm = () => {
   //   errors.value.types = 'Veuillez sélectionner au moins un type de réclamation'
   // }
 
+  // Valider les fichiers demandés obligatoires
+  const missing = []
+  for (const fd of filesDemandes.value) {
+    const hasExisting = !!findExistingFileForDemande(fd)
+    const hasNew = !!filesByDemande.value[fd.id]
+    if (fd.obligatoire && !hasExisting && !hasNew) {
+      missing.push(fd.libelle)
+    }
+  }
+  if (missing.length > 0) {
+    errors.value.files = `Fichiers obligatoires manquants: ${missing.join(', ')}`
+  }
+
   return Object.keys(errors.value).length === 0
 }
 
@@ -860,6 +872,14 @@ const submitForm = async () => {
     // Ajouter les nouveaux fichiers
     form.value.files.forEach((file, index) => {
       formData.append(`files[${index}]`, file)
+    })
+
+    // Ajouter les fichiers par demande (structure ticket_files[demande_id])
+    Object.keys(filesByDemande.value || {}).forEach((demandeId) => {
+      const file = filesByDemande.value[demandeId]
+      if (file) {
+        formData.append(`ticket_files[${demandeId}]`, file)
+      }
     })
 
     // Ajouter les fichiers à supprimer
