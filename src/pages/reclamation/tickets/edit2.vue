@@ -209,7 +209,7 @@
                 <div v-for="info in form.info_generales" :key="info.info_general_id" class="space-y-2">
                   <label class="block text-sm font-medium text-gray-700">
                     {{ info.libelle }}
-                    <span v-if="info.key_attribut" class="text-red-500">*</span>
+                <span v-if="info.obligatoire" class="text-red-500">*</span>
                   </label>
                   <q-input
                     v-if="info.type == 'date'"
@@ -233,7 +233,7 @@
                     dense
                     type="number"
                     :placeholder="`Entrez le numéro pour ${info.libelle.toLowerCase()}`"
-                    :required="info.key_attribut"
+                    :required="info.obligatoire"
                     class="w-full"
                     inputmode="numeric"
                     pattern="[0-9 ]*"
@@ -249,7 +249,7 @@
                     outlined
                     dense
                     :placeholder="`Entrez le montant pour ${info.libelle.toLowerCase()}`"
-                    :required="info.key_attribut"
+                    :required="info.obligatoire"
                     class="w-full"
                     @keypress="filterAmountKeypress"
                     @input="sanitizeAmountInputEdit(info.key_attribut, $event)"
@@ -267,7 +267,7 @@
                     outlined
                     dense
                     :placeholder="`Entrez ${info.libelle.toLowerCase()}`"
-                    :required="info.key_attribut"
+                    :required="info.obligatoire"
                     class="w-full"
                   >
                     <template v-slot:prepend>
@@ -275,7 +275,7 @@
                     </template>
                   </q-input>
                   <div
-                    v-if="info.key_attribut && (info.value === null || info.value === undefined || (typeof info.value === 'string' && info.value.trim() === ''))"
+                    v-if="info.obligatoire && (info.value === null || info.value === undefined || (typeof info.value === 'string' && info.value.trim() === ''))"
                     class="text-xs text-red-600"
                   >
                     Ce champ est obligatoire.
@@ -652,8 +652,8 @@ const initializeFormFromTicketData = (data) => {
       const key = base.key_attribut ?? info.key_attribut ?? ''
       const type = base.type ?? info.type ?? null
       const libelle = base.libelle ?? info.libelle ?? ''
-      // Source de vérité pour l'obligation: table de base
-      const obligatoire = base.obligatoire ?? false
+      // Source de vérité pour l'obligation: table de base (coercition vers booléen)
+      const obligatoire = (base.obligatoire === true || base.obligatoire === 1 || base.obligatoire === '1' || base.obligatoire === 'true')
       const rawVal = (info.value ?? info.valeur ?? '')
       return {
         info_general_id: id,
@@ -1071,6 +1071,8 @@ const filterAmountKeypress = (evt) => {
 // Formater un montant pour l'affichage initial (groupement des milliers avec '.' et décimales ',')
 const formatAmountDisplay = (val) => {
   let raw = (val ?? '').toString()
+  // Si aucune saisie ou aucune chiffre présent, retourner vide (ne pas forcer 0)
+  if (raw.trim().length === 0 || !/[0-9]/.test(raw)) return ''
   raw = raw.replace(/[^\d.,\s]/g, '')
   raw = raw.replace(/\s+/g, '')
 
@@ -1087,7 +1089,8 @@ const formatAmountDisplay = (val) => {
 
   intPart = intPart.replace(/[^\d]/g, '')
   intPart = intPart.replace(/^0+(?=\d)/, '')
-  if (intPart.length === 0) intPart = '0'
+  // Si après nettoyage il n'y a pas de partie entière, laisser vide
+  if (intPart.length === 0) return ''
 
   const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
 
