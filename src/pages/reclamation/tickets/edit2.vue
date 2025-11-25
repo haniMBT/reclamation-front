@@ -309,9 +309,9 @@
                 :key="fd.id"
                 class="border rounded-md p-3"
               >
-                <div class="flex items-start justify-between">
+                <div class="">
                   <div>
-                    <div class="text-sm font-medium text-gray-800">
+                    <div class="text-sm font-medium text-gray-800 w-full">
                       {{ fd.libelle }}
                       <span v-if="fd.obligatoire" class="text-red-600">*</span>
                     </div>
@@ -333,14 +333,14 @@
                       </div>
                     </div>
 
-                    <div v-if="!findExistingFileForDemande(fd) || deletedByDemande[fd.id]" class="mt-2">
+                    <div v-if="!findExistingFileForDemande(fd) || deletedByDemande[fd.id]" class="mt-2 flex items-center gap-3 w-full">
                       <q-file
                         v-model="filesByDemande[fd.id]"
                         outlined
                         dense
                         clearable
                         use-chips
-                        class="w-full"
+                        class="flex-1"
                         :accept="fd.format_fichier || 'image/*,application/pdf,.doc,.docx,.txt'"
                         max-file-size="10485760"
                         @rejected="onRejected"
@@ -351,11 +351,22 @@
                           <q-icon name="attach_file" class="text-yellow-600" />
                         </template>
                       </q-file>
+                      <q-btn
+                        v-if="filesByDemande[fd.id]"
+                        icon="close"
+                        size="sm"
+                        flat
+                        round
+                        color="negative"
+                        @click="filesByDemande[fd.id] = null"
+                      >
+                        <q-tooltip>Supprimer</q-tooltip>
+                      </q-btn>
                       <div v-if="fd.obligatoire && !findExistingFileForDemande(fd) && !filesByDemande[fd.id]" class="text-red-600 text-xs mt-1">
                         Ce fichier est obligatoire.
                       </div>
                     </div>
-                    
+
                   </div>
                 </div>
               </div>
@@ -897,8 +908,22 @@ const submitForm = async () => {
         position: 'top'
       })
 
-      // Rediriger vers la liste des tickets
-      // router.push('/reclamations/allTicket')
+      // Rafraîchir l'affichage des fichiers et masquer les inputs
+      try {
+        // Vider la sélection locale des fichiers par demande
+        Object.keys(filesByDemande.value || {}).forEach((demandeId) => {
+          filesByDemande.value[demandeId] = null
+        })
+        // Réinitialiser les flags de suppression côté UI
+        deletedByDemande.value = {}
+        // Nettoyer la liste des fichiers à supprimer (déjà traités côté backend avec succès)
+        filesToDelete.value = []
+
+        // Recharger les données du ticket pour récupérer les fichiers enregistrés
+        await loadTicketData()
+      } catch (e) {
+        console.warn('Refresh des fichiers après mise à jour échoué:', e)
+      }
     } else {
       throw new Error(response.data.message || 'Erreur lors de la mise à jour')
     }
