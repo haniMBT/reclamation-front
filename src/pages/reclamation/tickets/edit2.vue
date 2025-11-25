@@ -192,7 +192,7 @@
               ]"
               class="border rounded-md"
             />
-            <div v-if="errors.description || (!form.description || form.description.trim() === '')" class="text-red-600 text-xs mt-1">
+            <div v-if="errors.description || descriptionIsEmpty" class="text-red-600 text-xs mt-1">
               {{ errors.description || 'Ce champ est obligatoire' }}
             </div>
           </div>
@@ -459,9 +459,23 @@ watch(() => form.value.info_generales, () => {
 
 // Computed
 const filesDemandes = computed(() => ticketData.value?.base_ticket?.files_demandes || [])
+// Détecter correctement une description "vide" provenant du QEditor (HTML)
+const isRichTextEmpty = (html) => {
+  const s = (html ?? '').toString()
+  if (s.length === 0) return true
+  // Retirer toutes les balises HTML
+  const withoutTags = s.replace(/<[^>]*>/g, '')
+  // Remplacer les espaces insécables et normaliser
+  const normalized = withoutTags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return normalized.length === 0
+}
+const descriptionIsEmpty = computed(() => isRichTextEmpty(form.value.description))
 const isFormValid = computed(() => {
   // Vérifier que la description est remplie
-  if (!form.value.description || form.value.description.trim() === '') {
+  if (isRichTextEmpty(form.value.description)) {
     return false
   }
 
@@ -714,7 +728,7 @@ const validateForm = () => {
     errors.value.objet = 'L\'objet est obligatoire'
   }
 
-  if (!form.value.description || form.value.description.trim() === '') {
+  if (isRichTextEmpty(form.value.description)) {
     errors.value.description = 'La description est obligatoire'
   }
 
