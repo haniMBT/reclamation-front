@@ -637,28 +637,31 @@ const initializeFormFromTicketData = (data) => {
   // Informations générales - créer des objets complets avec tous les champs
   form.value.info_generales = []
 
-  if (data.infos_generales && data.infos_generales.length > 0) {
-    // Construire une map des définitions du ticket de base pour enrichir (key_attribut, type, libelle)
-    const baseMap = (data.base_ticket?.infos_generales || []).reduce((acc, base) => {
-      const id = base.id ?? base.info_general_id
-      if (id) acc[id] = base
+  if (data.base_ticket?.infos_generales && data.base_ticket.infos_generales.length > 0) {
+    // Construire une map des valeurs du ticket par id pour fusionner avec la définition de base
+    const infoMap = (data.infos_generales || []).reduce((acc, info) => {
+      const id = info.info_general_id ?? info.id
+      if (id) acc[id] = info
       return acc
     }, {})
 
-    // Utiliser directement les objets info_generales du ticket, enrichis avec la base si nécessaire
-    form.value.info_generales = data.infos_generales.map(info => {
-      const id = info.info_general_id ?? info.id
-      const base = id ? baseMap[id] || {} : {}
-      const key = info.key_attribut ?? base.key_attribut ?? ''
-      const type = info.type ?? base.type ?? null
-      const libelle = info.libelle ?? base.libelle ?? ''
+    // Toujours partir de la définition de base: tous les champs s'affichent même sans valeur
+    form.value.info_generales = data.base_ticket.infos_generales.map(base => {
+      const id = base.id ?? base.info_general_id
+      const info = id ? infoMap[id] || {} : {}
+      const key = base.key_attribut ?? info.key_attribut ?? ''
+      const type = base.type ?? info.type ?? null
+      const libelle = base.libelle ?? info.libelle ?? ''
+      // Source de vérité pour l'obligation: table de base
+      const obligatoire = base.obligatoire ?? false
       const rawVal = (info.value ?? info.valeur ?? '')
       return {
         info_general_id: id,
         libelle,
         value: rawVal,
         key_attribut: key,
-        type
+        type,
+        obligatoire
       }
     })
 
@@ -684,20 +687,6 @@ const initializeFormFromTicketData = (data) => {
         info.value = displayVal
         // Compatibilité dict
         form.value.infosGenerales[info.key_attribut] = displayVal
-      }
-    })
-  } else if (data.base_ticket?.infos_generales && data.base_ticket.infos_generales.length > 0) {
-    // Fallback: initialiser depuis les définitions du ticket de base si aucune donnée spécifique n'est fournie
-    data.base_ticket.infos_generales.forEach(base => {
-      form.value.info_generales.push({
-        info_general_id: base.id ?? base.info_general_id,
-        libelle: base.libelle,
-        value: '',
-        key_attribut: base.key_attribut ?? '',
-        type: base.type ?? null
-      })
-      if (base.key_attribut) {
-        form.value.infosGenerales[base.key_attribut] = ''
       }
     })
   }
