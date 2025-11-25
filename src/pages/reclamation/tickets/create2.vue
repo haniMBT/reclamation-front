@@ -59,7 +59,7 @@
             <label class="block text-sm font-medium text-gray-700 mb-2">
               Objet de la réclamation *
             </label>
-            <q-input
+          <q-input
               v-model="form.objet"
               outlined
               dense
@@ -71,8 +71,8 @@
                 <q-icon name="subject" class="text-blue-600" />
               </template>
             </q-input>
-            <div v-if="errors.objet" class="text-red-600 text-xs mt-1">
-              {{ errors.objet }}
+            <div v-if="errors.objet || (!form.objet || form.objet.trim() === '')" class="text-red-600 text-xs mt-1">
+              {{ errors.objet || 'Ce champ est obligatoire' }}
             </div>
           </div>
 
@@ -165,23 +165,13 @@
               ]"
               class="border rounded-md"
             />
-            <div v-if="errors.description" class="text-red-600 text-xs mt-1">
-              {{ errors.description }}
+            <div v-if="errors.description || (!form.description || form.description.trim() === '')" class="text-red-600 text-xs mt-1">
+              {{ errors.description || 'Ce champ est obligatoire' }}
             </div>
           </div>
 
-          <!-- Documents à fournir Section -->
-          <div v-if="ticketData.documentAFournir" class="mb-6">
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <div class="flex items-start">
-                <q-icon name="description" class="text-blue-600 mr-3 mt-0.5" />
-                <div class="text-sm text-blue-800">
-                  <p class="font-medium mb-2">Documents à fournir :</p>
-                  <div class="text-blue-700" v-html="ticketData.documentAFournir"></div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <!-- Documents à fournir Section (masquée selon demande) -->
+          <!-- Section intentionnellement non affichée -->
 
           <!-- Fichiers demandés (selon le ticket de base) -->
           <div class="mb-6">
@@ -234,6 +224,11 @@
                   >
                     <q-tooltip>Supprimer</q-tooltip>
                   </q-btn>
+                </div>
+
+                <!-- Message d’obligation affiché en rouge si fichier obligatoire non sélectionné -->
+                <div v-if="fd.obligatoire && !form.filesByDemande[fd.id]" class="text-red-600 text-xs mt-1">
+                  Ce fichier est obligatoire
                 </div>
 
                 <div v-if="errors.files_demande && errors.files_demande[fd.id]" class="text-red-600 text-xs mt-1">
@@ -483,6 +478,11 @@ const loadTicketData = async () => {
 
 const validateForm = () => {
   errors.value = {}
+
+  // Validation de l'objet
+  if (!form.value.objet || form.value.objet.trim() === '') {
+    errors.value.objet = "L'objet est obligatoire"
+  }
 
   // Validation de la description
   if (!form.value.description || form.value.description.trim() === '') {
