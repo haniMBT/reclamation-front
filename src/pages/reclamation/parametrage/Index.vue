@@ -120,7 +120,7 @@
                     size="sm"
                     flat
                     round
-                    v-if="privilege.role=='Admin' && privilege.modification==1 && ticket.possibilite_suppression === 1"
+                    v-if="privilege.role=='Admin' && privilege.modification==1 && ticket.possibilite_suppression === 0"
                     color="primary"
                     @click.stop="openEditTicket(ticket)"
                   >

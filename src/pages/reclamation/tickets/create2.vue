@@ -183,78 +183,61 @@
             </div>
           </div>
 
-          <!-- Fichiers joints -->
+          <!-- Fichiers demandés (selon le ticket de base) -->
           <div class="mb-6">
             <label class="block text-sm font-medium text-gray-700 mb-2">
-              Fichiers joints (optionnel)
+              Fichiers demandés
             </label>
 
-            <!-- Zone d'ajout de fichiers -->
-            <div class="flex gap-3 mb-3">
-              <q-file
-                v-model="newFiles"
-                multiple
-                outlined
-                dense
-                accept="image/*,application/pdf,.doc,.docx,.txt"
-                max-file-size="10485760"
-                class="flex-1"
-                @rejected="onRejected"
-                @update:model-value="onNewFilesSelected"
+            <div class="space-y-4">
+              <div
+                v-for="fd in filesDemandes"
+                :key="fd.id"
+                class="bg-gray-50 p-3 rounded-md border"
               >
-                <template v-slot:prepend>
-                  <q-icon name="attach_file" class="text-blue-600" />
-                </template>
-                <template v-slot:hint>
-                  Formats acceptés: Images, PDF, Word. Taille max: 10Mo par fichier
-                </template>
-              </q-file>
-
-              <q-btn
-                label="Ajouter"
-                color="blue-6"
-                outline
-                :disable="!newFiles || newFiles.length === 0"
-                @click="addFiles"
-                class="px-4"
-              >
-                <q-icon name="add" class="mr-1" />
-              </q-btn>
-            </div>
-
-            <!-- Liste des fichiers sélectionnés -->
-            <div v-if="form.files.length > 0" class="mt-3">
-              <div class="text-sm font-medium text-gray-700 mb-2">
-                Fichiers sélectionnés ({{ form.files.length }}) :
-              </div>
-              <div class="space-y-2">
-                <div
-                  v-for="(file, index) in form.files"
-                  :key="index"
-                  class="flex items-center justify-between bg-gray-50 p-3 rounded-md border"
-                >
-                  <div class="flex items-center">
-                    <q-icon
-                      :name="getFileIcon(file.type)"
-                      size="1.5rem"
-                      class="text-blue-600 mr-3"
-                    />
-                    <div>
-                      <div class="text-sm font-medium text-gray-800">{{ file.name }}</div>
-                      <div class="text-xs text-gray-500">{{ formatFileSize(file.size) }}</div>
-                    </div>
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-sm font-medium text-gray-800">
+                    {{ fd.libelle }}
+                    <span v-if="fd.obligatoire" class="text-red-600">*</span>
                   </div>
+                  <div class="text-xs text-gray-500" v-if="fd.format_fichier">
+                    Format: {{ fd.format_fichier }}
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <q-file
+                    v-model="form.filesByDemande[fd.id]"
+                    outlined
+                    dense
+                    :accept="fd.format_fichier ? fd.format_fichier : 'image/*,application/pdf,.doc,.docx,.txt'"
+                    max-file-size="10485760"
+                    class="flex-1"
+                    @rejected="onRejected"
+                  >
+                    <template v-slot:prepend>
+                      <q-icon name="attach_file" class="text-blue-600" />
+                    </template>
+                    <template v-slot:hint>
+                      Taille max: 10Mo
+                    </template>
+                  </q-file>
+
                   <q-btn
+                    v-if="form.filesByDemande[fd.id]"
                     icon="close"
                     size="sm"
                     flat
                     round
                     color="negative"
-                    @click="removeFile(index)"
-                    class="ml-2"
+                    @click="removeDemandeFile(fd.id)"
                   >
-                    <q-tooltip>Supprimer le fichier</q-tooltip>
+                    <q-tooltip>Supprimer</q-tooltip>
                   </q-btn>
+                </div>
+
+                <div v-if="errors.files_demande && errors.files_demande[fd.id]" class="text-red-600 text-xs mt-1">
+                  {{ errors.files_demande[fd.id] }}
                 </div>
               </div>
             </div>
@@ -307,7 +290,6 @@ const loadingTicketData = ref(false)
 const isSubmitting = ref(false)
 const ticketData = ref({})
 const ticketTypes = ref([])
-const newFiles = ref(null)
 const errors = ref({})
 
 // Form data
@@ -316,7 +298,7 @@ const form = ref({
   description: '',
   selectedTypes: {}, // Types sélectionnés (id => boolean)
   typeDetails: {}, // Structure: { type_id: { details: [detail_ids], autre: 'texte' } }
-  files: []
+  filesByDemande: {}
 })
 
 // Computed
@@ -330,6 +312,11 @@ const ticketInfo = computed(() => {
 
 const documentAFournir = computed(() => {
   return ticketData.value?.documentAFournir || ''
+})
+
+// Fichiers demandés depuis le ticket de base
+const filesDemandes = computed(() => {
+  return ticketData.value?.files_demandes || []
 })
 
 // Watcher pour initialiser typeDetails quand selectedTypes change
@@ -350,6 +337,13 @@ const isFormValid = computed(() => {
   // Vérifier que la description est remplie
   if (!form.value.description || form.value.description.trim() === '') {
     return false
+  }
+
+  // Vérifier que tous les fichiers obligatoires sont sélectionnés
+  for (const fd of filesDemandes.value) {
+    if (fd.obligatoire && !form.value.filesByDemande[fd.id]) {
+      return false
+    }
   }
 
   return true
@@ -421,6 +415,13 @@ const initializeFormFromTicketData = () => {
       }
     }
   })
+
+  // Initialiser la structure des fichiers demandés
+  filesDemandes.value.forEach(fd => {
+    if (!form.value.filesByDemande.hasOwnProperty(fd.id)) {
+      form.value.filesByDemande[fd.id] = null
+    }
+  })
 }
 
 // Fonction pour gérer la sélection/désélection des détails
@@ -490,6 +491,20 @@ const validateForm = () => {
 
   // La sélection de type n'est plus obligatoire
 
+  // Validation des fichiers demandés obligatoires
+  if (filesDemandes.value && filesDemandes.value.length > 0) {
+    errors.value.files_demande = {}
+    filesDemandes.value.forEach(fd => {
+      if (fd.obligatoire && !form.value.filesByDemande[fd.id]) {
+        errors.value.files_demande[fd.id] = `Le fichier "${fd.libelle}" est obligatoire`
+      }
+    })
+    // Nettoyer si aucun message
+    if (Object.keys(errors.value.files_demande).length === 0) {
+      delete errors.value.files_demande
+    }
+  }
+
   return Object.keys(errors.value).length === 0
 }
 
@@ -547,9 +562,6 @@ const submitForm = async () => {
       }
     })
 
-    // Ajouter les fichiers sélectionnés avant l'envoi même si les fichiers n'ont pas été ajoutés
-    addFiles()
-
     // Construire le payload standardisé
     const payload = {
       tticket_id: ticketInfo.value.t_rec_ticket_id,
@@ -568,9 +580,12 @@ const submitForm = async () => {
       }
     })
 
-    // Ajouter les fichiers
-    form.value.files.forEach((file, index) => {
-      formData.append(`files[${index}]`, file)
+    // Ajouter les fichiers par demande selon b_rec_ticket_files
+    filesDemandes.value.forEach(fd => {
+      const fileObj = form.value.filesByDemande[fd.id]
+      if (fileObj) {
+        formData.append(`ticket_files[${fd.id}]`, fileObj)
+      }
     })
 
     const response = await api.post('/api/rec/tickets/save-complete', formData, {
@@ -611,20 +626,9 @@ const submitForm = async () => {
   }
 }
 
-// File handling methods
-const onNewFilesSelected = (files) => {
-  // Les fichiers sont automatiquement mis à jour dans newFiles
-}
-
-const addFiles = () => {
-  if (newFiles.value && newFiles.value.length > 0) {
-    form.value.files.push(...newFiles.value)
-    newFiles.value = null
-  }
-}
-
-const removeFile = (index) => {
-  form.value.files.splice(index, 1)
+// Gestion des fichiers demandés
+const removeDemandeFile = (demandeId) => {
+  form.value.filesByDemande[demandeId] = null
 }
 
 const onRejected = (rejectedEntries) => {
