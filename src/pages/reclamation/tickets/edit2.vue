@@ -333,7 +333,7 @@
                       </div>
                     </div>
 
-                    <div v-if="!findExistingFileForDemande(fd) || deletedByDemande[fd.id]" class="mt-2 flex items-center gap-3 w-full">
+                    <div v-if="!findExistingFileForDemande(fd)" class="mt-2 flex items-center gap-3 w-full">
                       <q-file
                         v-model="filesByDemande[fd.id]"
                         outlined
@@ -488,7 +488,7 @@ const isFormValid = computed(() => {
   // Vérifier les informations générales obligatoires via form.info_generales
   for (const info of form.value.info_generales) {
     const val = (info.value ?? '').toString()
-    if (info.key_attribut && (val.trim() === '')) {
+    if (info.obligatoire && (val.trim() === '')) {
       return false
     }
   }
@@ -526,8 +526,8 @@ const findExistingFileForDemande = (fd) => {
 const removeExistingFileForDemande = (fd) => {
   const file = findExistingFileForDemande(fd)
   if (file) {
-    removeExistingFile(file.id)
-    deletedByDemande.value[fd.id] = true
+    // Ne pas afficher l'input avant confirmation; passer l'id de demande pour marquer après onOk
+    removeExistingFile(file.id, fd.id)
   }
 }
 const loadTicketData = async () => {
@@ -969,7 +969,7 @@ const removeFile = (index) => {
   form.value.files.splice(index, 1)
 }
 
-const removeExistingFile = (fileId) => {
+const removeExistingFile = (fileId, demandeId = null) => {
   $q.dialog({
     title: 'Confirmer la suppression',
     message: 'Êtes-vous sûr de vouloir supprimer ce fichier ?',
@@ -983,6 +983,11 @@ const removeExistingFile = (fileId) => {
     const index = existingFiles.value.findIndex(f => f.id === fileId)
     if (index !== -1) {
       existingFiles.value.splice(index, 1)
+    }
+
+    // Marquer la demande comme supprimée uniquement après confirmation
+    if (demandeId !== null && demandeId !== undefined) {
+      deletedByDemande.value[demandeId] = true
     }
 
     $q.notify({
@@ -1136,6 +1141,13 @@ const normalizeDateDisplay = (val) => {
 }
 const sanitizeAmountInputEdit = (keyAttr, val) => {
   let raw = (val ?? '').toString()
+  // Si vide ou sans chiffres, mettre une valeur vide (ne pas forcer 0)
+  if (raw.trim().length === 0 || !/[0-9]/.test(raw)) {
+    form.value.infosGenerales[keyAttr] = ''
+    const itemEmpty = form.value.info_generales.find(i => i.key_attribut === keyAttr)
+    if (itemEmpty) itemEmpty.value = ''
+    return
+  }
   // garder chiffres et séparateurs , . et espaces
   raw = raw.replace(/[^\d.,\s]/g, '')
   // retirer espaces
@@ -1156,7 +1168,13 @@ const sanitizeAmountInputEdit = (keyAttr, val) => {
   // nettoyer la partie entière et enlever les zéros en tête
   intPart = intPart.replace(/[^\d]/g, '')
   intPart = intPart.replace(/^0+(?=\d)/, '')
-  if (intPart.length === 0) intPart = '0'
+  // Si après nettoyage il n'y a pas de partie entière, considérer comme vide
+  if (intPart.length === 0) {
+    form.value.infosGenerales[keyAttr] = ''
+    const itemNone = form.value.info_generales.find(i => i.key_attribut === keyAttr)
+    if (itemNone) itemNone.value = ''
+    return
+  }
 
   // regrouper par milliers avec '.'
   const grouped = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
