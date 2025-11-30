@@ -87,6 +87,18 @@
           >
             <q-tooltip>Ajouter d'autres directions</q-tooltip>
           </q-btn>
+          <!-- Nouveau bouton: Ajouter un motif pour une direction (mêmes conditions) -->
+          <q-btn
+            icon="edit_note"
+            color="green"
+            size="sm"
+            v-if="canAddDirection"
+            round
+            @click="openAddMotifDirectionDialog"
+            class="ml-2"
+          >
+            <q-tooltip>Changer la direction pilote</q-tooltip>
+          </q-btn>
           <!-- confirmi conditioon v if essq cab ou commercial ou type orientation == ticket ou default -->
           <q-btn
             icon="remove"
@@ -469,6 +481,92 @@
             :disable="!newMessage.subject || !newMessage.content"
           >
             Envoyer le message
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Motif Direction (q-select simple + q-editor) -->
+    <q-dialog v-model="showAddMotifDirectionDialog" persistent>
+      <q-card class="w-full" style="min-width: 60vw; max-width: 70vw; max-height: 80vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-green-50">
+          <q-icon name="edit_note" class="text-green-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-green-900">Changer la direction pilote </div>
+            <div class="text-sm text-green-700">Sélectionner une direction et saisir un motif lié</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div class="space-y-6">
+            <!-- Sélection simple de la direction -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">Direction</label>
+              <q-select
+                v-model="selectedDirectionMotif"
+                :options="allDirectionsOptions"
+                label="Sélectionner une direction"
+                outlined
+                dense
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                :loading="loadingDirections"
+                stack-label
+              >
+                <template #prepend>
+                  <q-icon name="business" class="text-green-600" />
+                </template>
+                <template v-slot:no-option>
+                  <q-item>
+                    <q-item-section class="text-grey">Aucune direction disponible</q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+            </div>
+
+            <!-- Motif via QEditor -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">Motif</label>
+              <q-editor
+                v-model="motifDirectionContent"
+                min-height="160px"
+                :toolbar="[
+                  ['bold', 'italic', 'underline'],
+                  ['unordered', 'ordered'],
+                  ['undo', 'redo']
+                ]"
+                placeholder="Expliquez le motif lié à la direction sélectionnée..."
+              />
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn
+            @click="closeAddMotifDirectionDialog"
+            color="grey-6"
+            outline
+            no-caps
+            class="px-6"
+          >
+            Annuler
+          </q-btn>
+          <q-btn
+            @click="sendDirectionMotif"
+            color="green-6"
+            no-caps
+            unelevated
+            class="px-6 ml-3"
+            :disable="!selectedDirectionMotif || !isMotifValid"
+          >
+            Envoyer le motif
           </q-btn>
         </q-card-actions>
       </q-card>
@@ -1547,6 +1645,12 @@ const closeFiles = ref(null)
 const closeAttachments = ref([])
 
 
+// Motif par direction — nouvel état
+const showAddMotifDirectionDialog = ref(false)
+const selectedDirectionMotif = ref(null)
+const motifDirectionContent = ref('')
+
+
 
 
 // Configuration du tableau
@@ -1663,6 +1767,23 @@ const showAssociatedDirections = computed(() => !!currentTicketId.value && direc
 const canAddDirection = computed(() => ticket_direction.value?.statut_direction=='traitement' && ticket_direction.value?.type_orientation=='ticket' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
 const canRemoveDirection = computed(() => ticket_direction.value?.statut_direction=='traitement' && ticket_direction.value?.type_orientation=='ticket' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
 const isLoadingDirections = computed(() => loadingDirections.value)
+
+// Options combinées (directions associées + non concernées), sans duplications
+const allDirectionsOptions = computed(() => {
+  const list = [...(directionOptions.value || []), ...(directionsNonConcerneOptions.value || [])]
+  const byValue = new Map()
+  list.forEach(d => {
+    if (d && !byValue.has(d.value)) byValue.set(d.value, d)
+  })
+  return Array.from(byValue.values())
+})
+
+// Validation du contenu de motif (texte non vide après stripping HTML)
+const isMotifValid = computed(() => {
+  const text = motifDirectionContent.value || ''
+  const stripped = text.replace(/<[^>]*>/g, '').trim()
+  return stripped.length > 0
+})
 
 const canShowConclusionButton = computed(() => ['clôturé','Recours clôturé'].includes(ticket.value?.status))
 const canShowNewMessageButton = computed(() => ticket_direction.value!=null && ticket_direction.value.statut_direction=='traitement' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
@@ -2478,6 +2599,69 @@ const formatFileSize = (bytes) => {
      $q.notify({ type: 'warning', message: 'Ajout de directions non autorisé dans cet état', position: 'top' })
    }
  }
+
+  // Ouvrir la modale de motif par direction
+  const openAddMotifDirectionDialog = async () => {
+    await loadMessages()
+    await loadDirections()
+    if (!currentTicketId.value) {
+      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+      return
+    }
+    if (canAddDirection.value) {
+      showAddMotifDirectionDialog.value = true
+    } else {
+      $q.notify({ type: 'warning', message: 'Ajout de motif non autorisé dans cet état', position: 'top' })
+    }
+  }
+
+  const closeAddMotifDirectionDialog = () => {
+    showAddMotifDirectionDialog.value = false
+    selectedDirectionMotif.value = null
+    motifDirectionContent.value = ''
+  }
+
+  // Envoyer le motif comme message vers la direction sélectionnée
+  const sendDirectionMotif = async () => {
+    if (!currentTicketId.value) {
+      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+      showAddMotifDirectionDialog.value = false
+      return
+    }
+
+    await loadMessages()
+    await loadDirections()
+    if (!canAddDirection.value) {
+      $q.notify({ type: 'warning', message: 'Création de motif non autorisée dans cet état', position: 'top' })
+      showAddMotifDirectionDialog.value = false
+      return
+    }
+
+    if (!selectedDirectionMotif.value || !isMotifValid.value) {
+      $q.notify({ type: 'negative', message: 'Veuillez sélectionner une direction et saisir un motif' })
+      return
+    }
+
+    try {
+      const payload = {
+        direction: selectedDirectionMotif.value,
+        motif: motifDirectionContent.value
+      }
+
+      const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/orientation-changement`, payload)
+
+      if (response.data?.success) {
+        $q.notify({ type: 'positive', message: 'Motif enregistré et direction mise à jour', position: 'top' })
+        closeAddMotifDirectionDialog()
+        await loadDirections()
+      } else {
+        throw new Error(response.data?.message || 'Erreur lors de l\'envoi du motif')
+      }
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi du motif:', error)
+      $q.notify({ type: 'negative', message: 'Erreur lors de l\'envoi du motif', position: 'top' })
+    }
+  }
 
  const openRemoveDirectionDialog = async () => {
    await loadMessages()
