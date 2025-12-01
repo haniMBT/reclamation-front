@@ -1748,7 +1748,8 @@ const hasChangeRequestForUserDirection = computed(() => {
   return directionOptions.value?.some(d => d.value === authStore.user.direction && d.type_orientation === 'changement')
 })
 const canShowOrientationDecisionButton = computed(() => {
-  return canShowNewMessageButton.value && hasChangeRequestForUserDirection.value
+  return  hasChangeRequestForUserDirection.value
+  // return canShowNewMessageButton.value && hasChangeRequestForUserDirection.value
 })
 
 
