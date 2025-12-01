@@ -719,7 +719,7 @@
           <q-icon name="warning" class="text-red-600 mr-3" size="2rem" />
           <div>
             <div class="text-xl font-semibold text-red-900">Confirmer la suppression</div>
-            <div class="text-sm text-red-700">Supprimer votre direction liée au ticket (type_orientation = 'changement_accepter')</div>
+            <!-- <div class="text-sm text-red-700">Supprimer votre direction liée au ticket (type_orientation = 'changement_accepter')</div> -->
           </div>
         </q-card-section>
 
@@ -728,11 +728,7 @@
         <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
           <div class="space-y-3 text-gray-800">
             <p>
-              Cette action supprime votre direction depuis la table <code>t_rec_ticket_direction</code> pour ce ticket.
-              La suppression cible uniquement les enregistrements dont <code>type_orientation</code> vaut <code>'changement_accepter'</code>.
-            </p>
-            <p>
-              Après confirmation, vous serez redirigé vers la liste des réclamations.
+              Si vous confirmez la suppression, vous ne serez plus concerné par cette réclamation.
             </p>
           </div>
         </q-card-section>
