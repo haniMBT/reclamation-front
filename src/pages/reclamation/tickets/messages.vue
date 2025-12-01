@@ -177,6 +177,17 @@
               Nouveau Message
             </q-btn>
             <q-btn
+              icon="info"
+              color="red-6"
+              no-caps
+              v-if="canShowRefusalMotifButton"
+              @click="openRefusalMotifDialog"
+              :disable="!currentTicketId"
+              class="px-6"
+            >
+              Motif refus pilote
+            </q-btn>
+            <q-btn
               icon="swap_horiz"
               color="blue-8"
               no-caps
@@ -658,6 +669,34 @@
           >
             Confirmer la décision
           </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Motif de refus du changement de pilote -->
+    <q-dialog v-model="showRefusalMotifDialog" persistent>
+      <q-card class="w-full" style="min-width: 50vw; max-width: 60vw; max-height: 70vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-red-50">
+          <q-icon name="info" class="text-red-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-red-900">Motif du refus du changement de pilote</div>
+            <div class="text-sm text-red-700">Affichage du motif consigné par la direction pilote</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div class="prose max-w-none">
+            <div v-html="ticket?.motif_refu_changement || ticketDetails?.motif_refu_changement || '—'"></div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn @click="closeRefusalMotifDialog" color="grey-6" outline no-caps class="px-6">Fermer</q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -1972,6 +2011,22 @@ const hasTicketDetailsDocumentAFournir = computed(() => !!ticketDetails.value?.d
 const hasTicketDetailsFiles = computed(() => !!ticketDetails.value?.files && ticketDetails.value.files.length > 0)
 const hasCloseAttachments = computed(() => !!closeAttachments.value && closeAttachments.value.length > 0)
 
+// Bouton "Motif refus pilote" — conditions combinées
+const hasMotifRefus = computed(() => {
+  const m = ticket.value?.motif_refu_changement || ticketDetails.value?.motif_refu_changement
+  // Accepte HTML; présence non nulle
+  return m != null && String(m).trim().length > 0
+})
+const isAccepterPiloterRefuse = computed(() => {
+  const v = ticket.value?.accepter_piloter ?? ticketDetails.value?.accepter_piloter
+  // 0 (refus) ou false
+  return v === 0 || v === false
+})
+const canShowRefusalMotifButton = computed(() => {
+  // mêmes conditions que "Ajouter une direction" + accepter_piloter == 0 + motif_refu_changement != null
+  return canAddDirection.value && isAccepterPiloterRefuse.value && hasMotifRefus.value
+})
+
 // Méthodes
 const goBack = () => {
   ticketStore.clearTicket()
@@ -2038,6 +2093,25 @@ const onCloseFilesSelected = (files) => {
   if (files && files.length > 0) {
     console.log('Fichiers de conclusion sélectionnés:', files)
   }
+}
+
+// Modale affichage du motif de refus de changement de pilote
+const showRefusalMotifDialog = ref(false)
+const openRefusalMotifDialog = async () => {
+  await loadMessages()
+  await loadDirections()
+  if (!currentTicketId.value) {
+    $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+    return
+  }
+  if (canShowRefusalMotifButton.value) {
+    showRefusalMotifDialog.value = true
+  } else {
+    $q.notify({ type: 'warning', message: 'Affichage du motif de refus non autorisé dans cet état', position: 'top' })
+  }
+}
+const closeRefusalMotifDialog = () => {
+  showRefusalMotifDialog.value = false
 }
 
 const addCloseFiles = () => {
