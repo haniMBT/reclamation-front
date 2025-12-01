@@ -176,6 +176,17 @@
             >
               Nouveau Message
             </q-btn>
+            <q-btn
+              icon="swap_horiz"
+              color="blue-8"
+              no-caps
+              v-if="canShowOrientationDecisionButton"
+              @click="openOrientationDecisionDialog"
+              :disable="!currentTicketId"
+              class="px-6"
+            >
+              Décision pilote
+            </q-btn>
             <!-- ticket_direction.type_orientation=='ticket' a confimet -->
             <q-btn
               icon="reply"
@@ -567,6 +578,85 @@
             :disable="!selectedDirectionMotif || !isMotifValid"
           >
             Envoyer le motif
+          </q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Décision Orientation (accept/refuse changement pilote) -->
+    <q-dialog v-model="showOrientationDecisionDialog" persistent>
+      <q-card class="w-full" style="min-width: 60vw; max-width: 70vw; max-height: 80vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-blue-50">
+          <q-icon name="gavel" class="text-blue-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-blue-900">Décision changement de pilote</div>
+            <div class="text-sm text-blue-700">Valider la demande de changement de direction pilote</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div class="space-y-6">
+            <!-- Informations sur la demande -->
+            <div class="space-y-2 bg-blue-50 border border-blue-100 p-4 rounded-md">
+              <div class="text-sm text-blue-800">
+                <span class="font-medium">Direction demandeuse:</span>
+                {{ ticket_direction?.direction?.libelle || ticket_direction?.libelle || '—' }}
+              </div>
+              <div class="text-sm text-blue-800">
+                <span class="font-medium">Motif du changement:</span>
+                <span v-html="(ticket?.motif_changement || ticketDetails?.motif_changement || '—')"></span>
+              </div>
+            </div>
+
+            <!-- Choix de décision -->
+            <div class="space-y-3">
+              <label class="block text-sm font-medium text-gray-700">Décision</label>
+              <div class="flex items-center space-x-6">
+                <q-radio v-model="orientationDecision.decision" val="accept" label="Accepter" color="green-6" />
+                <q-radio v-model="orientationDecision.decision" val="refuse" label="Refuser" color="negative" />
+              </div>
+            </div>
+
+            <!-- Motif de refus -->
+            <div class="space-y-2" v-if="orientationDecision.decision === 'refuse'">
+              <label class="block text-sm font-medium text-gray-700">Motif du refus</label>
+              <q-input
+                v-model="orientationDecision.motifRefus"
+                type="textarea"
+                outlined
+                dense
+                placeholder="Expliquez la raison du refus"
+                :rules="[val => !!val && val.trim().length > 2 || 'Le motif est requis']"
+                autogrow
+              />
+            </div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn
+            @click="closeOrientationDecisionDialog"
+            color="grey-6"
+            outline
+            no-caps
+            class="px-6"
+          >
+            Annuler
+          </q-btn>
+          <q-btn
+            @click="submitOrientationDecision"
+            color="blue-6"
+            no-caps
+            unelevated
+            class="px-6 ml-3"
+            :disable="!orientationDecision.decision || (orientationDecision.decision === 'refuse' && (!orientationDecision.motifRefus || orientationDecision.motifRefus.trim().length < 3))"
+          >
+            Confirmer la décision
           </q-btn>
         </q-card-actions>
       </q-card>
@@ -1650,6 +1740,17 @@ const showAddMotifDirectionDialog = ref(false)
 const selectedDirectionMotif = ref(null)
 const motifDirectionContent = ref('')
 
+// Décision orientation pilote
+const showOrientationDecisionDialog = ref(false)
+const orientationDecision = ref({ decision: null, motifRefus: '' })
+const hasChangeRequestForUserDirection = computed(() => {
+  if (!authStore.user?.direction) return false
+  return directionOptions.value?.some(d => d.value === authStore.user.direction && d.type_orientation === 'changement')
+})
+const canShowOrientationDecisionButton = computed(() => {
+  return canShowNewMessageButton.value && hasChangeRequestForUserDirection.value
+})
+
 
 
 
@@ -2686,7 +2787,9 @@ const formatFileSize = (bytes) => {
        directionOptions.value = response.data.data.map(direction => ({
          label: direction.label,
          value: direction.value,
-         id: direction.id
+         id: direction.id,
+         type_orientation: direction.type_orientation,
+         statut_direction: direction.statut_direction
        }))
 
        directionsNonConcerneOptions.value = response.data.directionsNonConcerne.map(direction => ({
@@ -2893,11 +2996,11 @@ const removeSelectedDirections = async () => {
      // Réinitialiser et fermer le dialog
      selectedRemoveDirections.value = []
      showRemoveDirectionDialog.value = false
-   }
- }
+  }
+}
 
- // Initialiser les options de directions non concernées
- onMounted(() => {
+// Initialiser les options de directions non concernées
+onMounted(() => {
 
    if (currentTicketId.value) {
      loadMessages()
@@ -2922,14 +3025,60 @@ watch(currentTicketId, (newId) => {
   }
 })
 
+// Modale de décision orientation pilote
+const openOrientationDecisionDialog = async () => {
+  await loadMessages()
+  await loadDirections()
+  if (!currentTicketId.value) {
+    $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+    return
+  }
+  if (!hasChangeRequestForUserDirection.value) {
+    $q.notify({ type: 'warning', message: 'Aucune demande de changement pour votre direction', position: 'top' })
+    return
+  }
+  orientationDecision.value = { decision: null, motifRefus: '' }
+  showOrientationDecisionDialog.value = true
+}
+
+const closeOrientationDecisionDialog = () => {
+  showOrientationDecisionDialog.value = false
+}
+
+const submitOrientationDecision = async () => {
+  try {
+    const payload = {
+      decision: orientationDecision.value.decision,
+      direction: authStore.user?.direction,
+      motif_refus: orientationDecision.value.motifRefus || null,
+    }
+console.log(payload);
+
+    if (!payload.decision || (payload.decision === 'refuse' && !payload.motif_refus)) {
+      $q.notify({ type: 'warning', message: 'Sélectionnez une décision et renseignez le motif de refus', position: 'top' })
+      return
+    }
+
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/orientation-changement/decision`, payload)
+    if (response.data.success) {
+      $q.notify({ type: 'positive', message: response.data.message || 'Décision enregistrée', position: 'top' })
+      await loadMessages()
+      await loadDirections()
+      showOrientationDecisionDialog.value = false
+    } else {
+      throw new Error(response.data.message || 'Erreur lors de l\'enregistrement de la décision')
+    }
+  } catch (error) {
+    console.error('Erreur décision orientation:', error)
+    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Erreur lors de l\'enregistrement de la décision', position: 'top' })
+  }
+}
 // Lifecycle hook déjà défini plus haut avec l'initialisation des directions
 </script>
-
 <style scoped>
 .messages-table {
   /* Style personnalisé pour le tableau des messages */
 }
-
 .messages-table .q-table__top,
 .messages-table .q-table__bottom,
 .messages-table thead tr:first-child th {
