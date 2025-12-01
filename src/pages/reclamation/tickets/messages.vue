@@ -177,6 +177,17 @@
               Nouveau Message
             </q-btn>
             <q-btn
+              icon="delete"
+              color="negative"
+              no-caps
+              v-if="canShowDeleteSelfDirectionButton"
+              @click="openDeleteSelfDirectionDialog"
+              :disable="!currentTicketId"
+              class="px-6"
+            >
+              Supprimer
+            </q-btn>
+            <q-btn
               icon="info"
               color="red-6"
               no-caps
@@ -697,6 +708,41 @@
         <q-card-actions class="p-6 bg-gray-50">
           <q-space />
           <q-btn @click="closeRefusalMotifDialog" color="grey-6" outline no-caps class="px-6">Fermer</q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Confirmation Suppression de la direction (changement_accepter) -->
+    <q-dialog v-model="showDeleteSelfDirectionDialog" persistent>
+      <q-card class="w-full" style="min-width: 50vw; max-width: 60vw; max-height: 60vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-red-50">
+          <q-icon name="warning" class="text-red-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-red-900">Confirmer la suppression</div>
+            <div class="text-sm text-red-700">Supprimer votre direction liée au ticket (type_orientation = 'changement_accepter')</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div class="space-y-3 text-gray-800">
+            <p>
+              Cette action supprime votre direction depuis la table <code>t_rec_ticket_direction</code> pour ce ticket.
+              La suppression cible uniquement les enregistrements dont <code>type_orientation</code> vaut <code>'changement_accepter'</code>.
+            </p>
+            <p>
+              Après confirmation, vous serez redirigé vers la liste des réclamations.
+            </p>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn @click="closeDeleteSelfDirectionDialog" color="grey-6" outline no-caps class="px-6">Annuler</q-btn>
+          <q-btn @click="confirmDeleteSelfDirection" color="negative" no-caps unelevated class="px-6 ml-3">Confirmer la suppression</q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -2027,6 +2073,13 @@ const canShowRefusalMotifButton = computed(() => {
   return canAddDirection.value && isAccepterPiloterRefuse.value && hasMotifRefus.value
 })
 
+// Bouton "Supprimer" — visible si l’utilisateur possède type_orientation == 'changement_accepter'
+const hasAcceptedChangeForUserDirection = computed(() => {
+  if (!authStore.user?.direction) return false
+  return (directionOptions.value || []).some(d => d?.value === authStore.user.direction && d?.type_orientation === 'changement_accepter')
+})
+const canShowDeleteSelfDirectionButton = computed(() => hasAcceptedChangeForUserDirection.value)
+
 // Méthodes
 const goBack = () => {
   ticketStore.clearTicket()
@@ -2095,8 +2148,37 @@ const onCloseFilesSelected = (files) => {
   }
 }
 
+// Supprimer la direction de l’utilisateur lorsque type_orientation == 'changement_accepter'
+const deleteSelfDirection = async () => {
+  await loadMessages()
+  await loadDirections()
+  if (!currentTicketId.value) {
+    $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
+    return
+  }
+  if (!canShowDeleteSelfDirectionButton.value) {
+    $q.notify({ type: 'warning', message: "Suppression non disponible: la direction n'est pas en état 'changement_accepter'", position: 'top' })
+    return
+  }
+
+  try {
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/directions/self/delete`)
+    if (response.data?.success) {
+      $q.notify({ type: 'positive', message: 'Direction supprimée avec succès', position: 'top' })
+      await loadDirections()
+      await loadMessages()
+    } else {
+      throw new Error(response.data?.message || 'Échec de la suppression de la direction')
+    }
+  } catch (error) {
+    console.error('Erreur suppression direction (self):', error)
+    $q.notify({ type: 'negative', message: 'Erreur lors de la suppression de la direction', position: 'top' })
+  }
+}
+
 // Modale affichage du motif de refus de changement de pilote
 const showRefusalMotifDialog = ref(false)
+const showDeleteSelfDirectionDialog = ref(false)
 const openRefusalMotifDialog = async () => {
   await loadMessages()
   await loadDirections()
@@ -2112,6 +2194,23 @@ const openRefusalMotifDialog = async () => {
 }
 const closeRefusalMotifDialog = () => {
   showRefusalMotifDialog.value = false
+}
+
+const openDeleteSelfDirectionDialog = () => {
+  showDeleteSelfDirectionDialog.value = true
+}
+const closeDeleteSelfDirectionDialog = () => {
+  showDeleteSelfDirectionDialog.value = false
+}
+const confirmDeleteSelfDirection = async () => {
+  try {
+    await deleteSelfDirection()
+    showDeleteSelfDirectionDialog.value = false
+    $q.notify({ type: 'positive', message: 'Direction supprimée. Redirection en cours…' })
+    router.push({ path: '/reclamations/allTicket' })
+  } catch (e) {
+    // L’erreur est notifiée dans deleteSelfDirection(); on laisse le modal ouvert
+  }
 }
 
 const addCloseFiles = () => {
