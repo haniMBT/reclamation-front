@@ -3066,6 +3066,9 @@ console.log(payload);
       await loadMessages()
       await loadDirections()
       showOrientationDecisionDialog.value = false
+      if (payload.decision === 'refuse') {
+        router.push({ name: 'tickets-all' })
+      }
     } else {
       throw new Error(response.data.message || 'Erreur lors de l\'enregistrement de la décision')
     }
