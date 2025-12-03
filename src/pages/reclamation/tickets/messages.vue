@@ -2305,12 +2305,28 @@ const truncateText = (text, maxLength) => {
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
 
-const viewMessageDetail = (message) => {
+const viewMessageDetail = async (message) => {
   selectedMessage.value = message
   showMessageDetail.value = true
-  // Marquer comme lu
-  if (!message.isRead) {
-    message.isRead = true
+
+  // Vérifier si la direction de l'utilisateur est destinataire du message
+  const userDirection = authStore.user?.direction
+  const isUserRecipient = Array.isArray(message?.destinataires)
+    && message.destinataires.some(d => d?.direction_destinataire === userDirection
+    // || d?.direction_destinataire === 'directions'
+    )
+
+  if (isUserRecipient && userDirection) {
+    try {
+      await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { direction: userDirection })
+      // Mettre à jour localement le statut du destinataire correspondant
+      const idx = message.destinataires.findIndex(d => d?.direction_destinataire === userDirection)
+      if (idx !== -1) {
+        message.destinataires[idx].statut = 'lu'
+      }
+    } catch (error) {
+      console.error('Erreur lors du marquage du message comme lu:', error)
+    }
   }
 }
 
