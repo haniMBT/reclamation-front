@@ -299,7 +299,7 @@
             <q-expansion-item :header-inset-level="1" label="Nature old" expand-icon="0" to="/reclamations/nature" />
             <q-expansion-item :header-inset-level="1" label="Liste des réclamations" expand-icon="0" to="/reclamations/allTicket" />
             <q-expansion-item :header-inset-level="1" label="Nouvelle réclamation" expand-icon="0" to="/reclamations/ticket" />
-            <q-expansion-item :header-inset-level="1" label="Parametrage" expand-icon="0" to="/reclamations/parametrage" />
+            <q-expansion-item v-if="AllPrivilege?.privilege_parametrage.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr.role=='Admin'" :header-inset-level="1" label="Parametrage" expand-icon="0" to="/reclamations/parametrage" />
 
           </q-expansion-item>
 
@@ -400,6 +400,18 @@ const router = useRouter();
 const authStore = useAuthStore();
 const $q = useQuasar();
 
+// Privilege pour "liste_des_reclamations" stocké en mémoire (non affiché)
+const AllPrivilege = ref(null);
+const fetchAllPrivilege = async () => {
+  try {
+    const res = await api.get('api/all/privileges');
+    AllPrivilege.value = res?.data ?? null;
+    console.log(AllPrivilege.value.privilege_parametrage.role,'AllPrivilege');
+  } catch (error) {
+    console.error('Erreur lors de la récupération du privilège liste_des_reclamations:', error);
+  }
+};
+
 // Styles dynamiques pour les particules
 const particleStyle = (index) => {
   const angle = (index / 12) * 360;
@@ -462,6 +474,9 @@ onMounted(async () => {
   setTimeout(() => {
     visible.value = false;
   }, 1000);
+
+  // Récupérer le privilège côté backend et le stocker uniquement en ref
+  fetchAllPrivilege();
 });
 
 
