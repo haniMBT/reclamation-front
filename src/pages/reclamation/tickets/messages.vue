@@ -2414,6 +2414,24 @@ const viewMessageDetail = async (message) => {
       console.error('Erreur lors du marquage du message comme lu:', error)
     }
   }
+
+  // Si destinataire = client et l'utilisateur n'a pas de direction, marquer comme lu côté client
+  const hasNoDirection = !authStore.user?.direction
+  const clientIdx = Array.isArray(message?.destinataires)
+    ? message.destinataires.findIndex(d => d?.direction_destinataire === 'client' && d?.statut !== 'lu' && !d?.date_lecture)
+    : -1
+
+  if (hasNoDirection && clientIdx !== -1) {
+    try {
+      await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { recipient: 'client' })
+      // Mettre à jour localement le destinataire client
+      message.destinataires[clientIdx].statut = 'lu'
+      message.destinataires[clientIdx].lu = 1
+      message.destinataires[clientIdx].date_lecture = new Date().toISOString()
+    } catch (error) {
+      console.error('Erreur lors du marquage client comme lu:', error)
+    }
+  }
 }
 
 const closeMessageDetail = () => {
