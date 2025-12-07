@@ -286,6 +286,26 @@
           </q-td>
         </template>
 
+        <!-- Slot pour suivi de lecture X/Y + détails -->
+        <template v-slot:body-cell-reading_progress="props">
+          <q-td :props="props" class="items-center">
+            <div class="flex items-center justify-center gap-2">
+              <span class="text-gray-700">
+                {{ getReadCount(props.row) }}/{{ getTotalDirectionRecipients(props.row) }}
+              </span>
+              <q-btn
+                flat
+                round
+                dense
+                icon="more_horiz"
+                @click="openReadStatusDialog(props.row)"
+              >
+                <q-tooltip>Détails lecture</q-tooltip>
+              </q-btn>
+            </div>
+          </q-td>
+        </template>
+
         <!-- Slot pour les actions -->
         <template v-slot:body-cell-actions="props">
           <q-td :props="props">
@@ -1279,6 +1299,45 @@
       </q-card>
     </q-dialog>
 
+    <!-- Dialog Suivi de lecture -->
+    <q-dialog v-model="showReadStatusDialog" persistent>
+      <q-card class="w-full" style="min-width: 50vw; max-width: 60vw; max-height: 70vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-indigo-50">
+          <q-icon name="more_horiz" class="text-indigo-600 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-indigo-900">Suivi de lecture</div>
+            <div class="text-sm text-indigo-700">{{ readStatusMessageTitle }}</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div v-if="readStatusEntries && readStatusEntries.length" class="space-y-2">
+            <q-list bordered separator>
+              <q-item v-for="entry in readStatusEntries" :key="entry.code" class="bg-white rounded-lg shadow-sm">
+                <q-item-section avatar>
+                  <q-icon name="business" class="text-indigo-600" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="font-medium">{{ entry.label }}</q-item-label>
+                  <q-item-label caption class="text-gray-500">Lecture: {{ formatDateTime(entry.date) }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+          <div v-else class="text-gray-600">Aucune direction n’a lu ce message pour le moment.</div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn @click="closeReadStatusDialog" color="grey-6" outline no-caps class="px-6">Fermer</q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
     <!-- Modal Voir Réclamation - Design Moderne -->
     <q-dialog v-model="showTicketDetailDialog" transition-show="slide-up" transition-hide="slide-down">
       <q-card class="bg-gradient-to-br from-gray-50 to-gray-100" style="width: 90vw; height: 90vh; max-width: 90vw; max-height: 90vh;">
@@ -1861,6 +1920,13 @@ const columns = [
     sortable: false
   },
   {
+    name: 'reading_progress',
+    label: 'Suivi de lecture',
+    align: 'center',
+    field: 'reading_progress',
+    sortable: false
+  },
+  {
     name: 'actions',
     label: 'Actions',
     align: 'center',
@@ -2294,6 +2360,22 @@ const formatDate = (dateString) => {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit'
+    })
+  } catch {
+    return dateString
+  }
+}
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return '—'
+  try {
+    return new Date(dateString).toLocaleString('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     })
   } catch {
     return dateString
@@ -2789,6 +2871,36 @@ const formatFileSize = (bytes) => {
   const i = Math.floor(Math.log(bytes) / Math.log(k))
 
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
+
+// Suivi de lecture (compteurs et détails)
+const isDirectionRecipient = (d) => !!d?.direction_destinataire && d.direction_destinataire !== 'client' && d.direction_destinataire !== 'directions'
+const getTotalDirectionRecipients = (message) => Array.isArray(message?.destinataires) ? message.destinataires.filter(isDirectionRecipient).length : 0
+const getReadCount = (message) => Array.isArray(message?.destinataires) ? message.destinataires.filter(d => isDirectionRecipient(d) && (d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)).length : 0
+
+const showReadStatusDialog = ref(false)
+const readStatusEntries = ref([])
+const readStatusMessageTitle = ref('')
+const openReadStatusDialog = (message) => {
+  const recipients = Array.isArray(message?.destinataires) ? message.destinataires.filter(d => isDirectionRecipient(d)) : []
+  readStatusEntries.value = recipients
+    .filter(d => d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
+    .map(d => ({
+      code: d.direction_destinataire,
+      label: getDirectionLabel(d.direction_destinataire),
+      date: d.date_lecture || null
+    }))
+  readStatusMessageTitle.value = message?.titre || message?.subject || 'Suivi de lecture'
+  showReadStatusDialog.value = true
+}
+const closeReadStatusDialog = () => {
+  showReadStatusDialog.value = false
+  readStatusEntries.value = []
+  readStatusMessageTitle.value = ''
+}
+const getDirectionLabel = (code) => {
+  const found = allDirectionsOptions.value?.find(d => d.value === code)
+  return found?.label || code
 }
 
 // Charger les directions disponibles
