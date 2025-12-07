@@ -1312,7 +1312,7 @@
 
         <q-separator />
 
-        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+        <q-card-section class="q-pa-lg overflow-auto relative" style="flex: 1;">
           <div v-if="readStatusEntries && readStatusEntries.length" class="space-y-2">
             <q-list bordered separator>
               <q-item v-for="entry in readStatusEntries" :key="entry.code" class="bg-white rounded-lg shadow-sm">
@@ -1327,6 +1327,10 @@
             </q-list>
           </div>
           <div v-else class="text-gray-600">Aucune direction n’a lu ce message pour le moment.</div>
+
+          <q-inner-loading :showing="readStatusRefreshing">
+            <q-spinner-dots size="50px" color="indigo-6" />
+          </q-inner-loading>
         </q-card-section>
 
         <q-separator />
@@ -2881,17 +2885,30 @@ const getReadCount = (message) => Array.isArray(message?.destinataires) ? messag
 const showReadStatusDialog = ref(false)
 const readStatusEntries = ref([])
 const readStatusMessageTitle = ref('')
-const openReadStatusDialog = (message) => {
-  const recipients = Array.isArray(message?.destinataires) ? message.destinataires.filter(d => isDirectionRecipient(d)) : []
-  readStatusEntries.value = recipients
-    .filter(d => d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
-    .map(d => ({
-      code: d.direction_destinataire,
-      label: getDirectionLabel(d.direction_destinataire),
-      date: d.date_lecture || null
-    }))
-  readStatusMessageTitle.value = message?.titre || message?.subject || 'Suivi de lecture'
-  showReadStatusDialog.value = true
+const readStatusRefreshing = ref(false)
+const openReadStatusDialog = async (message) => {
+  try {
+    readStatusRefreshing.value = true
+    await loadMessages()
+    await loadDirections()
+    const fresh = Array.isArray(messages.value) ? messages.value.find(m => m.id === message?.id) : null
+    const source = fresh || message
+    const recipients = Array.isArray(source?.destinataires) ? source.destinataires.filter(d => isDirectionRecipient(d)) : []
+    readStatusEntries.value = recipients
+      .filter(d => d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
+      .map(d => ({
+        code: d.direction_destinataire,
+        label: getDirectionLabel(d.direction_destinataire),
+        date: d.date_lecture || null
+      }))
+    readStatusMessageTitle.value = source?.titre || source?.subject || 'Suivi de lecture'
+    showReadStatusDialog.value = true
+  } catch (error) {
+    console.error('Erreur lors du rafraîchissement des données de lecture:', error)
+    $q.notify({ type: 'negative', message: 'Impossible de rafraîchir les données de lecture', position: 'top' })
+  } finally {
+    readStatusRefreshing.value = false
+  }
 }
 const closeReadStatusDialog = () => {
   showReadStatusDialog.value = false
