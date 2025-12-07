@@ -2398,7 +2398,7 @@ const viewMessageDetail = async (message) => {
   // Vérifier si la direction de l'utilisateur est destinataire du message
   const userDirection = authStore.user?.direction
   const isUserRecipient = Array.isArray(message?.destinataires)
-    && message.destinataires.some(d => d?.direction_destinataire === userDirection
+    && message.destinataires.some(d => d?.direction_destinataire === userDirection && d?.statut !== 'lu'
     // || d?.direction_destinataire === 'directions'
     )
 
