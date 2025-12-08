@@ -2409,6 +2409,8 @@ const viewMessageDetail = async (message) => {
       const idx = message.destinataires.findIndex(d => d?.direction_destinataire === userDirection)
       if (idx !== -1) {
         message.destinataires[idx].statut = 'lu'
+        message.destinataires[idx].lu = 1
+        message.destinataires[idx].date_lecture = new Date().toISOString()
       }
     } catch (error) {
       console.error('Erreur lors du marquage du message comme lu:', error)
@@ -2430,6 +2432,23 @@ const viewMessageDetail = async (message) => {
       message.destinataires[clientIdx].date_lecture = new Date().toISOString()
     } catch (error) {
       console.error('Erreur lors du marquage client comme lu:', error)
+    }
+  }
+
+  // Si destinataire = client et l'utilisateur n'a pas de direction, marquer comme lu côté client
+  const pilotIdx = Array.isArray(message?.destinataires)
+    ? message.destinataires.findIndex(d => d?.direction_destinataire === 'directions' && d?.statut !== 'lu' && !d?.date_lecture)
+    : -1
+
+  if (pilotIdx !== -1) {
+    try {
+      await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { recipient: 'directions' })
+      // Mettre à jour localement le destinataire client
+      message.destinataires[pilotIdx].statut = 'lu'
+      message.destinataires[pilotIdx].lu = 1
+      message.destinataires[pilotIdx].date_lecture = new Date().toISOString()
+    } catch (error) {
+      console.error('Erreur lors du marquage directions comme lu:', error)
     }
   }
 }
