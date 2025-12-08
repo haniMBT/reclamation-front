@@ -287,24 +287,25 @@
         </template>
 
         <!-- Slot pour suivi de lecture (directions: Lu/Non lu, sinon X/Y) + détails -->
-<template v-slot:body-cell-reading_progress="props">
+        <template v-slot:body-cell-reading_progress="props">
           <q-td :props="props" class="items-center">
             <div class="flex items-center justify-center gap-2">
-  <span v-if="isClientTarget(props.row)" class="text-gray-700">
-    {{ getClientReadLabel(props.row) }}
-  </span>
-  <span v-else-if="isDirectionsBroadcast(props.row)" class="text-gray-700">
-    {{ getDirectionsReadLabel(props.row) }}
-  </span>
+              <span v-if="isClientTarget(props.row)" class="text-gray-700">
+                {{ getClientReadLabel(props.row) }}
+              </span>
+              <span v-else-if="isDirectionsBroadcast(props.row)" class="text-gray-700">
+                {{ getDirectionsReadLabel(props.row) }}
+              </span>
               <span v-else class="text-gray-700">
                 {{ getReadCount(props.row) }}/{{ getTotalDirectionRecipients(props.row) }}
               </span>
               <q-btn
+                v-if="authStore.user.direction!=null"
                 flat
                 round
                 dense
                 icon="more_horiz"
-  @click="openReadStatusDialog(props.row)"
+               @click="openReadStatusDialog(props.row)"
               >
                 <q-tooltip>Détails lecture</q-tooltip>
               </q-btn>
