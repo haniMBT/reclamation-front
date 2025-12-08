@@ -265,6 +265,31 @@
           </q-td>
         </template>
 
+        <!-- Slot pour suivi de lecture (client/directions: Lu/Non lu, sinon X/Y) + détails -->
+        <template v-slot:body-cell-reading_progress="props">
+          <q-td :props="props" class="items-center">
+            <div class="flex items-center justify-center gap-2">
+              <span v-if="isClientTarget(props.row)" class="text-gray-700">
+                {{ getClientReadLabel(props.row) }}
+              </span>
+              <span v-else-if="isDirectionsBroadcast(props.row)" class="text-gray-700">
+                {{ getDirectionsReadLabel(props.row) }}
+              </span>
+              <span v-else class="text-gray-700">
+                {{ getReadCount(props.row) }}/{{ getTotalDirectionRecipients(props.row) }}
+              </span>
+              <q-btn
+                flat
+                round
+                dense
+                icon="more_horiz"
+                @click="openReadStatusDialog(props.row)"
+              >
+                <q-tooltip>Détails lecture</q-tooltip>
+              </q-btn>
+            </div>
+          </q-td>
+        </template>
         <!-- Slot pour les actions -->
         <template v-slot:body-cell-actions="props">
           <q-td :props="props">
@@ -894,6 +919,54 @@
         <q-card-actions class="p-6 bg-gray-50">
           <q-space />
           <q-btn @click="closeConclusionDialog" color="grey-6" outline no-caps class="px-6">Fermer</q-btn>
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
+
+    <!-- Dialog Suivi de lecture -->
+    <q-dialog v-model="showReadStatusDialog">
+      <q-card class="w-full" style="min-width: 60vw; max-width: 70vw; max-height: 80vh; display: flex; flex-direction: column;">
+        <q-card-section class="flex items-center bg-blue-50">
+          <q-icon name="visibility" class="text-blue-600 mr-3" size="2rem" />
+          <div class="flex-1">
+            <div class="text-xl font-semibold text-blue-900">Suivi de lecture</div>
+            <div class="text-sm text-blue-700">{{ readStatusMessageTitle }}</div>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+        <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+          <div v-if="readStatusRefreshing" class="flex items-center justify-center py-4">
+            <q-spinner color="blue" size="2em" />
+            <span class="ml-2 text-gray-600">Chargement du suivi...</span>
+          </div>
+          <div v-else>
+            <q-list bordered class="rounded-lg">
+              <q-item v-for="entry in readStatusEntries" :key="entry.code">
+                <q-item-section avatar>
+                  <q-icon name="visibility" class="text-green-600" />
+                </q-item-section>
+                <q-item-section>
+                  <q-item-label class="font-medium">{{ entry.label }}</q-item-label>
+                  <q-item-label caption class="text-gray-600">
+                    <span v-if="entry.date">Lu le {{ entry.date }}</span>
+                    <span v-else>Non lu</span>
+                  </q-item-label>
+                </q-item-section>
+              </q-item>
+              <q-item v-if="readStatusEntries.length === 0">
+                <q-item-section>
+                  <q-item-label caption>Aucune donnée de lecture disponible</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </div>
+        </q-card-section>
+
+        <q-card-actions class="p-6 bg-gray-50">
+          <q-space />
+          <q-btn @click="closeReadStatusDialog" color="grey-6" outline no-caps class="px-6">Fermer</q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -1610,6 +1683,13 @@ const columns = [
     sortable: false
   },
   {
+    name: 'reading_progress',
+    label: 'Suivi de lecture',
+    align: 'center',
+    field: 'reading_progress',
+    sortable: false
+  },
+  {
     name: 'actions',
     label: 'Actions',
     align: 'center',
@@ -1617,6 +1697,111 @@ const columns = [
     sortable: false
   }
 ]
+
+// Suivi de lecture: helpers et état du dialogue
+const isDirectionRecipient = (d) => !!d?.direction_destinataire && d.direction_destinataire !== 'client' && d.direction_destinataire !== 'directions'
+const getTotalDirectionRecipients = (message) => Array.isArray(message?.destinataires) ? message.destinataires.filter(isDirectionRecipient).length : 0
+const getReadCount = (message) => Array.isArray(message?.destinataires) ? message.destinataires.filter(d => isDirectionRecipient(d) && (d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)).length : 0
+
+// 'client' helpers
+const isClientTarget = (message) => Array.isArray(message?.destinataires)
+  ? message.destinataires.some(d => d?.direction_destinataire == 'client')
+  : false
+const getClientRecipient = (message) => Array.isArray(message?.destinataires)
+  ? message.destinataires.find(d => d?.direction_destinataire == 'client')
+  : null
+const isClientRead = (message) => {
+  const d = getClientRecipient(message)
+  return !!d && (d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
+}
+const getClientReadLabel = (message) => isClientRead(message) ? 'Lu' : 'Non lu'
+
+// 'directions' helpers
+const isDirectionsBroadcast = (message) => Array.isArray(message?.destinataires)
+  ? message.destinataires.some(d => d?.direction_destinataire === 'directions')
+  : false
+const getDirectionsRecipient = (message) => Array.isArray(message?.destinataires)
+  ? message.destinataires.find(d => d?.direction_destinataire === 'directions')
+  : null
+const isDirectionsRead = (message) => {
+  const d = getDirectionsRecipient(message)
+  return !!d && (d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
+}
+const getDirectionsReadLabel = (message) => isDirectionsRead(message) ? 'Lu' : 'Non lu'
+
+// Dialog state
+const showReadStatusDialog = ref(false)
+const readStatusEntries = ref([])
+const readStatusMessageTitle = ref('')
+const readStatusRefreshing = ref(false)
+
+const getDirectionLabel = (code) => {
+  const found = directionOptions.value?.find(d => d.value === code)
+  return found?.label || code
+}
+
+const formatDateTime = (dateString) => {
+  if (!dateString) return '—'
+  try {
+    return new Date(dateString).toLocaleString('fr-FR', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    })
+  } catch {
+    return dateString
+  }
+}
+
+const openReadStatusDialog = async (message) => {
+  try {
+    readStatusRefreshing.value = true
+    await loadMessages()
+    await loadDirections()
+    const fresh = Array.isArray(messages.value) ? messages.value.find(m => m.id === message?.id) : null
+    const source = fresh || message
+    if (isClientTarget(source)) {
+      const d = getClientRecipient(source)
+      readStatusEntries.value = [{
+        code: 'client',
+        label: 'Client',
+        date: d?.date_lecture ? formatDateTime(d.date_lecture) : null
+      }]
+    } else if (isDirectionsBroadcast(source)) {
+      const d = getDirectionsRecipient(source)
+      readStatusEntries.value = [{
+        code: 'directions',
+        label: 'Directions',
+        date: d?.date_lecture ? formatDateTime(d.date_lecture) : null
+      }]
+    } else {
+      const recipients = Array.isArray(source?.destinataires) ? source.destinataires.filter(d => isDirectionRecipient(d)) : []
+      readStatusEntries.value = recipients
+        .filter(d => d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
+        .map(d => ({
+          code: d.direction_destinataire,
+          label: getDirectionLabel(d.direction_destinataire),
+          date: d.date_lecture ? formatDateTime(d.date_lecture) : null
+        }))
+    }
+    readStatusMessageTitle.value = source?.titre || source?.subject || 'Suivi de lecture'
+    showReadStatusDialog.value = true
+  } catch (error) {
+    console.error('Erreur lors du rafraîchissement des données de lecture:', error)
+    $q.notify({ type: 'negative', message: 'Impossible de rafraîchir les données de lecture', position: 'top' })
+  } finally {
+    readStatusRefreshing.value = false
+  }
+}
+
+const closeReadStatusDialog = () => {
+  showReadStatusDialog.value = false
+  readStatusEntries.value = []
+  readStatusMessageTitle.value = ''
+}
 
 // Configuration de la pagination
 const pagination = ref({
