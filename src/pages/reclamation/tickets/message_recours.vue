@@ -2166,12 +2166,24 @@ const truncateText = (text, maxLength) => {
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
 
-const viewMessageDetail = (message) => {
+const viewMessageDetail = async (message) => {
   selectedMessage.value = message
   showMessageDetail.value = true
   // Marquer comme lu
-  if (!message.isRead) {
-    message.isRead = true
+   const pilotIdx = Array.isArray(message?.destinataires)
+    ? message.destinataires.findIndex(d => d?.direction_destinataire === 'directions' && d?.statut !== 'lu' && !d?.date_lecture)
+    : -1
+
+  if (pilotIdx !== -1 && isPresidentRecours.value) {
+    try {
+      await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { recipient: 'directions' })
+      // Mettre à jour localement le destinataire client
+      message.destinataires[pilotIdx].statut = 'lu'
+      message.destinataires[pilotIdx].lu = 1
+      message.destinataires[pilotIdx].date_lecture = new Date().toISOString()
+    } catch (error) {
+      console.error('Erreur lors du marquage directions comme lu:', error)
+    }
   }
 }
 
