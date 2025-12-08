@@ -2440,7 +2440,7 @@ const viewMessageDetail = async (message) => {
     ? message.destinataires.findIndex(d => d?.direction_destinataire === 'directions' && d?.statut !== 'lu' && !d?.date_lecture)
     : -1
 
-  if (pilotIdx !== -1) {
+  if (pilotIdx !== -1 && ticket_direction.value!=null && ticket_direction.value?.type_orientation=='ticket') {
     try {
       await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { recipient: 'directions' })
       // Mettre à jour localement le destinataire client
