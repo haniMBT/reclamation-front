@@ -286,11 +286,14 @@
           </q-td>
         </template>
 
-        <!-- Slot pour suivi de lecture X/Y + détails -->
-        <template v-slot:body-cell-reading_progress="props">
+        <!-- Slot pour suivi de lecture (directions: Lu/Non lu, sinon X/Y) + détails -->
+<template v-slot:body-cell-reading_progress="props">
           <q-td :props="props" class="items-center">
             <div class="flex items-center justify-center gap-2">
-              <span class="text-gray-700">
+  <span v-if="isDirectionsBroadcast(props.row)" class="text-gray-700">
+    {{ getDirectionsReadLabel(props.row) }}
+  </span>
+              <span v-else class="text-gray-700">
                 {{ getReadCount(props.row) }}/{{ getTotalDirectionRecipients(props.row) }}
               </span>
               <q-btn
@@ -298,7 +301,7 @@
                 round
                 dense
                 icon="more_horiz"
-                @click="openReadStatusDialog(props.row)"
+  @click="openReadStatusDialog(props.row)"
               >
                 <q-tooltip>Détails lecture</q-tooltip>
               </q-btn>
@@ -2919,6 +2922,19 @@ const isDirectionRecipient = (d) => !!d?.direction_destinataire && d.direction_d
 const getTotalDirectionRecipients = (message) => Array.isArray(message?.destinataires) ? message.destinataires.filter(isDirectionRecipient).length : 0
 const getReadCount = (message) => Array.isArray(message?.destinataires) ? message.destinataires.filter(d => isDirectionRecipient(d) && (d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)).length : 0
 
+// Helpers pour 'directions': Lu/Non lu pour la direction de l'utilisateur
+const isDirectionsBroadcast = (message) => Array.isArray(message?.destinataires)
+  ? message.destinataires.some(d => d?.direction_destinataire === 'directions')
+  : false
+const getDirectionsRecipient = (message) => Array.isArray(message?.destinataires)
+  ? message.destinataires.find(d => d?.direction_destinataire === 'directions')
+  : null
+const isDirectionsRead = (message) => {
+  const d = getDirectionsRecipient(message)
+  return !!d && (d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
+}
+const getDirectionsReadLabel = (message) => isDirectionsRead(message) ? 'Lu' : 'Non lu'
+
 const showReadStatusDialog = ref(false)
 const readStatusEntries = ref([])
 const readStatusMessageTitle = ref('')
@@ -2930,14 +2946,23 @@ const openReadStatusDialog = async (message) => {
     await loadDirections()
     const fresh = Array.isArray(messages.value) ? messages.value.find(m => m.id === message?.id) : null
     const source = fresh || message
-    const recipients = Array.isArray(source?.destinataires) ? source.destinataires.filter(d => isDirectionRecipient(d)) : []
-    readStatusEntries.value = recipients
-      .filter(d => d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
-      .map(d => ({
-        code: d.direction_destinataire,
-        label: getDirectionLabel(d.direction_destinataire),
-        date: d.date_lecture || null
-      }))
+  if (isDirectionsBroadcast(source)) {
+    const d = getDirectionsRecipient(source)
+    readStatusEntries.value = [{
+      code: 'directions',
+      label: 'Directions',
+      date: d?.date_lecture ? formatDateTime(d.date_lecture) : null
+    }]
+    } else {
+      const recipients = Array.isArray(source?.destinataires) ? source.destinataires.filter(d => isDirectionRecipient(d)) : []
+      readStatusEntries.value = recipients
+        .filter(d => d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
+        .map(d => ({
+          code: d.direction_destinataire,
+          label: getDirectionLabel(d.direction_destinataire),
+          date: d.date_lecture ? formatDateTime(d.date_lecture) : null
+        }))
+    }
     readStatusMessageTitle.value = source?.titre || source?.subject || 'Suivi de lecture'
     showReadStatusDialog.value = true
   } catch (error) {
