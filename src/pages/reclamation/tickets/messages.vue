@@ -290,7 +290,10 @@
 <template v-slot:body-cell-reading_progress="props">
           <q-td :props="props" class="items-center">
             <div class="flex items-center justify-center gap-2">
-  <span v-if="isDirectionsBroadcast(props.row)" class="text-gray-700">
+  <span v-if="isClientTarget(props.row)" class="text-gray-700">
+    {{ getClientReadLabel(props.row) }}
+  </span>
+  <span v-else-if="isDirectionsBroadcast(props.row)" class="text-gray-700">
     {{ getDirectionsReadLabel(props.row) }}
   </span>
               <span v-else class="text-gray-700">
@@ -2922,6 +2925,19 @@ const isDirectionRecipient = (d) => !!d?.direction_destinataire && d.direction_d
 const getTotalDirectionRecipients = (message) => Array.isArray(message?.destinataires) ? message.destinataires.filter(isDirectionRecipient).length : 0
 const getReadCount = (message) => Array.isArray(message?.destinataires) ? message.destinataires.filter(d => isDirectionRecipient(d) && (d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)).length : 0
 
+// Helpers pour 'client': Lu/Non lu et date depuis t_rec_destinataires_messages
+const isClientTarget = (message) => Array.isArray(message?.destinataires)
+  ? message.destinataires.some(d => d?.direction_destinataire === 'client')
+  : false
+const getClientRecipient = (message) => Array.isArray(message?.destinataires)
+  ? message.destinataires.find(d => d?.direction_destinataire === 'client')
+  : null
+const isClientRead = (message) => {
+  const d = getClientRecipient(message)
+  return !!d && (d?.statut === 'lu' || d?.lu === 1 || !!d?.date_lecture)
+}
+const getClientReadLabel = (message) => isClientRead(message) ? 'Lu' : 'Non lu'
+
 // Helpers pour 'directions': Lu/Non lu pour la direction de l'utilisateur
 const isDirectionsBroadcast = (message) => Array.isArray(message?.destinataires)
   ? message.destinataires.some(d => d?.direction_destinataire === 'directions')
@@ -2946,7 +2962,14 @@ const openReadStatusDialog = async (message) => {
     await loadDirections()
     const fresh = Array.isArray(messages.value) ? messages.value.find(m => m.id === message?.id) : null
     const source = fresh || message
-  if (isDirectionsBroadcast(source)) {
+  if (isClientTarget(source)) {
+    const d = getClientRecipient(source)
+    readStatusEntries.value = [{
+      code: 'client',
+      label: 'Client',
+      date: d?.date_lecture ? formatDateTime(d.date_lecture) : null
+    }]
+    } else if (isDirectionsBroadcast(source)) {
     const d = getDirectionsRecipient(source)
     readStatusEntries.value = [{
       code: 'directions',
