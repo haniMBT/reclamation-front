@@ -1639,6 +1639,7 @@ const loadingCommissionMembers = ref(false)
 const isMembreRecours = ref(false)
 const isPresidentRecours = ref(false)
 const currentUserId = computed(() => authStore.user?.id || authStore.userProfile?.id)
+const currentUserFullName = computed(() => `${authStore.user?.Prenom ?? ''} ${authStore.user?.Nom ?? ''}`.trim())
 
 const directionsNonConcerneOptions = ref([])
 const showAddDirectionDialog = ref(false)
@@ -2169,6 +2170,24 @@ const truncateText = (text, maxLength) => {
 const viewMessageDetail = async (message) => {
   selectedMessage.value = message
   showMessageDetail.value = true
+  // Marquage comme lu pour un membre (destinataire stocké en Nom Prénom)
+  const memberIdx = Array.isArray(message?.destinataires)
+    ? message.destinataires.findIndex(d => {
+        const label = (d?.direction_destinataire || '').toString().trim().toLowerCase()
+        return label && label === currentUserFullName.value.toLowerCase() && d?.statut !== 'lu' && !d?.date_lecture
+      })
+    : -1
+
+  if (isMembreRecours.value && memberIdx !== -1) {
+    try {
+      await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { recipient: 'member' })
+      message.destinataires[memberIdx].statut = 'lu'
+      message.destinataires[memberIdx].lu = 1
+      message.destinataires[memberIdx].date_lecture = new Date().toISOString()
+    } catch (error) {
+      console.error('Erreur lors du marquage membre comme lu:', error)
+    }
+  }
   // Marquer comme lu
    const pilotIdx = Array.isArray(message?.destinataires)
     ? message.destinataires.findIndex(d => d?.direction_destinataire === 'directions' && d?.statut !== 'lu' && !d?.date_lecture)
