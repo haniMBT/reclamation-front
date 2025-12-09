@@ -116,6 +116,17 @@
                     <q-tooltip>Supprimer</q-tooltip>
                   </q-btn>
                   <q-btn
+                    icon="content_copy"
+                    size="sm"
+                    flat
+                    round
+                    v-if="privilege.role=='Admin' && privilege.insertion==1"
+                    color="teal-6"
+                    @click.stop="openDuplicateTicket(ticket)"
+                  >
+                    <q-tooltip>Dupliquer</q-tooltip>
+                  </q-btn>
+                  <q-btn
                     icon="edit"
                     size="sm"
                     flat
@@ -771,6 +782,81 @@
               @click="sendData"
               :loading="loading"
               :disable="!isFormValid || loading"
+              class="px-6"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Duplicate Ticket Dialog -->
+      <q-dialog v-model="duplicateTicketDialog" persistent>
+        <q-card class="w-full max-w-lg" style="display: flex; flex-direction: column;">
+          <q-card-section class="flex items-center bg-teal-50">
+            <q-icon name="content_copy" class="text-teal-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-teal-900">Dupliquer le ticket</div>
+              <div class="text-sm text-teal-700">Créer une copie avec toutes les informations associées</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg" style="flex: 1;">
+            <div class="space-y-4">
+              <div class="bg-gray-50 p-4 rounded-lg border">
+                <div class="flex items-start space-x-3">
+                  <q-icon name="confirmation_number" class="text-teal-600 mt-1" size="1.2rem" />
+                  <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900">{{ selectedTicket?.libelle }}</h4>
+                    <p class="text-sm text-gray-600 mt-1">
+                      <q-icon name="business" size="xs" class="mr-1" />
+                      Direction: {{ selectedTicket?.direction }}
+                    </p>
+                    <div class="mt-2 text-xs text-gray-500">
+                      <div v-if="selectedTicket?.infos_generales?.length">
+                        <q-icon name="info" size="xs" class="mr-1" />
+                        {{ selectedTicket.infos_generales.length }} information(s) générale(s)
+                      </div>
+                      <div v-if="selectedTicket?.types?.length">
+                        <q-icon name="category" size="xs" class="mr-1" />
+                        {{ selectedTicket.types.length }} type(s) avec leurs détails
+                      </div>
+                      <div v-if="(selectedTicket?.files_demandes?.length) || (selectedTicket?.filesDemandes?.length)">
+                        <q-icon name="attach_file" size="xs" class="mr-1" />
+                        {{ (selectedTicket.files_demandes?.length) || (selectedTicket.filesDemandes?.length) }} fichier(s) demandé(s)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Nouveau libellé</label>
+                <q-input v-model="duplicateForm.libelle" outlined dense placeholder="Libellé de la copie">
+                  <template #prepend>
+                    <q-icon name="label" class="text-teal-600" />
+                  </template>
+                </q-input>
+              </div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-md bg-white">
+            <q-btn
+              flat
+              label="Annuler"
+              color="grey"
+              @click="closeDuplicateTicket"
+              class="px-6"
+              :disable="duplicateLoading"
+            />
+            <q-btn
+              label="Dupliquer"
+              color="teal-6"
+              @click="duplicateTicket"
+              :loading="duplicateLoading"
               class="px-6"
             />
           </q-card-actions>
@@ -1794,6 +1880,41 @@ const initialLoading = computed(() => {
 
 const goHome = () => router.push('/reclamations/allTicket');
 const goBack = () => router.back();
+
+// Duplication: état et méthodes
+const duplicateTicketDialog = ref(false);
+const duplicateForm = ref({ libelle: '' });
+const duplicateLoading = ref(false);
+
+const openDuplicateTicket = (ticket) => {
+  selectedTicket.value = ticket;
+  duplicateForm.value = { libelle: `${ticket.libelle} (Copie)` };
+  duplicateTicketDialog.value = true;
+};
+
+const closeDuplicateTicket = () => {
+  duplicateTicketDialog.value = false;
+  selectedTicket.value = null;
+  duplicateForm.value = { libelle: '' };
+};
+
+const duplicateTicket = async () => {
+  if (!selectedTicket.value) return;
+  duplicateLoading.value = true;
+  try {
+    const payload = { libelle: duplicateForm.value.libelle };
+    const resp = await api.post(`/api/rec/parametrage/${selectedTicket.value.id}/duplicate`, payload);
+    $q.notify({ type: 'positive', message: resp.data?.message || 'Ticket dupliqué avec succès' });
+    closeDuplicateTicket();
+    await fetchData();
+  } catch (error) {
+    console.error('Erreur duplication ticket:', error);
+    const msg = error.response?.data?.message || 'Erreur lors de la duplication du ticket';
+    $q.notify({ type: 'negative', message: msg });
+  } finally {
+    duplicateLoading.value = false;
+  }
+};
 
 // Methods
 const fetchData = async () => {
