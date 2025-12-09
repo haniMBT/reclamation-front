@@ -1760,8 +1760,7 @@ const formatDateTime = (dateString) => {
 const openReadStatusDialog = async (message) => {
   try {
     readStatusRefreshing.value = true
-    await loadMessages()
-    await loadDirections()
+    await loadMessagesDirections()
     const fresh = Array.isArray(messages.value) ? messages.value.find(m => m.id === message?.id) : null
     const source = fresh || message
     if (isClientTarget(source)) {
@@ -2147,6 +2146,85 @@ const loadMessages = async () => {
   }
 }
 
+// Chargement combiné: messages + directions en un seul appel
+const loadMessagesDirections = async () => {
+  if (!currentTicketId.value) return
+
+  loading.value = true
+  loadingDirections.value = true
+  try {
+    const response = await api.get(`/api/rec/tickets/${currentTicketId.value}/messages-directions`)
+
+    if (response.data.success) {
+      // Messages et métadonnées du ticket
+      messages.value = response.data.messages || []
+      ticket_direction.value = response.data.ticket_direction || null
+      ticket.value = response.data.ticket || null
+      privilege.value = response.data.privilege || null
+      // Flags commission
+      isMembreRecours.value = !!response.data.is_commission_member
+      isPresidentRecours.value = !!response.data.is_commission_president
+      // Membres commission
+      const commission = response.data?.commission_recours || []
+      commissionMemberOptions.value = commission.map(m => ({
+        value: m.user_id,
+        label: `${m.prenom ?? ''} ${m.nom ?? ''}`.trim() || m.user_id,
+        direction: m.direction ?? null,
+        role: m.role
+      }))
+      // Créateur et conclusion
+      createur.value = response.data.createur || null
+      if (!showCloseDialog.value) {
+        closeConclusion.value = ticket.value?.conclusion
+      }
+
+      // Directions concernées et non concernées (mêmes mappings que loadDirections)
+      const dirs = response.data.directions || []
+      directionOptions.value = dirs.map(direction => ({
+        label: direction.label,
+        value: direction.value,
+        id: direction.id,
+        type_orientation: direction.type_orientation,
+        statut_direction: direction.statut_direction
+      }))
+
+      const nonConcerne = response.data.directionsNonConcerne || []
+      directionsNonConcerneOptions.value = nonConcerne.map(direction => ({
+        label: direction.label,
+        value: direction.value,
+        id: direction.id
+      }))
+    } else {
+      // Conserver comportement existant en cas d'absence de données
+      messages.value = []
+      directionOptions.value = []
+      directionsNonConcerneOptions.value = []
+      $q.notify({
+        type: 'warning',
+        message: response.data.message || 'Aucun message ou direction trouvé'
+      })
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement combiné messages+directions:', error)
+    messages.value = []
+    // Fallback directions comme dans loadDirections
+    directionOptions.value = [
+      { label: 'Direction Générale', value: 'DG', id: 1 },
+      { label: 'Direction Technique', value: 'DT', id: 2 },
+      { label: 'Direction Commerciale', value: 'DC', id: 3 },
+      { label: 'Direction des Ressources Humaines', value: 'DRH', id: 4 },
+    ]
+    directionsNonConcerneOptions.value = []
+    $q.notify({
+      type: 'negative',
+      message: 'Erreur lors du chargement des messages et directions'
+    })
+  } finally {
+    loading.value = false
+    loadingDirections.value = false
+  }
+}
+
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
   try {
@@ -2376,8 +2454,7 @@ const sendReplyMessage = async () => {
     closeReplyDialog()
     return
   }
-  await loadMessages()
-  await loadDirections()
+  await loadMessagesDirections()
   if (!canShowReplyButton.value) {
     $q.notify({ type: 'warning', message: 'Réponse non autorisée pour l’état actuel du ticket', position: 'top' })
     // Fermer le q-dialog
@@ -2433,8 +2510,7 @@ const sendRecourMessage = async () => {
    closeRecourDialog()
     return
   }
-  await loadMessages()
-  await loadDirections()
+  await loadMessagesDirections()
   if (!canShowRecourButton.value) {
     $q.notify({ type: 'warning', message: 'Recour non disponible pour l’état actuel du ticket', position: 'top' })
     // Fermer le q-dialog
@@ -2683,8 +2759,7 @@ const formatFileSize = (bytes) => {
 
  // Ouvrir/fermer le dialogue de conclusion (sécurisé)
  const openConclusionDialog = async () => {
-   await loadMessages()
-   await loadDirections()
+   await loadMessagesDirections()
    if (!currentTicketId.value) {
      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
      return
@@ -2715,8 +2790,7 @@ const formatFileSize = (bytes) => {
  }
 
  const openReplyDialog = async () => {
-   await loadMessages()
-   await loadDirections()
+   await loadMessagesDirections()
    if (!currentTicketId.value) {
      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
      return
@@ -2729,8 +2803,7 @@ const formatFileSize = (bytes) => {
  }
 
  const openRecourDialog = async () => {
-   await loadMessages()
-   await loadDirections()
+   await loadMessagesDirections()
    if (!currentTicketId.value) {
      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
      return
@@ -2743,8 +2816,7 @@ const formatFileSize = (bytes) => {
  }
 
  const openCloseDialog = async () => {
-   await loadMessages()
-   await loadDirections()
+   await loadMessagesDirections()
    if (!currentTicketId.value) {
      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
      return
@@ -2757,8 +2829,7 @@ const formatFileSize = (bytes) => {
  }
 
  const openAddDirectionDialog = async () => {
-   await loadMessages()
-   await loadDirections()
+   await loadMessagesDirections()
    if (!currentTicketId.value) {
      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
      return
@@ -2771,8 +2842,7 @@ const formatFileSize = (bytes) => {
  }
 
  const openRemoveDirectionDialog = async () => {
-   await loadMessages()
-   await loadDirections()
+   await loadMessagesDirections()
    if (!currentTicketId.value) {
      $q.notify({ type: 'warning', message: 'Aucun ticket sélectionné', position: 'top' })
      return
@@ -2900,8 +2970,7 @@ const addAdditionalDirections = async () => {
   }
 
   // Rafraîchir et revalider avant envoi depuis le q-dialog d'ajout
-  await loadMessages()
-  await loadDirections()
+  await loadMessagesDirections()
   if (!canAddDirection.value) {
     $q.notify({ type: 'warning', message: 'Ajout de directions non autorisé dans cet état', position: 'top' })
     // Fermer le q-dialog
@@ -2959,8 +3028,7 @@ const removeSelectedDirections = async () => {
   }
 
   // Rafraîchir et revalider avant envoi depuis le q-dialog de suppression
-  await loadMessages()
-  await loadDirections()
+  await loadMessagesDirections()
   if (!canRemoveDirection.value) {
     $q.notify({ type: 'warning', message: 'Suppression de directions non autorisée dans cet état', position: 'top' })
     // Fermer le q-dialog
@@ -3004,13 +3072,14 @@ const removeSelectedDirections = async () => {
  }
 
  // Initialiser les options de directions non concernées
- onMounted(() => {
-
-   if (currentTicketId.value) {
-     loadMessages()
-   }
-   loadDirections()
- })
+onMounted(() => {
+  if (currentTicketId.value) {
+    loadMessagesDirections()
+  } else {
+    // Charger au moins les directions par défaut si aucun ticket
+    loadDirections()
+  }
+})
 
  const formatFileSizeVoir = (bytes) => {
    if (!bytes) return '0 B'
