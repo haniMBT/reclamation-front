@@ -282,21 +282,67 @@
             <div class="stellar-badge">📢</div>
           </q-item> -->
 
-           <q-expansion-item >
+           <q-expansion-item class="stellar-expansion nebula-card" data-category="support">
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
-                <q-icon size="lg">
-                  <img src="/images/menu/complain.png" />
-                </q-icon>
+                <div class="neon-container">
+                  <div class="neon-sign neon-orange">
+                    <div class="neon-tube"></div>
+                    <div class="neon-glow"></div>
+                    <svg viewBox="0 0 24 24" class="neon-icon">
+                      <path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z"/>
+                    </svg>
+                    <div class="neon-spark" v-for="i in 4" :key="i" :style="neonSparkStyle(i)"></div>
+                  </div>
+                </div>
               </q-item-section>
-
               <q-item-section>
-                <q-item-section-label>Réclamation client</q-item-section-label>
+                <div class="menu-text">
+                  <span class="text-dark">Réclamation client</span>
+                  <div class="text-underline"></div>
+                </div>
               </q-item-section>
+              <div class="stellar-badge">📢</div>
             </template>
-            <q-expansion-item :header-inset-level="1" label="Liste des réclamations" expand-icon="0" to="/reclamations/allTicket" />
-            <q-expansion-item :header-inset-level="1" label="Nouvelle réclamation" expand-icon="0" to="/reclamations/ticket" />
-            <q-expansion-item v-if="AllPrivilege?.privilege_parametrage.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr.role=='Admin'" :header-inset-level="1" label="Parametrage" expand-icon="0" to="/reclamations/parametrage" />
+
+            <q-item to="/reclamations/allTicket" clickable v-ripple class="stellar-submenu nebula-subcard">
+              <q-item-section avatar>
+                <div class="submenu-icon">
+                  <q-icon name="list_alt" color="orange" />
+                </div>
+              </q-item-section>
+              <q-item-section>
+                <div class="menu-text">
+                  <span class="text-dark submenu-text">Liste des réclamations</span>
+                </div>
+              </q-item-section>
+            </q-item>
+
+            <q-item to="/reclamations/ticket" clickable v-ripple class="stellar-submenu nebula-subcard">
+              <q-item-section avatar>
+                <div class="submenu-icon">
+                  <q-icon name="add_circle" color="orange" />
+                </div>
+              </q-item-section>
+              <q-item-section>
+                <div class="menu-text">
+                  <span class="text-dark submenu-text">Nouvelle réclamation</span>
+                </div>
+              </q-item-section>
+            </q-item>
+
+            <q-item v-if="AllPrivilege?.privilege_parametrage.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr.role=='Admin'" to="/reclamations/parametrage" clickable v-ripple class="stellar-submenu nebula-subcard">
+              <q-item-section avatar>
+                <div class="submenu-icon">
+                  <q-icon name="tune" color="orange" />
+                </div>
+              </q-item-section>
+              <q-item-section>
+                <div class="menu-text">
+                  <span class="text-dark submenu-text">Paramétrage</span>
+                </div>
+              </q-item-section>
+            </q-item>
           </q-expansion-item>
 
           <!-- Gestion des utilisateurs avec effet data-stream -->
@@ -322,34 +368,68 @@
             </q-item-section>
             <div class="stellar-badge">👥</div>
           </q-item> -->
-           <q-expansion-item>
+           <q-expansion-item class="stellar-expansion nebula-card" data-category="management">
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
-                <q-icon size="md">
-                  <img src="/images/menu/gestion_des_utilisateurs.png" />
-                </q-icon>
+                <div class="datastream-container">
+                  <div class="datastream datastream-teal">
+                    <div class="stream-line line-1"></div>
+                    <div class="stream-line line-2"></div>
+                    <div class="stream-line line-3"></div>
+                    <svg viewBox="0 0 24 24" class="datastream-icon">
+                      <path fill="currentColor" d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    <div class="data-point" v-for="i in 8" :key="i" :style="dataPointStyle(i)"></div>
+                  </div>
+                </div>
               </q-item-section>
-
-              <q-item-section> Gestion des utilisateurs </q-item-section>
+              <q-item-section>
+                <div class="menu-text">
+                  <span class="text-dark">Gestion des utilisateurs</span>
+                  <div class="text-underline"></div>
+                </div>
+              </q-item-section>
+              <div class="stellar-badge">👥</div>
             </template>
-            <q-expansion-item
-              :header-inset-level="1"
-              label="Utilisateurs"
-              expand-icon="0"
-              to="/utilisateur"
-            />
-            <q-expansion-item
-              :header-inset-level="1"
-              label="Privilèges"
-              expand-icon="0"
-              to="/privilege"
-            />
-            <q-expansion-item
-              :header-inset-level="1"
-              label="Volet d'application"
-              expand-icon="0"
-              to="/volets"
-            />
+
+            <q-item to="/utilisateur" clickable v-ripple class="stellar-submenu nebula-subcard">
+              <q-item-section avatar>
+                <div class="submenu-icon">
+                  <q-icon name="group" color="teal" />
+                </div>
+              </q-item-section>
+              <q-item-section>
+                <div class="menu-text">
+                  <span class="text-dark submenu-text">Utilisateurs</span>
+                </div>
+              </q-item-section>
+            </q-item>
+
+            <q-item to="/privilege" clickable v-ripple class="stellar-submenu nebula-subcard">
+              <q-item-section avatar>
+                <div class="submenu-icon">
+                  <q-icon name="verified_user" color="teal" />
+                </div>
+              </q-item-section>
+              <q-item-section>
+                <div class="menu-text">
+                  <span class="text-dark submenu-text">Privilèges</span>
+                </div>
+              </q-item-section>
+            </q-item>
+
+            <q-item to="/volets" clickable v-ripple class="stellar-submenu nebula-subcard">
+              <q-item-section avatar>
+                <div class="submenu-icon">
+                  <q-icon name="view_module" color="teal" />
+                </div>
+              </q-item-section>
+              <q-item-section>
+                <div class="menu-text">
+                  <span class="text-dark submenu-text">Volet d'application</span>
+                </div>
+              </q-item-section>
+            </q-item>
           </q-expansion-item>
         </q-list>
       </q-scroll-area>
