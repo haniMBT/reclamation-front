@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <!-- Search Section -->
+      <!-- Search & Filters Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <!-- Recherche textuelle -->
@@ -78,8 +78,102 @@
           </div>
         </div>
 
+        <!-- Filtres avancés -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <!-- Ticket de base (libellé actif) -->
+          <div>
+            <q-select
+              v-model="selectedBaseTicketId"
+              :options="baseTicketOptions"
+              outlined
+              dense
+              label="Type de ticket (libellé)"
+              class="w-full"
+              emit-value
+              map-options
+              clearable
+            >
+              <template v-slot:prepend>
+                <q-icon name="assignment" class="text-gray-500" />
+              </template>
+            </q-select>
+          </div>
+          <!-- Objet -->
+          <div>
+            <q-input
+              v-model="objet"
+              outlined
+              dense
+              label="Objet"
+              class="w-full"
+              debounce="400"
+            >
+              <template v-slot:prepend>
+                <q-icon name="subject" class="text-gray-500" />
+              </template>
+            </q-input>
+          </div>
+
+          <!-- Nom -->
+          <div>
+            <q-input
+              v-model="nom"
+              outlined
+              dense
+              label="Nom"
+              class="w-full"
+              debounce="400"
+            >
+              <template v-slot:prepend>
+                <q-icon name="badge" class="text-gray-500" />
+              </template>
+            </q-input>
+          </div>
+
+          <!-- Prénom -->
+          <div>
+            <q-input
+              v-model="prenom"
+              outlined
+              dense
+              label="Prénom"
+              class="w-full"
+              debounce="400"
+            >
+              <template v-slot:prepend>
+                <q-icon name="person" class="text-gray-500" />
+              </template>
+            </q-input>
+          </div>
+
+          <!-- Statuts (multi-sélection) -->
+          <div>
+            <q-select
+              v-model="selectedStatuses"
+              :options="statusOptions"
+              multiple
+              use-chips
+              outlined
+              dense
+              label="Statuts"
+              class="w-full"
+              emit-value
+              map-options
+            >
+              <template v-slot:prepend>
+                <q-icon name="flag" class="text-gray-500" />
+              </template>
+            </q-select>
+          </div>
+
+          <!-- Tickets actifs (b_rec_ticket) -->
+          <div class="flex items-center">
+            <q-checkbox v-model="onlyActiveBase" label="Tickets actifs (b_rec_ticket)" />
+          </div>
+        </div>
+
         <!-- Bouton de réinitialisation des filtres -->
-        <div class="flex justify-end mt-4" v-if="searchQuery || dateFrom || dateTo">
+        <div class="flex justify-end mt-4" v-if="searchQuery || dateFrom || dateTo || objet || nom || prenom || selectedStatuses.length || onlyActiveBase || selectedBaseTicketId">
           <q-btn
             @click="clearFilters"
             color="grey-6"
@@ -261,6 +355,14 @@ const loading = ref(false)
 const searchQuery = ref('')
 const dateFrom = ref('')
 const dateTo = ref('')
+const objet = ref('')
+const nom = ref('')
+const prenom = ref('')
+const selectedStatuses = ref([])
+const statusOptions = ref([])
+const onlyActiveBase = ref(false)
+const baseTicketOptions = ref([])
+const selectedBaseTicketId = ref(null)
 
 const pagination = reactive({
   page: 1,
@@ -280,7 +382,13 @@ const fetchTickets = async (props = {}) => {
         per_page: rowsPerPage,
         q: searchQuery.value,
         date_from: dateFrom.value,
-        date_to: dateTo.value
+        date_to: dateTo.value,
+        objet: objet.value,
+        nom: nom.value,
+        prenom: prenom.value,
+        statuses: selectedStatuses.value.join(','),
+        only_active_base: onlyActiveBase.value,
+        bticket_id: selectedBaseTicketId.value
       }
     })
 
@@ -288,6 +396,7 @@ const fetchTickets = async (props = {}) => {
       privilege.value = response.data.data.privilege
       isCommissionMember.value = !!response.data.data.is_commission_member
       tickets.value = response.data.data.items
+      statusOptions.value = (response.data.data.available_statuses || []).map(s => ({ label: s, value: s }))
       pagination.page = response.data.data.meta.current_page
       pagination.rowsPerPage = response.data.data.meta.per_page
       pagination.rowsNumber = response.data.data.meta.total
@@ -300,6 +409,18 @@ const fetchTickets = async (props = {}) => {
     })
   } finally {
     loading.value = false
+  }
+}
+
+// Charger la liste des tickets de base actifs
+const fetchBaseTickets = async () => {
+  try {
+    const resp = await api.get('/api/rec/tickets')
+    // Cette API renvoie uniquement les tickets de base actifs (is_active = true)
+    const items = Array.isArray(resp.data) ? resp.data : (resp.data?.data || [])
+    baseTicketOptions.value = (items || []).map(t => ({ label: t.libelle || `Ticket ${t.id}`, value: t.id }))
+  } catch (e) {
+    console.error('Erreur lors du chargement des tickets de base:', e)
   }
 }
 
@@ -419,6 +540,11 @@ const clearFilters = () => {
   searchQuery.value = ''
   dateFrom.value = ''
   dateTo.value = ''
+  objet.value = ''
+  nom.value = ''
+  prenom.value = ''
+  selectedStatuses.value = []
+  onlyActiveBase.value = false
   pagination.page = 1
   fetchTickets({ pagination })
 }
@@ -439,9 +565,22 @@ watch([dateFrom, dateTo], () => {
   fetchTickets({ pagination })
 }, { debounce: 500 })
 
+watch([objet, nom, prenom, selectedStatuses, onlyActiveBase], () => {
+  pagination.page = 1
+  fetchTickets({ pagination })
+}, { debounce: 400 })
+
+watch(selectedBaseTicketId, () => {
+  pagination.page = 1
+  fetchTickets({ pagination })
+}, { debounce: 300 })
+
 // Lifecycle
 onMounted(async () => {
-  await fetchTickets()
+  await Promise.all([
+    fetchBaseTickets(),
+    fetchTickets()
+  ])
 })
 </script>
 
