@@ -408,8 +408,9 @@ const markAsRead = async (notif) => {
   try {
     const id = notif.id
     const tticket_id = notif.tticket_id
-    await api.put(`/api/rec/notifications/${id}/mark-as-read`)
-
+    if(notif.is_read == 0){
+      await api.put(`/api/rec/notifications/${id}/mark-as-read`)
+    }
     // Mettre à jour localement
     const notification = notifications.value.find(n => n.id === id)
     if (notification) {
