@@ -49,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import dayjs from 'dayjs'
 import { api } from 'src/boot/axios'
@@ -249,6 +249,15 @@ const series = computed(() => {
 
 onMounted(() => {
   loadData()
+  // Charger les libellés b_rec_ticket pour le filtre
+  loadBaseTickets()
+})
+
+// Rafraîchir automatiquement quand un type (b_rec_ticket) est sélectionné
+watch(() => filters.value.bticket_id, (val) => {
+  if (val !== null && val !== undefined) {
+    loadData()
+  }
 })
 </script>
 
