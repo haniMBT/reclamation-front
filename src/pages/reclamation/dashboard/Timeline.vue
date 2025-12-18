@@ -1,40 +1,56 @@
 <template>
-  <div class="q-pa-md column q-gutter-md">
-    <div class="row q-col-gutter-md items-center">
-      <div class="col-12 col-md-3">
-        <q-input v-model="filters.date_from" type="date" label="Date début" dense />
+  <div class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8">
+      <!-- Header Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex items-center mb-2">
+          <q-icon name="stacked_bar_chart" size="2rem" class="text-blue-600 mr-3" />
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800 mb-1">Tableau de bord des réclamations</h1>
+            <p class="text-gray-600 text-sm">Chronologie des tickets et durées par statut</p>
+          </div>
+        </div>
       </div>
-      <div class="col-12 col-md-3">
-        <q-input v-model="filters.date_to" type="date" label="Date fin" dense />
+
+      <!-- Toolbar Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div class="flex flex-col sm:flex-row sm:flex-wrap gap-3">
+            <q-input outlined dense v-model="filters.date_from" type="date" label="Date début" class="min-w-[200px]" />
+            <q-input outlined dense v-model="filters.date_to" type="date" label="Date fin" class="min-w-[200px]" />
+
+            <q-select outlined dense v-model="filters.statuses" :options="availableStatuses" label="Statuts"
+              use-chips multiple emit-value map-options class="min-w-[260px]" />
+
+            <q-select outlined dense v-model="filters.direction" :options="directions" label="Direction / Service"
+              emit-value map-options class="min-w-[240px]" />
+
+            <q-select outlined dense v-model="filters.type_id" :options="types" label="Type de réclamation"
+              emit-value map-options class="min-w-[240px]" />
+
+            <q-select outlined dense v-model="filters.recours" :options="recoursOptions" label="Recours"
+              emit-value map-options class="min-w-[200px]" />
+          </div>
+
+          <div class="flex gap-3">
+            <q-btn icon="tune" color="blue-6" no-caps :loading="loading" class="px-6" label="Appliquer les filtres" @click="loadData" />
+            <q-btn flat color="grey-8" no-caps class="px-6" label="Réinitialiser" :disable="loading" @click="resetFilters" />
+          </div>
+        </div>
       </div>
-      <div class="col-12 col-md-3">
-        <q-select v-model="filters.statuses" :options="availableStatuses" label="Statuts" dense use-chips multiple emit-value map-options />
-      </div>
-      <div class="col-12 col-md-3">
-        <q-select v-model="filters.direction" :options="directions" label="Direction / Service" dense emit-value map-options />
-      </div>
-      <div class="col-12 col-md-3">
-        <q-select v-model="filters.type_id" :options="types" label="Type de réclamation" dense emit-value map-options />
-      </div>
-      <div class="col-12 col-md-3">
-        <q-select v-model="filters.recours" :options="recoursOptions" label="Recours" dense emit-value map-options />
-      </div>
-      <div class="col-12 col-md-3">
-        <q-btn color="primary" label="Appliquer les filtres" @click="loadData" :loading="loading" />
-        <q-btn flat color="grey-8" class="q-ml-sm" label="Réinitialiser" @click="resetFilters" :disable="loading" />
+
+      <!-- Chart Section -->
+      <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center">
+            <q-icon name="timeline" class="text-indigo-600 mr-2" />
+            <div class="text-lg font-semibold text-gray-800">Chronologie des réclamations</div>
+          </div>
+          <div class="text-sm text-gray-500">Chaque barre = 1 ticket. Segments = statuts.</div>
+        </div>
+        <apexchart type="rangeBar" height="600" :options="chartOptions" :series="series" />
       </div>
     </div>
-
-    <q-card>
-      <q-card-section>
-        <div class="text-h6">Chronologie des réclamations par périodes de statut</div>
-        <div class="text-caption text-grey-7">Chaque barre = un ticket. Segments colorés par statut.</div>
-      </q-card-section>
-      <q-separator />
-      <q-card-section>
-        <apexchart type="rangeBar" height="600" :options="chartOptions" :series="series" />
-      </q-card-section>
-    </q-card>
   </div>
 </template>
 
