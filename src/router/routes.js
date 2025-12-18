@@ -28,6 +28,7 @@ const routes = [
     path: '/reclamations/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
+      { path: 'dashboard', name: 'reclamations-dashboard', component: () => import('src/pages/reclamation/dashboard/Timeline.vue') },
       { path: 'client', component: () => import('src/pages/reclamation/Index.vue') },
       { path: 'client/:id', component: () => import('src/pages/reclamation/show.vue') },
       { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },

@@ -305,6 +305,19 @@
               <div class="stellar-badge">📢</div>
             </template>
 
+            <q-item to="/reclamations/dashboard" clickable v-ripple class="stellar-submenu nebula-subcard">
+              <q-item-section avatar>
+                <div class="submenu-icon">
+                  <q-icon name="list_alt" color="orange" />
+                </div>
+              </q-item-section>
+              <q-item-section>
+                <div class="menu-text">
+                  <span class="text-dark submenu-text">Dashboard</span>
+                </div>
+              </q-item-section>
+            </q-item>
+
             <q-item to="/reclamations/allTicket" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
