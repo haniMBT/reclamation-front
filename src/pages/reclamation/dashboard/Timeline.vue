@@ -23,7 +23,8 @@
               emit-value map-options class="min-w-[280px]" @update:model-value="onSelectBaseTicket" />
 
             <q-select outlined dense v-model="filters.recours" :options="recoursOptions" label="Recours"
-              emit-value map-options class="min-w-[200px]" />
+              emit-value map-options class="min-w-[200px]" :disable="filters.only_not_closed" />
+            <q-toggle v-model="filters.only_not_closed" color="blue" label="Non clôturé" />
           </div>
 
           <div class="flex gap-3">
@@ -71,11 +72,12 @@ const filters = ref({
   date_to: '',
   bticket_id: null,
   bticket_label: null,
-  recours: 'all'
+  recours: 'all',
+  only_not_closed: false
 })
 
 function resetFilters() {
-  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_label: null, recours: 'all' }
+  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_label: null, recours: 'all', only_not_closed: false }
   loadData()
 }
 
@@ -170,12 +172,22 @@ const chartOptions = computed(() => ({
 }))
 
 const series = computed(() => {
-  // Filtre Recours côté client
   let base = items.value
-  if (filters.value.recours === 'with') {
-    base = base.filter(t => !!t.date_recours)
-  } else if (filters.value.recours === 'without') {
-    base = base.filter(t => !t.date_recours)
+
+  // Filtre unique Non clôturé prioritaire: union (non clôturé OU recours actif non clôturé)
+  if (filters.value.only_not_closed) {
+    base = base.filter(t => {
+      const notClosed = !t.closed_at
+      const recourseActive = !!t.date_recours && !t.date_cloture_recours
+      return notClosed || recourseActive
+    })
+  } else {
+    // Sinon, appliquer le filtre Recours côté client
+    if (filters.value.recours === 'with') {
+      base = base.filter(t => !!t.date_recours)
+    } else if (filters.value.recours === 'without') {
+      base = base.filter(t => !t.date_recours)
+    }
   }
 
   // Fallback client-side filter by base ticket label when backend filter not applied
