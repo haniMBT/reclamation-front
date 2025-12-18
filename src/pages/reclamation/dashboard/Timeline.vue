@@ -19,14 +19,8 @@
             <q-input outlined dense v-model="filters.date_from" type="date" label="Date début" class="min-w-[200px]" />
             <q-input outlined dense v-model="filters.date_to" type="date" label="Date fin" class="min-w-[200px]" />
 
-            <q-select outlined dense v-model="filters.statuses" :options="availableStatuses" label="Statuts"
-              use-chips multiple emit-value map-options class="min-w-[260px]" />
-
-            <q-select outlined dense v-model="filters.direction" :options="directions" label="Direction / Service"
-              emit-value map-options class="min-w-[240px]" />
-
-            <q-select outlined dense v-model="filters.type_id" :options="types" label="Type de réclamation"
-              emit-value map-options class="min-w-[240px]" />
+            <q-select outlined dense v-model="filters.bticket_id" :options="baseTickets" label="Type de réclamation (b_rec_ticket)"
+              emit-value map-options class="min-w-[280px]" @update:model-value="onSelectBaseTicket" />
 
             <q-select outlined dense v-model="filters.recours" :options="recoursOptions" label="Recours"
               emit-value map-options class="min-w-[200px]" />
@@ -64,9 +58,7 @@ const $q = useQuasar()
 
 const loading = ref(false)
 const items = ref([])
-const availableStatuses = ref([])
-const directions = ref([])
-const types = ref([])
+const baseTickets = ref([])
 
 const recoursOptions = [
   { label: 'Tous', value: 'all' },
@@ -77,14 +69,13 @@ const recoursOptions = [
 const filters = ref({
   date_from: '',
   date_to: '',
-  statuses: [],
-  direction: null,
-  type_id: null,
+  bticket_id: null,
+  bticket_label: null,
   recours: 'all'
 })
 
 function resetFilters() {
-  filters.value = { date_from: '', date_to: '', statuses: [], direction: null, type_id: null, recours: 'all' }
+  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_label: null, recours: 'all' }
   loadData()
 }
 
@@ -94,30 +85,12 @@ async function loadData () {
     const params = {}
     if (filters.value.date_from) params.date_from = filters.value.date_from
     if (filters.value.date_to) params.date_to = filters.value.date_to
-    if (filters.value.statuses && filters.value.statuses.length) params.statuses = filters.value.statuses.join(',')
-    if (filters.value.direction) params.direction = filters.value.direction
-    if (filters.value.type_id) params.type_id = filters.value.type_id
+    if (filters.value.bticket_id) params.bticket_id = filters.value.bticket_id
 
     const { data } = await api.get('/api/rec/tickets/indexAll', { params })
     const payload = data?.data || {}
     items.value = (payload.items || [])
-    availableStatuses.value = (payload.available_statuses || []).map(s => ({ label: s, value: s }))
-
-    // Collecter les directions et types depuis les items
-    const dirSet = new Set()
-    const typeMap = new Map()
-    items.value.forEach(t => {
-      if (t?.direction) dirSet.add(t.direction)
-      if (Array.isArray(t.types)) {
-        t.types.forEach(tp => {
-          const id = tp?.b_rec_type_id
-          const label = tp?.type_info?.libelle || tp?.libelle || `Type ${id}`
-          if (id) typeMap.set(id, label)
-        })
-      }
-    })
-    directions.value = Array.from(dirSet).map(d => ({ label: d, value: d }))
-    types.value = Array.from(typeMap.entries()).map(([value, label]) => ({ label, value }))
+    await loadBaseTickets()
 
   } catch (err) {
     console.error(err)
@@ -125,6 +98,33 @@ async function loadData () {
   } finally {
     loading.value = false
   }
+}
+
+async function loadBaseTickets () {
+  try {
+    const { data } = await api.get('/api/rec/tickets')
+    const tickets = data?.data || data || []
+    // Map to options: id and libelle
+    baseTickets.value = (tickets || []).map(t => ({ label: t.libelle || `Ticket ${t.id}`, value: t.id }))
+  } catch (err) {
+    // Fallback: build from current items (indexAll payload)
+    const map = new Map()
+    items.value.forEach(t => {
+      const id = t?.bticket_id || t?.baseTicket?.id || null
+      const label = t?.type_name || t?.baseTicket?.libelle || (id ? `Ticket ${id}` : null)
+      if (label && !map.has(label)) {
+        map.set(label, id)
+      }
+    })
+    baseTickets.value = Array.from(map.entries()).map(([label, value]) => ({ label, value }))
+  }
+}
+
+function onSelectBaseTicket (val) {
+  // Keep both id and label for client-side filtering fallback if needed
+  filters.value.bticket_id = val || null
+  const opt = baseTickets.value.find(o => o.value === val)
+  filters.value.bticket_label = opt ? opt.label : null
 }
 
 function toTs (d) {
@@ -176,6 +176,11 @@ const series = computed(() => {
     base = base.filter(t => !!t.date_recours)
   } else if (filters.value.recours === 'without') {
     base = base.filter(t => !t.date_recours)
+  }
+
+  // Fallback client-side filter by base ticket label when backend filter not applied
+  if (!filters.value.bticket_id && filters.value.bticket_label) {
+    base = base.filter(t => (t.type_name || '').toLowerCase() === filters.value.bticket_label.toLowerCase())
   }
 
   const categories = base.map(t => `${t.libelle || 'Ticket'} #${t.id}`)
