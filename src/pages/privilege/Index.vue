@@ -549,14 +549,15 @@ const sendData = async () => {
     .post("/api/gu/securite", data)
     .then(async (response) => {
         console.log(searchProfils.value);
-      await fetchData(searchProfils.value);
       message.value = response.data.message;
-      privilege.value = response.data.privilege;
+      // privilege.value = response.data.privilege;
       $q.notify({
         type: "positive",
         message: message.value,
       });
       closeAddProfil();
+            await fetchData(searchProfils.value);
+
     })
     .catch((errors) => {
       console.log(errors);
