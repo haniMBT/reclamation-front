@@ -77,6 +77,29 @@
                 />
               </template>
             </q-input>
+            <!-- Filtres: Statut (actif / non actif) et Direction pilote de b_rec_ticket -->
+            <q-select
+              outlined
+              dense
+              clearable
+              v-model="activeFilter"
+              :options="activeStatusOptions"
+              label="Actif / Inactif"
+              class="min-w-[220px]"
+              emit-value
+              map-options
+            />
+            <!-- <q-select
+              outlined
+              dense
+              clearable
+              v-model="pilotDirectionFilter"
+              :options="directionOptions"
+              label="Direction pilote"
+              class="min-w-[260px]"
+              emit-value
+              map-options
+            /> -->
           </div>
         </div>
       </div>
@@ -1721,6 +1744,14 @@ const directions = ref([]);
 const privilege = ref('');
 const privilege_pcr = ref('');
 const searchTickets = ref('');
+// Filtres: actif/inactif et direction pilote
+const activeFilter = ref(null);
+const pilotDirectionFilter = ref(null);
+// Options de statut (actif / inactif)
+const activeStatusOptions = computed(() => [
+  { label: 'Actif', value: 'Actif' },
+  { label: 'Inactif', value: 'Inactif' }
+]);
 const addTicket = ref(false);
 const editTicket = ref(false);
 const deleteTicket = ref(false);
@@ -2470,14 +2501,38 @@ const deleteData = async () => {
 
 // Computed property for filtered tickets
 const filteredTickets = computed(() => {
-  if (!searchTickets.value) {
-    return tickets.value;
+  let items = Array.isArray(tickets.value) ? [...tickets.value] : [];
+
+  // Filtre par recherche texte
+  if (searchTickets.value) {
+    const needle = String(searchTickets.value).toLowerCase();
+    items = items.filter(ticket =>
+      ticket.libelle?.toLowerCase().includes(needle) ||
+      (Array.isArray(ticket.direction)
+        ? ticket.direction.some(d => String(d).toLowerCase().includes(needle))
+        : ticket.direction?.toLowerCase().includes(needle))
+    );
   }
-  const needle = searchTickets.value.toLowerCase();
-  return tickets.value.filter(ticket =>
-    ticket.libelle?.toLowerCase().includes(needle) ||
-    ticket.direction?.toLowerCase().includes(needle)
-  );
+
+  // Filtre par statut actif/inactif
+  if (activeFilter.value) {
+    if (activeFilter.value === 'Actif') {
+      items = items.filter(t => t.is_active === true || t.is_active === 1);
+    } else if (activeFilter.value === 'Inactif') {
+      items = items.filter(t => t.is_active === false || t.is_active === 0 || t.is_active == null);
+    }
+  }
+
+  // Filtre par direction pilote de b_rec_ticket
+  if (pilotDirectionFilter.value) {
+    const sel = String(pilotDirectionFilter.value).toLowerCase();
+    items = items.filter(t => {
+      const dirs = Array.isArray(t.direction) ? t.direction : (t.direction ? [t.direction] : []);
+      return dirs.some(d => String(d).toLowerCase() === sel);
+    });
+  }
+
+  return items;
 });
 
 
