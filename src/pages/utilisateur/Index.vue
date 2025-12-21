@@ -360,7 +360,7 @@
                     <ErrorValidation v-if="myerrors?.privilege" :myerrors="myerrors?.privilege" />
                   </div>
 
-                  <div>
+                  <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                       Direction <span class="text-red-500">*</span>
                     </label>
@@ -379,16 +379,16 @@
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
                   </div>
 
-                  <div>
-                    <div class="flex items-center mb-2">
-                      <q-checkbox
-                        v-model="showNewpasswordEdit"
-                        color="blue-6"
-                        class="mr-2"
-                      />
-                      <label class="text-sm font-medium text-gray-700">
+                  <div class="md:col-span-2">
+                    <div class="flex items-center justify-between mb-2">
+                      <label class="block text-sm font-medium text-gray-700">
                         Nouveau mot de passe
                       </label>
+                      <q-toggle
+                        v-model="showNewpasswordEdit"
+                        color="blue-6"
+                        size="sm"
+                      />
                     </div>
                     <q-input
                       v-model="form.password"
