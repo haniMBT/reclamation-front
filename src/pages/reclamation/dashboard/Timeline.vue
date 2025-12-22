@@ -89,10 +89,11 @@ async function loadData () {
     if (filters.value.date_to) params.date_to = filters.value.date_to
     if (filters.value.bticket_id) params.bticket_id = filters.value.bticket_id
 
-    const { data } = await api.get('/api/rec/tickets/indexAll', { params })
+    const { data } = await api.get('/api/rec/dashboard/timeline', { params })
     const payload = data?.data || {}
     items.value = (payload.items || [])
-    await loadBaseTickets()
+    // Alimenter les options de filtre b_rec_ticket à partir de la même réponse
+    baseTickets.value = (payload.base_tickets || []).map(t => ({ label: t.libelle || `Ticket ${t.id}`, value: t.id }))
 
   } catch (err) {
     console.error(err)
@@ -103,22 +104,17 @@ async function loadData () {
 }
 
 async function loadBaseTickets () {
-  try {
-    const { data } = await api.get('/api/rec/tickets')
-    const tickets = data?.data || data || []
-    // Map to options: id and libelle
-    baseTickets.value = (tickets || []).map(t => ({ label: t.libelle || `Ticket ${t.id}`, value: t.id }))
-  } catch (err) {
-    // Fallback: build from current items (indexAll payload)
+  // Fallback: si la réponse API n’a pas fourni de base_tickets, reconstruire via items
+  if (!baseTickets.value || baseTickets.value.length === 0) {
     const map = new Map()
     items.value.forEach(t => {
       const id = t?.bticket_id || t?.baseTicket?.id || null
       const label = t?.type_name || t?.baseTicket?.libelle || (id ? `Ticket ${id}` : null)
-      if (label && !map.has(label)) {
-        map.set(label, id)
+      if (label && id !== null && !map.has(id)) {
+        map.set(id, label)
       }
     })
-    baseTickets.value = Array.from(map.entries()).map(([label, value]) => ({ label, value }))
+    baseTickets.value = Array.from(map.entries()).map(([value, label]) => ({ label, value }))
   }
 }
 
@@ -261,7 +257,7 @@ const series = computed(() => {
 
 onMounted(() => {
   loadData()
-  // Charger les libellés b_rec_ticket pour le filtre
+  // Charger les libellés b_rec_ticket pour le filtre (fallback sans appel réseau)
   loadBaseTickets()
 })
 
