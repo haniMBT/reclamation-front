@@ -191,13 +191,20 @@ const series = computed(() => {
     base = base.filter(t => (t.type_name || '').toLowerCase() === filters.value.bticket_label.toLowerCase())
   }
 
-  const categories = base.map(t => `${t.libelle || 'Ticket'} #${t.id}`)
+  // Construire une étiquette enrichie: libelle du type de réclamation + direction ou Nom Prénom
+  function ticketLabel (t) {
+    const type = t.libelle || t.type_name || 'Ticket'
+    const owner = t.owner_display || ''
+    return owner ? `${type} — ${owner} #${t.id}` : `${type} #${t.id}`
+  }
+
+  const categories = base.map(ticketLabel)
 
   function makeDataForStatus (label, getRange) {
     return base.map(t => {
       const [start, end] = getRange(t) || [null, null]
       if (!start || !end || end < start) return null
-      return { x: `${t.libelle || 'Ticket'} #${t.id}`, y: [start, end] }
+      return { x: ticketLabel(t), y: [start, end] }
     }).filter(Boolean)
   }
 
