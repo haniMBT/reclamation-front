@@ -22,9 +22,7 @@
             <q-select outlined dense v-model="filters.bticket_id" :options="baseTickets" label="Type de réclamation (b_rec_ticket)"
               emit-value map-options class="min-w-[280px]" @update:model-value="onSelectBaseTicket" />
 
-            <q-select outlined dense v-model="filters.recours" :options="recoursOptions" label="Recours"
-              emit-value map-options class="min-w-[200px]" :disable="filters.only_not_closed" />
-            <q-toggle v-model="filters.only_not_closed" color="blue" label="Non clôturé" />
+
           </div>
 
           <div class="flex gap-3">
@@ -61,23 +59,15 @@ const loading = ref(false)
 const items = ref([])
 const baseTickets = ref([])
 
-const recoursOptions = [
-  { label: 'Tous', value: 'all' },
-  { label: 'Avec recours', value: 'with' },
-  { label: 'Sans recours', value: 'without' }
-]
-
 const filters = ref({
   date_from: '',
   date_to: '',
   bticket_id: null,
-  bticket_label: null,
-  recours: 'all',
-  only_not_closed: false
+  bticket_label: null
 })
 
 function resetFilters() {
-  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_label: null, recours: 'all', only_not_closed: false }
+  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_label: null }
   loadData()
 }
 
@@ -171,22 +161,6 @@ const chartOptions = computed(() => ({
 const series = computed(() => {
   let base = items.value
 
-  // Filtre unique Non clôturé prioritaire: union (non clôturé OU recours actif non clôturé)
-  if (filters.value.only_not_closed) {
-    base = base.filter(t => {
-      const notClosed = !t.closed_at
-      const recourseActive = !!t.date_recours && !t.date_cloture_recours
-      return notClosed || recourseActive
-    })
-  } else {
-    // Sinon, appliquer le filtre Recours côté client
-    if (filters.value.recours === 'with') {
-      base = base.filter(t => !!t.date_recours)
-    } else if (filters.value.recours === 'without') {
-      base = base.filter(t => !t.date_recours)
-    }
-  }
-
   // Fallback client-side filter by base ticket label when backend filter not applied
   if (!filters.value.bticket_id && filters.value.bticket_label) {
     base = base.filter(t => (t.type_name || '').toLowerCase() === filters.value.bticket_label.toLowerCase())
@@ -256,7 +230,6 @@ const series = computed(() => {
     // Fin de cycle: afficher un marqueur court à la date de clôture du recours
     return [s, s]
   })
-
   return [
     { name: 'Ouvert', data: ouvert },
     { name: 'En attente', data: attente },
