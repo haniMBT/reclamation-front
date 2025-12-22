@@ -151,12 +151,13 @@ const chartOptions = computed(() => ({
   yaxis: {
     labels: {
       minWidth: 160,
-      maxWidth: 300
+      maxWidth: 300,
+      formatter: (val) => (typeof val === 'string' ? val.split('¬')[0].trim() : val)
     }
   },
   dataLabels: { enabled: false },
   legend: { position: 'bottom' },
-  tooltip: { shared: true },
+  tooltip: { shared: true, x: { formatter: (val) => (typeof val === 'string' ? val.split('¬')[0].trim() : val) } },
   colors: [
     '#1E88E5', // Ouvert
     '#FBC02D', // En attente
@@ -195,16 +196,20 @@ const series = computed(() => {
   function ticketLabel (t) {
     const type = t.libelle || t.type_name || 'Ticket'
     const owner = t.owner_display || ''
-    return owner ? `${type} — ${owner} #${t.id}` : `${type} #${t.id}`
+    return owner ? `${type} — ${owner}` : `${type}`
+  }
+  // Clé interne unique (inclut ID) non affichée visuellement grâce aux formatters
+  function ticketLabelKey (t) {
+    return `${ticketLabel(t)} ¬${t.id}`
   }
 
-  const categories = base.map(ticketLabel)
+  const categories = base.map(ticketLabelKey)
 
   function makeDataForStatus (label, getRange) {
     return base.map(t => {
       const [start, end] = getRange(t) || [null, null]
       if (!start || !end || end < start) return null
-      return { x: ticketLabel(t), y: [start, end] }
+      return { x: ticketLabelKey(t), y: [start, end] }
     }).filter(Boolean)
   }
 
