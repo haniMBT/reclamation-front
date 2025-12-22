@@ -22,8 +22,10 @@
             <q-select outlined dense v-model="filters.bticket_id" :options="baseTickets" label="Type de réclamation (b_rec_ticket)"
               emit-value map-options class="min-w-[280px]" @update:model-value="onSelectBaseTicket" />
 
+            <q-select outlined dense v-model="filters.statuses" :options="statusOptions" label="Statuts"
+              multiple emit-value map-options use-chips class="min-w-[280px]" @update:model-value="loadData" />
 
-          </div>
+           </div>
 
           <div class="flex gap-3">
             <q-btn icon="tune" color="blue-6" no-caps :loading="loading" class="px-6" label="Appliquer les filtres" @click="loadData" />
@@ -59,15 +61,25 @@ const loading = ref(false)
 const items = ref([])
 const baseTickets = ref([])
 
+const statusOptions = [
+  { label: 'ouvert', value: 'ouvert' },
+  { label: 'En attente', value: 'En attente' },
+  { label: 'En cours', value: 'En cours' },
+  { label: 'clôturé', value: 'clôturé' },
+  { label: 'Recours', value: 'Recours' },
+  { label: 'Recours clôturé', value: 'Recours clôturé' }
+]
+
 const filters = ref({
   date_from: '',
   date_to: '',
   bticket_id: null,
-  bticket_label: null
+  bticket_label: null,
+  statuses: []
 })
 
 function resetFilters() {
-  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_label: null }
+  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_label: null, statuses: [] }
   loadData()
 }
 
@@ -78,6 +90,7 @@ async function loadData () {
     if (filters.value.date_from) params.date_from = filters.value.date_from
     if (filters.value.date_to) params.date_to = filters.value.date_to
     if (filters.value.bticket_id) params.bticket_id = filters.value.bticket_id
+    if (filters.value.statuses && filters.value.statuses.length > 0) params.statuses = filters.value.statuses
 
     const { data } = await api.get('/api/rec/dashboard/timeline', { params })
     const payload = data?.data || {}
