@@ -19,8 +19,8 @@
             <q-input outlined dense v-model="filters.date_from" type="date" label="Date début" class="min-w-[200px]" />
             <q-input outlined dense v-model="filters.date_to" type="date" label="Date fin" class="min-w-[200px]" />
 
-            <q-select outlined dense v-model="filters.bticket_id" :options="baseTickets" label="Type de réclamation (b_rec_ticket)"
-              emit-value map-options class="min-w-[280px]" @update:model-value="onSelectBaseTicket" />
+            <q-select outlined dense v-model="filters.bticket_ids" :options="baseTickets" label="Type de réclamation"
+              multiple emit-value map-options use-chips class="min-w-[280px]" @update:model-value="onSelectBaseTicket" />
 
             <q-select outlined dense v-model="filters.statuses" :options="statusOptions" label="Statuts"
               multiple emit-value map-options use-chips class="min-w-[280px]" @update:model-value="loadData" />
@@ -73,13 +73,14 @@ const statusOptions = [
 const filters = ref({
   date_from: '',
   date_to: '',
-  bticket_id: null,
+  bticket_id: null, // compat single-select
+  bticket_ids: [], // multi-select values
   bticket_label: null,
   statuses: []
 })
 
 function resetFilters() {
-  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_label: null, statuses: [] }
+  filters.value = { date_from: '', date_to: '', bticket_id: null, bticket_ids: [], bticket_label: null, statuses: [] }
   loadData()
 }
 
@@ -89,7 +90,11 @@ async function loadData () {
     const params = {}
     if (filters.value.date_from) params.date_from = filters.value.date_from
     if (filters.value.date_to) params.date_to = filters.value.date_to
-    if (filters.value.bticket_id) params.bticket_id = filters.value.bticket_id
+    if (filters.value.bticket_ids && filters.value.bticket_ids.length > 0) {
+      params.bticket_ids = filters.value.bticket_ids
+    } else if (filters.value.bticket_id) {
+      params.bticket_id = filters.value.bticket_id
+    }
     if (filters.value.statuses && filters.value.statuses.length > 0) params.statuses = filters.value.statuses
 
     const { data } = await api.get('/api/rec/dashboard/timeline', { params })
@@ -122,10 +127,14 @@ async function loadBaseTickets () {
 }
 
 function onSelectBaseTicket (val) {
-  // Keep both id and label for client-side filtering fallback if needed
-  filters.value.bticket_id = val || null
-  const opt = baseTickets.value.find(o => o.value === val)
-  filters.value.bticket_label = opt ? opt.label : null
+  // val is now an array of ids for multi-select
+  const arr = Array.isArray(val) ? val : (val != null ? [val] : [])
+  filters.value.bticket_ids = arr
+  // Clear single-select fallback when multi is used
+  filters.value.bticket_id = arr.length === 1 ? arr[0] : null
+  const labels = baseTickets.value.filter(o => arr.includes(o.value)).map(o => o.label)
+  // Keep a single label for legacy client-side filter fallback only when one selected
+  filters.value.bticket_label = labels.length === 1 ? labels[0] : null
 }
 
 function toTs (d) {
@@ -174,8 +183,11 @@ const chartOptions = computed(() => ({
 const series = computed(() => {
   let base = items.value
 
-  // Fallback client-side filter by base ticket label when backend filter not applied
-  if (!filters.value.bticket_id && filters.value.bticket_label) {
+  // Fallback client-side filter by base tickets when backend filter not applied
+  if (filters.value.bticket_ids && filters.value.bticket_ids.length > 0) {
+    const set = new Set(filters.value.bticket_ids)
+    base = base.filter(t => set.has(t.bticket_id || t?.baseTicket?.id))
+  } else if (!filters.value.bticket_id && filters.value.bticket_label) {
     base = base.filter(t => (t.type_name || '').toLowerCase() === filters.value.bticket_label.toLowerCase())
   }
 
@@ -259,7 +271,13 @@ onMounted(() => {
   loadBaseTickets()
 })
 
-// Rafraîchir automatiquement quand un type (b_rec_ticket) est sélectionné
+// Rafraîchir automatiquement quand des types (b_rec_ticket) sont sélectionnés
+watch(() => filters.value.bticket_ids, (val) => {
+  if (Array.isArray(val)) {
+    loadData()
+  }
+})
+// Compatibilité: déclenchement sur single-select si utilisé
 watch(() => filters.value.bticket_id, (val) => {
   if (val !== null && val !== undefined) {
     loadData()
