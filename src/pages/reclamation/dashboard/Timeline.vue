@@ -202,13 +202,25 @@ const chartOptions = computed(() => ({
         if (m > 0) parts.push(`${m} ${m > 1 ? 'minutes' : 'minute'}`)
         if (parts.length === 0) parts.push(s > 0 ? `${s} ${s > 1 ? 'secondes' : 'seconde'}` : '< 1 minute')
         const duree = parts.join(' ')
-        // Récupération robuste de l'objet
+        // Récupération robuste des métadonnées
         const xVal = point?.x
-        const fromX = (typeof xVal === 'string' && xVal.includes('¬')) ? (xVal.split('¬')[2] || '').trim() : ''
-        const rawObj = point?.obj || fromX || ''
+        const firstSeg = (typeof xVal === 'string') ? (xVal.split('¬')[0] || '').trim() : ''
+        const fromXObj = (typeof xVal === 'string' && xVal.includes('¬')) ? (xVal.split('¬')[2] || '').trim() : ''
+        let typeLabel = point?.type || ''
+        let ownerLabel = point?.owner || ''
+        if ((!typeLabel || !ownerLabel) && firstSeg) {
+          const dashParts = firstSeg.split('—')
+          const parsedType = (dashParts[0] || '').trim()
+          const parsedOwner = (dashParts[1] || '').trim()
+          if (!typeLabel) typeLabel = parsedType
+          if (!ownerLabel) ownerLabel = parsedOwner
+        }
+        const rawObj = point?.obj || fromXObj || ''
         const esc = (s) => String(s).replace(/[&<>\"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]))
+        const typePart = typeLabel ? `<div><strong>Type:</strong> ${esc(typeLabel)}</div>` : ''
+        const ownerPart = ownerLabel ? `<div><strong>Auteur:</strong> ${esc(ownerLabel)}</div>` : ''
         const objetPart = rawObj ? `<div class="text-xs text-gray-700 mt-1"><strong>Objet:</strong> ${esc(rawObj)}</div>` : ''
-        return `<div class="px-3 py-2 text-sm"><div><strong>Statut:</strong> ${name}</div><div>Durée: ${duree}</div>${objetPart}</div>`
+        return `<div class="px-3 py-2 text-sm"><div><strong>Statut:</strong> ${name}</div>${typePart}${ownerPart}<div>Durée: ${duree}</div>${objetPart}</div>`
       } catch (e) {
         return ''
       }
@@ -253,7 +265,7 @@ const series = computed(() => {
       const start = Array.isArray(rng) ? rng[0] : null
       const end = Array.isArray(rng) ? rng[1] : null
       if (!start || !end || end < start) return null
-      return { x: ticketLabelKey(t), y: [start, end], obj: t?.objet ?? '' }
+      return { x: ticketLabelKey(t), y: [start, end], obj: t?.objet ?? '', type: (t?.libelle || t?.type_name || 'Ticket'), owner: (t?.owner_display || '') }
     }).filter(Boolean)
   }
 
