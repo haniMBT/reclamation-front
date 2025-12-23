@@ -72,10 +72,10 @@ const statusOptions = [
 const filters = ref({
   date_from: '',
   date_to: '',
-  bticket_id: null, // compat single-select
-  bticket_ids: [], // multi-select values
-  bticket_label: null,
-  statuses: []
+  statuses: [],
+  bticket_ids: [],
+  bticket_id: null,
+  bticket_label: null
 })
 
 function resetFilters() {
@@ -89,18 +89,26 @@ async function loadData () {
     const params = {}
     if (filters.value.date_from) params.date_from = filters.value.date_from
     if (filters.value.date_to) params.date_to = filters.value.date_to
+    if (filters.value.statuses && filters.value.statuses.length > 0) params.statuses = filters.value.statuses
     if (filters.value.bticket_ids && filters.value.bticket_ids.length > 0) {
       params.bticket_ids = filters.value.bticket_ids
     } else if (filters.value.bticket_id) {
       params.bticket_id = filters.value.bticket_id
     }
-    if (filters.value.statuses && filters.value.statuses.length > 0) params.statuses = filters.value.statuses
 
     const { data } = await api.get('/api/rec/dashboard/timeline', { params })
     const payload = data?.data || {}
-    items.value = (payload.items || [])
-    // Alimenter les options de filtre b_rec_ticket à partir de la même réponse
-    baseTickets.value = (payload.base_tickets || []).map(t => ({ label: t.libelle || `Ticket ${t.id}`, value: t.id }))
+    const rawItems = payload.items
+    items.value = Array.isArray(rawItems)
+      ? rawItems
+      : (rawItems && typeof rawItems === 'object' ? Object.values(rawItems) : [])
+
+    const rawBaseTickets = payload.base_tickets
+    baseTickets.value = Array.isArray(rawBaseTickets)
+      ? rawBaseTickets.map(t => ({ label: t.libelle || `Ticket ${t.id}`, value: t.id }))
+      : (rawBaseTickets && typeof rawBaseTickets === 'object'
+          ? Object.values(rawBaseTickets).map(t => ({ label: t.libelle || `Ticket ${t.id}`, value: t.id }))
+          : [])
 
   } catch (err) {
     console.error(err)
@@ -200,80 +208,85 @@ const chartOptions = computed(() => ({
 }))
 
 const series = computed(() => {
-  let base = items.value
+  // Exclure toute réclamation non validée
+  let base = (Array.isArray(items.value) ? items.value : []).filter(t => !!t?.date_validation_createur)
 
   // Fallback client-side filter by base tickets when backend filter not applied
   if (filters.value.bticket_ids && filters.value.bticket_ids.length > 0) {
     const set = new Set(filters.value.bticket_ids)
-    base = base.filter(t => set.has(t.bticket_id || t?.baseTicket?.id))
+    base = base.filter(t => set.has(t?.bticket_id ?? t?.baseTicket?.id))
   } else if (!filters.value.bticket_id && filters.value.bticket_label) {
-    base = base.filter(t => (t.type_name || '').toLowerCase() === filters.value.bticket_label.toLowerCase())
+    base = base.filter(t => (t?.type_name || '').toLowerCase() === filters.value.bticket_label.toLowerCase())
   }
 
-  // Construire une étiquette enrichie: libelle du type de réclamation + direction ou Nom Prénom
+  const now = Date.now()
+
   function ticketLabel (t) {
-    const type = t.libelle || t.type_name || 'Ticket'
-    const owner = t.owner_display || ''
+    const type = t?.libelle || t?.type_name || 'Ticket'
+    const owner = t?.owner_display || ''
     return owner ? `${type} — ${owner}` : `${type}`
   }
-  // Clé interne unique (inclut ID) non affichée visuellement grâce aux formatters
   function ticketLabelKey (t) {
-    return `${ticketLabel(t)} ¬${t.id}`
+    return `${ticketLabel(t)} ¬${t?.id}`
   }
 
-  const categories = base.map(ticketLabelKey)
-
-  function makeDataForStatus (label, getRange) {
+  function makeDataForStatus (getRange) {
     return base.map(t => {
-      const [start, end] = getRange(t) || [null, null]
+      const rng = getRange(t)
+      const start = Array.isArray(rng) ? rng[0] : null
+      const end = Array.isArray(rng) ? rng[1] : null
       if (!start || !end || end < start) return null
       return { x: ticketLabelKey(t), y: [start, end] }
     }).filter(Boolean)
   }
 
-  // Segments par règles métier
-  const ouvert = makeDataForStatus('Ouvert', t => {
-    const s = toTs(t.created_at)
-    const e = toTs(t.date_validation_createur)
-    if (!s) return null
-    return [s, e || s] // si pas de validation, segment minimal
-  })
-
-  const attente = makeDataForStatus('En attente', t => {
-    const s = toTs(t.date_validation_createur)
-    const e = toTs(t.date_en_cours)
+  // Règles d’affichage normalisées
+  const ouvert = makeDataForStatus(t => {
+    const s = toTs(t?.created_at)
+    const e = toTs(t?.date_validation_createur)
     if (!s || !e) return null
     return [s, e]
   })
 
-  const encours = makeDataForStatus('En cours', t => {
-    const s = toTs(t.date_en_cours)
-    const e = toTs(t.closed_at)
+  const attente = makeDataForStatus(t => {
+    const s = toTs(t?.date_validation_createur)
+    const e = t?.date_en_cours ? toTs(t?.date_en_cours) : now
     if (!s || !e) return null
     return [s, e]
   })
 
-  const cloture = makeDataForStatus('Clôturé', t => {
-    const s = toTs(t.closed_at)
-    const e = toTs(t.date_recours)
+  const encours = makeDataForStatus(t => {
+    // Afficher "En cours" uniquement si l’original date_en_cours existe
+    if (!t?.date_en_cours) return null
+    const s = toTs(t?.date_en_cours)
+    const e = t?.closed_at ? toTs(t?.closed_at) : now
+    if (!s || !e) return null
+    return [s, e]
+  })
+
+  const cloture = makeDataForStatus(t => {
+    // Segment de clôture seulement si closed_at existe
+    const s = toTs(t?.closed_at)
+    const e = toTs(t?.date_recours)
     if (!s) return null
-    // Si pas de recours, afficher un marqueur court
+    // Si pas de recours, cycle s’arrête à la clôture: afficher un marqueur court
     return [s, e || s]
   })
 
-  const recours = makeDataForStatus('Recours', t => {
-    const s = toTs(t.date_recours)
-    const e = toTs(t.date_cloture_recours)
+  const recours = makeDataForStatus(t => {
+    const s = toTs(t?.date_recours)
+    const e = t?.date_cloture_recours ? toTs(t?.date_cloture_recours) : now
     if (!s || !e) return null
     return [s, e]
   })
 
-  const recoursCloture = makeDataForStatus('Recours clôturé', t => {
-    const s = toTs(t.date_cloture_recours)
+  const recoursCloture = makeDataForStatus(t => {
+    // Afficher uniquement si la date de clôture du recours existe réellement
+    const s = toTs(t?.date_cloture_recours)
     if (!s) return null
-    // Fin de cycle: afficher un marqueur court à la date de clôture du recours
     return [s, s]
   })
+
   return [
     { name: 'Ouvert', data: ouvert },
     { name: 'En attente', data: attente },
