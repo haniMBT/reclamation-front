@@ -16,8 +16,8 @@
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div class="flex flex-col sm:flex-row sm:flex-wrap gap-3">
-            <q-input outlined dense v-model="filters.date_from" type="date" label="Date début" class="min-w-[200px]" />
-            <q-input outlined dense v-model="filters.date_to" type="date" label="Date fin" class="min-w-[200px]" />
+            <q-input outlined dense v-model="filters.date_from" type="date" label="Date début" class="min-w-[200px]" @update:model-value="loadData" />
+            <q-input outlined dense v-model="filters.date_to" type="date" label="Date fin" class="min-w-[200px]" @update:model-value="loadData" />
 
             <q-select outlined dense v-model="filters.bticket_ids" :options="baseTickets" label="Type de réclamation"
               multiple emit-value map-options use-chips class="min-w-[280px]" @update:model-value="onSelectBaseTicket" />
@@ -28,7 +28,6 @@
            </div>
 
           <div class="flex gap-3">
-            <q-btn icon="tune" color="blue-6" no-caps :loading="loading" class="px-6" label="Appliquer les filtres" @click="loadData" />
             <q-btn flat color="grey-8" no-caps class="px-6" label="Réinitialiser" :disable="loading" @click="resetFilters" />
           </div>
         </div>
