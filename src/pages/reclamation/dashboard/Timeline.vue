@@ -168,7 +168,27 @@ const chartOptions = computed(() => ({
   },
   dataLabels: { enabled: false },
   legend: { position: 'bottom' },
-  tooltip: { shared: true, x: { formatter: (val) => (typeof val === 'string' ? val.split('¬')[0].trim() : val) } },
+  tooltip: {
+    shared: false,
+    x: { formatter: (val) => (typeof val === 'string' ? val.split('¬')[0].trim() : val) },
+    custom: function({ seriesIndex, dataPointIndex, w }) {
+      try {
+        const name = w?.globals?.seriesNames?.[seriesIndex] || ''
+        const point = w?.config?.series?.[seriesIndex]?.data?.[dataPointIndex]
+        const y = point?.y
+        if (!Array.isArray(y) || y.length < 2) return `<div class="px-3 py-2 text-sm">${name}</div>`
+        const start = y[0]
+        const end = y[1]
+        const ms = Math.max(0, end - start)
+        const daysFloat = ms / 86400000
+        const days = daysFloat < 1 ? null : Math.round(daysFloat)
+        const duree = days === null ? 'durée < 1 jour' : `durée ${days} ${days > 1 ? 'jours' : 'jour'}`
+        return `<div class="px-3 py-2 text-sm"><strong>${name}</strong> — ${duree}</div>`
+      } catch (e) {
+        return ''
+      }
+    }
+  },
   colors: [
     '#1E88E5', // Ouvert
     '#FBC02D', // En attente
