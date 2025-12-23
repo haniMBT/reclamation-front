@@ -218,10 +218,36 @@ const chartOptions = computed(() => ({
         const rawObj = point?.obj || fromXObj || ''
         const esc = (s) => String(s).replace(/[&<>\"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]))
         const typePart = typeLabel ? `<div><strong>Type:</strong> ${esc(typeLabel)}</div>` : ''
-const ownerPart = ownerLabel ? `<div><strong>Créateur:</strong> ${esc(ownerLabel)}</div>` : ''
-const objetPart = rawObj ? `<div class="text-xs text-gray-700 mt-1"><strong>Objet:</strong> ${esc(rawObj)}</div>` : ''
-const divider = `<div class="my-2 border-t border-gray-200"></div>`
-return `<div class="px-3 py-2 text-sm"><div><strong>Statut:</strong> ${name}</div>${typePart}${ownerPart}${divider}<div><strong>Durée du statut:</strong> ${duree}</div>${objetPart}</div>`
+        const ownerPart = ownerLabel ? `<div><strong>Créateur:</strong> ${esc(ownerLabel)}</div>` : ''
+        const objetPart = rawObj ? `<div class="text-xs text-gray-700 mt-1"><strong>Objet:</strong> ${esc(rawObj)}</div>` : ''
+        const divider = `<div class="my-2 border-t border-gray-200"></div>`
+        // Acteurs concernés selon le cas et la période de statut
+        const renderList = (title, arr) => {
+          const list = (Array.isArray(arr) ? arr : []).filter(x => !!x)
+          if (list.length === 0) return ''
+          const itemsHtml = list.map(v => `<li class="ml-4">• ${esc(v)}</li>`).join('')
+          return `<div class="mt-1"><strong>${esc(title)}:</strong><ul class="mt-1">${itemsHtml}</ul></div>`
+        }
+        const pilotNormal = point?.pilot_direction || ''
+        const treatDirs = Array.isArray(point?.treatment_directions) ? point.treatment_directions : []
+        const consultDirs = Array.isArray(point?.consultation_directions) ? point.consultation_directions : []
+        const pilotRecours = point?.recours_pilot || ''
+        const commission = Array.isArray(point?.recours_commission) ? point.recours_commission : []
+
+        let actorsHtml = ''
+        if (name === 'Recours' || name === 'Recours clôturé') {
+          const head = pilotRecours ? `<div><strong>Pilot du recours:</strong> ${esc(pilotRecours)}</div>` : ''
+          actorsHtml = head + renderList('Membres de la commission de recours', commission)
+        } else if (name === 'En cours') {
+          const head = pilotNormal ? `<div><strong>Direction pilot:</strong> ${esc(pilotNormal)}</div>` : ''
+          actorsHtml = head + renderList('Directions en traitement', treatDirs) + renderList('Directions en consultation', consultDirs)
+        } else if (name === 'Ouvert' || name === 'En attente' || name === 'Clôturé') {
+          // Pendant Ouvert / En attente / Clôturé, on ne montre que le pilot si disponible
+          const head = pilotNormal ? `<div><strong>Direction pilot:</strong> ${esc(pilotNormal)}</div>` : ''
+          actorsHtml = head
+        }
+
+        return `<div class=\"px-3 py-2 text-sm\"><div><strong>Statut:</strong> ${name}</div>${typePart}${ownerPart}${divider}<div><strong>Durée du statut:</strong> ${duree}</div>${objetPart}${divider}${actorsHtml}</div>`
       } catch (e) {
         return ''
       }
@@ -266,7 +292,7 @@ const series = computed(() => {
       const start = Array.isArray(rng) ? rng[0] : null
       const end = Array.isArray(rng) ? rng[1] : null
       if (!start || !end || end < start) return null
-      return { x: ticketLabelKey(t), y: [start, end], obj: t?.objet ?? '', type: (t?.libelle || t?.type_name || 'Ticket'), owner: (t?.owner_display || '') }
+      return { x: ticketLabelKey(t), y: [start, end], obj: t?.objet ?? '', type: (t?.libelle || t?.type_name || 'Ticket'), owner: (t?.owner_display || ''), pilot_direction: t?.pilot_direction || null, treatment_directions: Array.isArray(t?.treatment_directions) ? t.treatment_directions : [], consultation_directions: Array.isArray(t?.consultation_directions) ? t.consultation_directions : [], recours_pilot: t?.recours_pilot || null, recours_commission: Array.isArray(t?.recours_commission) ? t.recours_commission : [] }
     }).filter(Boolean)
   }
 
