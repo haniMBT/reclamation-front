@@ -182,16 +182,33 @@ const chartOptions = computed(() => ({
     custom: function({ seriesIndex, dataPointIndex, w }) {
       try {
         const name = w?.globals?.seriesNames?.[seriesIndex] || ''
-        const point = w?.config?.series?.[seriesIndex]?.data?.[dataPointIndex]
+        const pointCfg = w?.config?.series?.[seriesIndex]?.data?.[dataPointIndex]
+        const pointInit = w?.globals?.initialSeries?.[seriesIndex]?.data?.[dataPointIndex]
+        const point = pointCfg ?? pointInit ?? {}
         const y = point?.y
-        if (!Array.isArray(y) || y.length < 2) return `<div class="px-3 py-2 text-sm">${name}</div>`
+        if (!Array.isArray(y) || y.length < 2) return `<div class="px-3 py-2 text-sm"><strong>Statut:</strong> ${name}</div>`
         const start = y[0]
         const end = y[1]
         const ms = Math.max(0, end - start)
-        const daysFloat = ms / 86400000
-        const days = daysFloat < 1 ? null : Math.round(daysFloat)
-        const duree = days === null ? 'durée < 1 jour' : `durée ${days} ${days > 1 ? 'jours' : 'jour'}`
-        return `<div class="px-3 py-2 text-sm"><strong>${name}</strong> — ${duree}</div>`
+        // Calcul lisible: jours, heures, minutes, secondes
+        let rest = ms
+        const d = Math.floor(rest / 86400000); rest %= 86400000
+        const h = Math.floor(rest / 3600000); rest %= 3600000
+        const m = Math.floor(rest / 60000); rest %= 60000
+        const s = Math.floor(rest / 1000)
+        const parts = []
+        if (d > 0) parts.push(`${d} ${d > 1 ? 'jours' : 'jour'}`)
+        if (h > 0) parts.push(`${h} ${h > 1 ? 'heures' : 'heure'}`)
+        if (m > 0) parts.push(`${m} ${m > 1 ? 'minutes' : 'minute'}`)
+        if (parts.length === 0) parts.push(s > 0 ? `${s} ${s > 1 ? 'secondes' : 'seconde'}` : '< 1 minute')
+        const duree = parts.join(' ')
+        // Récupération robuste de l'objet
+        const xVal = point?.x
+        const fromX = (typeof xVal === 'string' && xVal.includes('¬')) ? (xVal.split('¬')[2] || '').trim() : ''
+        const rawObj = point?.obj || fromX || ''
+        const esc = (s) => String(s).replace(/[&<>\"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]))
+        const objetPart = rawObj ? `<div class="text-xs text-gray-700 mt-1"><strong>Objet:</strong> ${esc(rawObj)}</div>` : ''
+        return `<div class="px-3 py-2 text-sm"><div><strong>Statut:</strong> ${name}</div><div>Durée: ${duree}</div>${objetPart}</div>`
       } catch (e) {
         return ''
       }
@@ -227,7 +244,7 @@ const series = computed(() => {
     return owner ? `${type} — ${owner}` : `${type}`
   }
   function ticketLabelKey (t) {
-    return `${ticketLabel(t)} ¬${t?.id}`
+    return `${ticketLabel(t)} ¬${t?.id} ¬${(t?.objet ?? '').toString().trim()}`
   }
 
   function makeDataForStatus (getRange) {
@@ -236,7 +253,7 @@ const series = computed(() => {
       const start = Array.isArray(rng) ? rng[0] : null
       const end = Array.isArray(rng) ? rng[1] : null
       if (!start || !end || end < start) return null
-      return { x: ticketLabelKey(t), y: [start, end] }
+      return { x: ticketLabelKey(t), y: [start, end], obj: t?.objet ?? '' }
     }).filter(Boolean)
   }
 
