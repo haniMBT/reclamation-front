@@ -218,9 +218,10 @@ const chartOptions = computed(() => ({
         const rawObj = point?.obj || fromXObj || ''
         const esc = (s) => String(s).replace(/[&<>\"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]))
         const typePart = typeLabel ? `<div><strong>Type:</strong> ${esc(typeLabel)}</div>` : ''
-        const ownerPart = ownerLabel ? `<div><strong>Auteur:</strong> ${esc(ownerLabel)}</div>` : ''
-        const objetPart = rawObj ? `<div class="text-xs text-gray-700 mt-1"><strong>Objet:</strong> ${esc(rawObj)}</div>` : ''
-        return `<div class="px-3 py-2 text-sm"><div><strong>Statut:</strong> ${name}</div>${typePart}${ownerPart}<div>Durée: ${duree}</div>${objetPart}</div>`
+const ownerPart = ownerLabel ? `<div><strong>Créateur:</strong> ${esc(ownerLabel)}</div>` : ''
+const objetPart = rawObj ? `<div class="text-xs text-gray-700 mt-1"><strong>Objet:</strong> ${esc(rawObj)}</div>` : ''
+const divider = `<div class="my-2 border-t border-gray-200"></div>`
+return `<div class="px-3 py-2 text-sm"><div><strong>Statut:</strong> ${name}</div>${typePart}${ownerPart}${divider}<div><strong>Durée du statut:</strong> ${duree}</div>${objetPart}</div>`
       } catch (e) {
         return ''
       }
