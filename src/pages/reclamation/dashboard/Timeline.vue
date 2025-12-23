@@ -42,7 +42,7 @@
           </div>
           <div class="text-sm text-gray-500">Chaque barre = 1 ticket. Segments = statuts.</div>
         </div>
-        <apexchart type="rangeBar" height="600" :options="chartOptions" :series="series" />
+        <div ref="chartRef" style="height: 600px;"></div>
       </div>
     </div>
   </div>
@@ -53,6 +53,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useQuasar } from 'quasar'
 import dayjs from 'dayjs'
 import { api } from 'src/boot/axios'
+import * as echarts from 'echarts'
 
 const $q = useQuasar()
 
@@ -353,25 +354,174 @@ const series = computed(() => {
   ]
 })
 
+const chartRef = ref(null)
+let chartInstance = null
 onMounted(() => {
+  if (chartRef.value && !chartInstance) {
+    chartInstance = echarts.init(chartRef.value)
+  }
   loadData()
-  // Charger les libellés b_rec_ticket pour le filtre (fallback sans appel réseau)
   loadBaseTickets()
 })
 
-// Rafraîchir automatiquement quand des types (b_rec_ticket) sont sélectionnés
+// Auto resize on container size change
+function handleResize () {
+  if (chartInstance) chartInstance.resize()
+}
+window.addEventListener('resize', handleResize)
+
+// Destroy chart on unmount
+// onUnmounted(() => {
+//   window.removeEventListener('resize', handleResize)
+//   if (chartInstance) {
+//     chartInstance.dispose()
+//     chartInstance = null
+//   }
+// })
+
+// Refresh chart when items change
+watch(items, () => {
+  renderChart()
+})
+
 watch(() => filters.value.bticket_ids, (val) => {
   if (Array.isArray(val)) {
     loadData()
   }
 })
-// Compatibilité: déclenchement sur single-select si utilisé
+
 watch(() => filters.value.bticket_id, (val) => {
   if (val !== null && val !== undefined) {
     loadData()
   }
 })
-</script>
 
-<style scoped>
-</style>
+function buildEchartsOption () {
+  const base = (Array.isArray(items.value) ? items.value : []).filter(t => !!t?.date_validation_createur)
+  // Map tickets to categories
+  const categories = base.map(t => (t?.owner_display ? `${t?.libelle || t?.type_name || 'Ticket'} — ${t.owner_display}` : (t?.libelle || t?.type_name || 'Ticket')))
+  // Flatten segments
+  const segments = []
+  base.forEach((t, idx) => {
+    const segs = Array.isArray(t?.segments) ? t.segments : []
+    segs.forEach(s => {
+      const start = dayjs(s.start).valueOf()
+      const end = dayjs(s.end).valueOf()
+      if (!start || !end || end < start) return
+      segments.push({
+        ticketIndex: idx,
+        status: s.status,
+        start,
+        end,
+        meta: {
+          type: t?.libelle || t?.type_name || 'Ticket',
+          owner: t?.owner_display || '',
+          obj: t?.objet || '',
+          pilot_direction: t?.pilot_direction || null,
+          treatment_directions: Array.isArray(t?.treatment_directions) ? t.treatment_directions : [],
+          consultation_directions: Array.isArray(t?.consultation_directions) ? t.consultation_directions : [],
+          recours_pilot: t?.recours_pilot || null,
+          recours_commission: Array.isArray(t?.recours_commission) ? t.recours_commission : []
+        }
+      })
+    })
+  })
+
+  const colorMap = {
+    'Ouvert': '#1E88E5',
+    'En attente': '#FBC02D',
+    'En cours': '#43A047',
+    'Clôturé': '#757575',
+    'Recours': '#E53935',
+    'Recours clôturé': '#8E24AA'
+  }
+
+  const option = {
+    animation: false,
+    grid: { left: 180, right: 20, top: 20, bottom: 40 },
+    xAxis: {
+      type: 'time',
+      axisLabel: { formatter: (value) => dayjs(value).format('DD/MM/YYYY') }
+    },
+    yAxis: {
+      type: 'category',
+      data: categories,
+      axisLabel: { width: 160, overflow: 'truncate' }
+    },
+    tooltip: {
+      trigger: 'item',
+      renderMode: 'html',
+      formatter: (params) => {
+        const v = Array.isArray(params.value) ? params.value : []
+        const start = v[1]
+        const end = v[2]
+        const status = v[3]
+        const meta = v[4] || {}
+        if (!start || !end) return ''
+        // Durée affichée en jours uniquement
+        const days = Math.max(0, (end - start) / 86400000)
+        const daysInt = Math.round(days)
+        const startStr = dayjs(start).format('DD/MM/YYYY HH:mm')
+        const endStr = dayjs(end).format('DD/MM/YYYY HH:mm')
+        const esc = (s) => String(s || '').replace(/[&<>\"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]))
+        const typePart = meta.type ? `<div><strong>Type:</strong> ${esc(meta.type)}</div>` : ''
+        const ownerPart = meta.owner ? `<div><strong>Créateur:</strong> ${esc(meta.owner)}</div>` : ''
+        const objetPart = meta.obj ? `<div class="text-xs text-gray-700 mt-1"><strong>Objet:</strong> ${esc(meta.obj)}</div>` : ''
+        const divider = `<div class="my-2 border-t border-gray-200"></div>`
+        const renderList = (title, arr) => {
+          const list = (Array.isArray(arr) ? arr : []).filter(x => !!x)
+          if (list.length === 0) return ''
+          const itemsHtml = list.map(v => `<li class="ml-4">• ${esc(v)}</li>`).join('')
+          return `<div class="mt-1"><strong>${esc(title)}:</strong><ul class="mt-1">${itemsHtml}</ul></div>`
+        }
+        let actorsHtml = ''
+        if (status === 'Recours' || status === 'Recours clôturé') {
+          const head = meta.recours_pilot ? `<div><strong>Pilot du recours:</strong> ${esc(meta.recours_pilot)}</div>` : ''
+          actorsHtml = head + renderList('Membres de la commission de recours', meta.recours_commission)
+        } else if (status === 'En cours') {
+          const head = meta.pilot_direction ? `<div><strong>Direction pilot:</strong> ${esc(meta.pilot_direction)}</div>` : ''
+          actorsHtml = head + renderList('Directions en traitement', meta.treatment_directions) + renderList('Directions en consultation', meta.consultation_directions)
+        } else if (status === 'Ouvert' || status === 'En attente' || status === 'Clôturé') {
+          const head = meta.pilot_direction ? `<div><strong>Direction pilot:</strong> ${esc(meta.pilot_direction)}</div>` : ''
+          actorsHtml = head
+        }
+        return `<div class=\"px-3 py-2 text-sm\"><div><strong>Statut:</strong> ${esc(status)}</div>${typePart}${ownerPart}${divider}<div><strong>Début:</strong> ${startStr}</div><div><strong>Fin:</strong> ${endStr}</div><div><strong>Durée (jours):</strong> ${daysInt}</div>${objetPart}${divider}${actorsHtml}</div>`
+      }
+    },
+    series: [{
+      type: 'custom',
+      renderItem: (params, api) => {
+        const ticketIndex = api.value(0)
+        const start = api.value(1)
+        const end = api.value(2)
+        const status = api.value(3)
+        const meta = api.value(4)
+        const categoryIndex = ticketIndex
+        const startCoord = api.coord([start, categoryIndex])
+        const endCoord = api.coord([end, categoryIndex])
+        const height = api.size([0, 1])[1] * 0.6
+        const x = startCoord[0]
+        const y = startCoord[1] - height / 2
+        const width = endCoord[0] - startCoord[0]
+        return {
+          type: 'rect',
+          shape: { x, y, width, height },
+          style: api.style({ fill: colorMap[status] || '#888888' })
+        }
+      },
+      encode: { x: [1,2], y: 0 },
+      data: segments.map(s => [s.ticketIndex, s.start, s.end, s.status, s.meta])
+    }]
+  }
+  return option
+}
+
+function renderChart () {
+  if (!chartRef.value) return
+  if (!chartInstance) {
+    chartInstance = echarts.init(chartRef.value)
+  }
+  const option = buildEchartsOption()
+  chartInstance.setOption(option)
+}
+</script>

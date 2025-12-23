@@ -27,7 +27,6 @@ module.exports = configure(function (ctx) {
       'axios',
       'pinia',
       'auth-init',
-      'apexcharts',
       'fusioncharts',
     ],
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#css
