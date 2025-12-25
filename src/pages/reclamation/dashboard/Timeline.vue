@@ -356,6 +356,7 @@ const series = computed(() => {
 
 const chartRef = ref(null)
 let chartInstance = null
+let lastCategories = []
 onMounted(() => {
   if (chartRef.value && !chartInstance) {
     chartInstance = echarts.init(chartRef.value)
@@ -438,7 +439,7 @@ function buildEchartsOption () {
 
   const option = {
     animation: false,
-    grid: { left: 180, right: 20, top: 20, bottom: 40 },
+    grid: { left: 180, right: 20, top: 80, bottom: 40 },
     xAxis: {
       type: 'time',
       axisLabel: { formatter: (value) => dayjs(value).format('DD/MM/YYYY') }
@@ -448,6 +449,50 @@ function buildEchartsOption () {
       data: categories,
       axisLabel: { width: 160, overflow: 'truncate' }
     },
+    toolbox: {
+      show: true,
+      right: 10,
+      top: 0,
+      feature: {
+        dataZoom: { xAxisIndex: 0, yAxisIndex: 0 },
+        brush: { type: ['rect', 'clear'] },
+        restore: {},
+        saveAsImage: {}
+      }
+    },
+    dataZoom: [
+      { type: 'slider', yAxisIndex: 0, filterMode: 'weakFilter', right: 0 },
+      { type: 'inside', yAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseWheel: true, moveOnMouseMove: true, preventDefaultMouseWheel: true },
+      { type: 'slider', xAxisIndex: 0, filterMode: 'weakFilter', bottom: 10 },
+      { type: 'inside', xAxisIndex: 0, zoomOnMouseWheel: true, moveOnMouseWheel: true, moveOnMouseMove: true, preventDefaultMouseWheel: true }
+    ],
+    brush: {
+      toolbox: ['rect', 'clear'],
+      xAxisIndex: 'none',
+      yAxisIndex: 0,
+      brushMode: 'single',
+      transformable: true,
+      throttleType: 'debounce',
+      throttle: 100
+    },
+    graphic: [
+      (function() {
+        const statusList = ['Ouvert','En attente','En cours','Clôturé','Recours','Recours clôturé']
+        const children = []
+        const itemWidth = 16
+        const itemHeight = 16
+        const gapX = 12
+        const blockWidth = 100
+        statusList.forEach((name, i) => {
+          const x = i * blockWidth
+          children.push(
+            { type: 'rect', left: x, top: 0, shape: { x: 0, y: 0, width: itemWidth, height: itemHeight }, style: { fill: colorMap[name] || '#888888', stroke: '#cccccc' } },
+            { type: 'text', left: x + itemWidth + 6, top: itemHeight - 2, style: { text: name, fill: '#333', fontSize: 12 } }
+          )
+        })
+        return { type: 'group', right: 10, top: 36, children }
+      })()
+    ],
     tooltip: {
       trigger: 'item',
       renderMode: 'html',
@@ -458,7 +503,6 @@ function buildEchartsOption () {
         const status = v[3]
         const meta = v[4] || {}
         if (!start || !end) return ''
-        // Durée affichée en jours uniquement
         const days = Math.max(0, (end - start) / 86400000)
         const daysInt = Math.round(days)
         const startStr = dayjs(start).format('DD/MM/YYYY HH:mm')
@@ -490,29 +534,32 @@ function buildEchartsOption () {
     },
     series: [{
       type: 'custom',
-      renderItem: (params, api) => {
-        const ticketIndex = api.value(0)
-        const start = api.value(1)
-        const end = api.value(2)
-        const status = api.value(3)
-        const meta = api.value(4)
-        const categoryIndex = ticketIndex
-        const startCoord = api.coord([start, categoryIndex])
-        const endCoord = api.coord([end, categoryIndex])
-        const height = api.size([0, 1])[1] * 0.6
-        const x = startCoord[0]
-        const y = startCoord[1] - height / 2
-        const width = endCoord[0] - startCoord[0]
-        return {
-          type: 'rect',
-          shape: { x, y, width, height },
-          style: api.style({ fill: colorMap[status] || '#888888' })
-        }
-      },
-      encode: { x: [1,2], y: 0 },
-      data: segments.map(s => [s.ticketIndex, s.start, s.end, s.status, s.meta])
-    }]
-  }
+      clip: true,
+       renderItem: (params, api) => {
+         const ticketIndex = api.value(0)
+         const start = api.value(1)
+         const end = api.value(2)
+         const status = api.value(3)
+         const meta = api.value(4)
+         const categoryIndex = ticketIndex
+         const startCoord = api.coord([start, categoryIndex])
+         const endCoord = api.coord([end, categoryIndex])
+         const height = api.size([0, 1])[1] * 0.6
+         const x = startCoord[0]
+         const y = startCoord[1] - height / 2
+         const width = endCoord[0] - startCoord[0]
+         return {
+           type: 'rect',
+           shape: { x, y, width, height },
+           style: api.style({ fill: colorMap[status] || '#888888' })
+         }
+       },
+       encode: { x: [1,2], y: 0 },
+       data: segments.map(s => [s.ticketIndex, s.start, s.end, s.status, s.meta])
+     }]
+   }
+  // Mémoriser les catégories pour le zoom vertical via brush (bar chart uniquement)
+  lastCategories = categories
   return option
 }
 
@@ -523,5 +570,29 @@ function renderChart () {
   }
   const option = buildEchartsOption()
   chartInstance.setOption(option)
+  // Double‑clic pour réinitialiser le zoom (Y uniquement)
+  chartInstance.off('dblclick')
+  chartInstance.on('dblclick', () => {
+    try {
+      chartInstance.dispatchAction({ type: 'dataZoom', start: 0, end: 100, yAxisIndex: 0 })
+      chartInstance.dispatchAction({ type: 'dataZoom', start: 0, end: 100, xAxisIndex: 0 })
+     } catch (e) {}
+   })
+  // Zoom par sélection rectangulaire (brush) sur Y uniquement
+  chartInstance.off('brushSelected')
+  chartInstance.on('brushSelected', (evt) => {
+    try {
+      const batch = Array.isArray(evt?.batch) ? evt.batch : []
+      const area = batch[0]?.areas?.[0]
+      const yr = area?.coordRange?.[1] // [yStart, yEnd] en indices/valeurs catégorie
+      if (Array.isArray(yr) && yr.length === 2 && lastCategories.length > 0) {
+        const startIdx = Math.max(0, Math.floor(yr[0]))
+        const endIdx = Math.min(lastCategories.length - 1, Math.ceil(yr[1]))
+        const startVal = lastCategories[startIdx]
+        const endVal = lastCategories[endIdx]
+        chartInstance.dispatchAction({ type: 'dataZoom', yAxisIndex: 0, startValue: startVal, endValue: endVal })
+      }
+    } catch (e) {}
+  })
 }
 </script>
