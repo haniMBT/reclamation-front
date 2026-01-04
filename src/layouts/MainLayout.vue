@@ -308,7 +308,7 @@
             <q-item v-if="AllPrivilege?.privilege_dasboard_global.role=='Admin'" to="/reclamations/dashboard2" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
-                  <q-icon name="list_alt" color="orange" />
+                  <q-icon name="pie_chart" color="orange" />
                 </div>
               </q-item-section>
               <q-item-section>
@@ -321,7 +321,7 @@
             <q-item v-if="AllPrivilege?.privilege_dasboard_détaillé.role=='Admin'" to="/reclamations/dashboard" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
-                  <q-icon name="list_alt" color="orange" />
+                  <q-icon name="stacked_bar_chart" color="orange" />
                 </div>
               </q-item-section>
               <q-item-section>

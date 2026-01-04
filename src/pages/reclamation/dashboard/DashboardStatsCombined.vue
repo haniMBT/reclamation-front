@@ -4,7 +4,7 @@
       <!-- Header Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
         <div class="flex items-center mb-2">
-          <q-icon name="analytics" size="2rem" class="text-blue-600 mr-3" />
+          <q-icon name="pie_chart" size="2rem" class="text-blue-600 mr-3" />
           <div>
             <h1 class="text-2xl font-bold text-gray-800 mb-1">Statistiques Globales des Réclamations</h1>
             <p class="text-gray-600 text-sm">Vue d'ensemble par état (En attente, En cours, Traité, Recours)</p>
