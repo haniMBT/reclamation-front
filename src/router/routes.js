@@ -21,7 +21,7 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/Dashboard.vue') }
+      { path: '', component: () => import('pages/Dashboard.vue') },
     ]
   },
   {
@@ -29,6 +29,7 @@ const routes = [
     component: () => import('layouts/MainLayout.vue'),
     children: [
       { path: 'dashboard', name: 'reclamations-dashboard', component: () => import('src/pages/reclamation/dashboard/Timeline.vue') },
+      { path: 'dashboard2', name: 'reclamations-dashboard2', component: () => import('src/pages/reclamation/dashboard/DashboardStatsCombined.vue') },
       { path: 'client', component: () => import('src/pages/reclamation/Index.vue') },
       { path: 'client/:id', component: () => import('src/pages/reclamation/show.vue') },
       { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },
