@@ -105,6 +105,9 @@ async function loadData() {
       params.bticket_ids = filters.value.bticket_ids
     }
 
+    // Indiquer la source pour différencier (ici on veut tout, y compris les traités)
+    params.source = 'combined'
+
     // Réutilisation de l'endpoint existant pour garantir la cohérence des données
     const { data } = await api.get('/api/rec/dashboard/timeline', { params })
     const payload = data?.data || {}

@@ -65,9 +65,7 @@ const statusOptions = [
   { label: 'ouvert', value: 'ouvert' },
   { label: 'En attente', value: 'En attente' },
   { label: 'En cours', value: 'En cours' },
-  { label: 'clôturé', value: 'clôturé' },
-  { label: 'Recours', value: 'Recours' },
-  { label: 'Recours clôturé', value: 'Recours clôturé' }
+  { label: 'Recours', value: 'Recours' }
 ]
 
 const filters = ref({
@@ -96,6 +94,9 @@ async function loadData () {
     } else if (filters.value.bticket_id) {
       params.bticket_id = filters.value.bticket_id
     }
+
+    // Indiquer la source pour que le backend puisse filtrer les tickets clôturés/recours clôturés
+    params.source = 'timeline'
 
     const { data } = await api.get('/api/rec/dashboard/timeline', { params })
     const payload = data?.data || {}
