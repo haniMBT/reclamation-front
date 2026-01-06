@@ -67,6 +67,7 @@ import * as echarts from 'echarts'
 const $q = useQuasar()
 const loading = ref(false)
 const items = ref([])
+const statsPrecomputed = ref(null)
 const baseTickets = ref([])
 
 // Options pour le filtre de statut (identique à l'existant pour cohérence)
@@ -111,6 +112,9 @@ async function loadData() {
     // Réutilisation de l'endpoint existant pour garantir la cohérence des données
     const { data } = await api.get('/api/rec/dashboard/timeline', { params })
     const payload = data?.data || {}
+
+    // Stats pré-calculées (optimisation backend)
+    statsPrecomputed.value = payload.stats_precomputed || null
 
     // Traitement des items
     const rawItems = payload.items
@@ -164,6 +168,26 @@ function processStats() {
         'En cours': 0,
         'Traité': 0,
         'Recours': 0
+    }
+
+    if (statsPrecomputed.value) {
+        const s = statsPrecomputed.value
+        // Mapping des statuts DB vers statuts Dashboard
+        // 'En attente'
+        stats['En attente'] = (s['Ouvert'] || 0) + (s['ouvert'] || 0) +
+                              (s['En attente'] || 0) + (s['en attente'] || 0)
+
+        // 'En cours'
+        stats['En cours'] = (s['En cours'] || 0) + (s['en cours'] || 0)
+
+        // 'Traité' (Clôturé + Recours clôturé)
+        stats['Traité'] = (s['clôturé'] || 0) + (s['Clôturé'] || 0) +
+                          (s['Recours clôturé'] || 0) + (s['recours clôturé'] || 0)
+
+        // 'Recours' (actif)
+        stats['Recours'] = (s['Recours'] || 0) + (s['recours'] || 0)
+
+        return stats
     }
 
     items.value.forEach(t => {
