@@ -98,7 +98,10 @@ async function loadData () {
     // Indiquer la source pour que le backend puisse filtrer les tickets clôturés/recours clôturés
     params.source = 'timeline'
 
-    const { data } = await api.get('/api/rec/dashboard/timeline', { params })
+    const { data } = await api.get('/api/rec/dashboard/timeline', {
+      params,
+      timeout: 30000
+    })
     const payload = data?.data || {}
     const rawItems = payload.items
     items.value = Array.isArray(rawItems)
@@ -114,7 +117,13 @@ async function loadData () {
 
   } catch (err) {
     console.error(err)
-    $q.notify({ type: 'negative', message: 'Erreur de chargement des tickets' })
+    let msg = 'Erreur de chargement des tickets'
+    if (err.code === 'ECONNABORTED') {
+      msg = 'Le délai d\'attente du serveur a expiré. Veuillez réessayer.'
+    } else if (err.response && err.response.status >= 500) {
+      msg = 'Erreur serveur interne.'
+    }
+    $q.notify({ type: 'negative', message: msg, timeout: 5000 })
   } finally {
     loading.value = false
   }

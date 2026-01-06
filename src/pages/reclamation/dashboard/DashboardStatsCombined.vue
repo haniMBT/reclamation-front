@@ -110,7 +110,11 @@ async function loadData() {
     params.source = 'combined'
 
     // Réutilisation de l'endpoint existant pour garantir la cohérence des données
-    const { data } = await api.get('/api/rec/dashboard/timeline', { params })
+    // Timeout défini à 30 secondes pour éviter le spinner infini
+    const { data } = await api.get('/api/rec/dashboard/timeline', {
+      params,
+      timeout: 30000
+    })
     const payload = data?.data || {}
 
     // Stats pré-calculées (optimisation backend)
@@ -145,7 +149,13 @@ async function loadData() {
 
   } catch (err) {
     console.error(err)
-    $q.notify({ type: 'negative', message: 'Erreur de chargement des données' })
+    let msg = 'Erreur de chargement des données'
+    if (err.code === 'ECONNABORTED') {
+      msg = 'Le serveur met trop de temps à répondre (Timeout). Veuillez réessayer.'
+    } else if (err.response && err.response.status >= 500) {
+      msg = 'Erreur serveur. Veuillez contacter le support.'
+    }
+    $q.notify({ type: 'negative', message: msg, timeout: 5000 })
   } finally {
     loading.value = false
   }
