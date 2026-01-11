@@ -305,7 +305,7 @@
               <div class="stellar-badge">📢</div>
             </template>
 
-            <q-item v-if="AllPrivilege?.privilege_dasboard_global.role=='Admin'" to="/reclamations/dashboard2" clickable v-ripple class="stellar-submenu nebula-subcard">
+            <q-item v-if="AllPrivilege?.privilege_dasboard_global?.role=='Admin'" to="/reclamations/dashboard2" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
                   <q-icon name="pie_chart" color="orange" />
@@ -318,7 +318,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item v-if="AllPrivilege?.privilege_dasboard_détaillé.role=='Admin'" to="/reclamations/dashboard" clickable v-ripple class="stellar-submenu nebula-subcard">
+            <q-item v-if="AllPrivilege?.privilege_dasboard_détaillé?.role=='Admin'" to="/reclamations/dashboard" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
                   <q-icon name="stacked_bar_chart" color="orange" />
@@ -357,7 +357,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item v-if="AllPrivilege?.privilege_parametrage.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr.role=='Admin'" to="/reclamations/parametrage" clickable v-ripple class="stellar-submenu nebula-subcard">
+            <q-item v-if="AllPrivilege?.privilege_parametrage?.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr?.role=='Admin'" to="/reclamations/parametrage" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
                   <q-icon name="tune" color="orange" />
@@ -508,7 +508,7 @@ const fetchAllPrivilege = async () => {
   try {
     const res = await api.get('api/all/privileges');
     AllPrivilege.value = res?.data ?? null;
-    console.log(AllPrivilege.value.privilege_parametrage.role,'AllPrivilege');
+    console.log(AllPrivilege.value.privilege_parametrage?.role,'AllPrivilege');
   } catch (error) {
     console.error('Erreur lors de la récupération du privilège liste_des_reclamations:', error);
   }
