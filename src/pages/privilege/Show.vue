@@ -640,7 +640,7 @@ const sendData = async () => {
       id: data.value,
     })
     .then(async (response) => {
-      await fetchData(searchPrivileges.value);
+     // await fetchData(searchPrivileges.value);
       message.value = response.data.message;
       console.log(message.value);
       $q.notify({
