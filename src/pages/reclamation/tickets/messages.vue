@@ -651,7 +651,7 @@
             <div class="space-y-2 bg-blue-50 border border-blue-100 p-4 rounded-md">
               <div class="text-sm text-blue-800">
                 <span class="font-medium">Direction demandeuse:</span>
-                {{ ticket_direction?.direction?.libelle || ticket_direction?.libelle || '—' }}
+                {{ requesting_direction || ticket_direction?.direction || '—' }}
               </div>
               <div class="text-sm text-blue-800">
                 <span class="font-medium">Motif du changement:</span>
@@ -1869,6 +1869,7 @@ const recourMessage = ref({
 // Upload
 const newFiles = ref(null)
 const loadingDirections = ref(false)
+const requesting_direction = ref(null)
 const directionOptions = ref([])
 const directionsNonConcerneOptions = ref([])
 const showAddDirectionDialog = ref(false)
@@ -2333,6 +2334,7 @@ const loadMessages = async () => {
     if (response.data.success) {
       messages.value = response.data.data || []
       ticket_direction.value = response.data.ticket_direction || null
+      requesting_direction.value = response.data.requesting_direction || null
       ticket.value = response.data.ticket || null
       privilege.value = response.data.privilege || null
       createur.value = response.data.createur || null // Récupérer les infos du créateur
@@ -2371,6 +2373,7 @@ const loadMessagesDirections = async () => {
       // Messages et méta
       messages.value = response.data.messages || response.data.data || []
       ticket_direction.value = response.data.ticket_direction || null
+      requesting_direction.value = response.data.requesting_direction || null
       ticket.value = response.data.ticket || null
       privilege.value = response.data.privilege || null
       createur.value = response.data.createur || null
