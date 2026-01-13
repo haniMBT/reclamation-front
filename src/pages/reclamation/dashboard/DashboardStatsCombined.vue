@@ -7,7 +7,7 @@
           <q-icon name="pie_chart" size="2rem" class="text-blue-600 mr-3" />
           <div>
             <h1 class="text-2xl font-bold text-gray-800 mb-1">Statistiques Globales des Réclamations</h1>
-            <p class="text-gray-600 text-sm">Vue d'ensemble par état (En attente, En cours, Traité, Recours)</p>
+            <p class="text-gray-600 text-sm">Vue d'ensemble par état (En attente, En cours, Clôturé, Recours, Recours clôturé)</p>
           </div>
         </div>
       </div>
@@ -176,8 +176,9 @@ function processStats() {
     const stats = {
         'En attente': 0,
         'En cours': 0,
-        'Traité': 0,
-        'Recours': 0
+        'Clôturé': 0,
+        'Recours': 0,
+        'Recours clôturé': 0
     }
 
     if (statsPrecomputed.value) {
@@ -190,9 +191,11 @@ function processStats() {
         // 'En cours'
         stats['En cours'] = (s['En cours'] || 0) + (s['en cours'] || 0)
 
-        // 'Traité' (Clôturé + Recours clôturé)
-        stats['Traité'] = (s['clôturé'] || 0) + (s['Clôturé'] || 0) +
-                          (s['Recours clôturé'] || 0) + (s['recours clôturé'] || 0)
+        // 'Clôturé'
+        stats['Clôturé'] = (s['clôturé'] || 0) + (s['Clôturé'] || 0)
+
+        // 'Recours clôturé'
+        stats['Recours clôturé'] = (s['Recours clôturé'] || 0) + (s['recours clôturé'] || 0)
 
         // 'Recours' (actif)
         stats['Recours'] = (s['Recours'] || 0) + (s['recours'] || 0)
@@ -206,8 +209,10 @@ function processStats() {
 
         const status = getTicketStatus(t)
 
-        if (status === 'Recours clôturé' || status === 'Clôturé') {
-            stats['Traité']++
+        if (status === 'Clôturé') {
+            stats['Clôturé']++
+        } else if (status === 'Recours clôturé') {
+            stats['Recours clôturé']++
         } else if (status === 'Recours') {
             stats['Recours']++
         } else if (status === 'En cours') {
@@ -225,14 +230,15 @@ function renderChart() {
     if (!chartInstance) chartInstance = echarts.init(chartRef.value)
 
     const stats = processStats()
-    const categories = ['En attente', 'En cours', 'Traité', 'Recours']
+    const categories = ['En attente', 'En cours', 'Clôturé', 'Recours', 'Recours clôturé']
 
     // Couleurs personnalisées
     const colors = {
         'En attente': '#FBC02D',
         'En cours': '#43A047',
-        'Traité': '#757575',
-        'Recours': '#E53935'
+        'Clôturé': '#757575',
+        'Recours': '#E53935',
+        'Recours clôturé': '#8E24AA'
     }
 
     const data = categories.map(cat => ({
