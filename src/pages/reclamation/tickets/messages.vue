@@ -2511,13 +2511,13 @@ const viewMessageDetail = async (message) => {
     }
   }
 
-  // Si destinataire = client et l'utilisateur n'a pas de direction, marquer comme lu côté client
-  const hasNoDirection = !authStore.user?.direction
+  // Si destinataire = client et l'utilisateur a une direction, marquer comme lu côté client
+  // const hasNoDirection = !authStore.user?.direction //n'a pas de direction
   const clientIdx = Array.isArray(message?.destinataires)
     ? message.destinataires.findIndex(d => d?.direction_destinataire === 'client' && d?.statut !== 'lu' && !d?.date_lecture)
     : -1
 
-  if (hasNoDirection && clientIdx !== -1) {
+  if (clientIdx !== -1) {
     try {
       await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { recipient: 'client' })
       // Mettre à jour localement le destinataire client
