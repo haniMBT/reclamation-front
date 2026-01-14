@@ -1741,10 +1741,26 @@ const getDirectionLabel = (code) => {
   return found?.label || code
 }
 
+const parseDate = (value) => {
+  if (!value) return null
+  if (value instanceof Date) return isNaN(value.getTime()) ? null : value
+  const raw = String(value).trim()
+  if (!raw) return null
+  let d = new Date(raw)
+  if (!isNaN(d.getTime())) return d
+  d = new Date(raw.replace(' ', 'T'))
+  if (!isNaN(d.getTime())) return d
+  d = new Date(raw.replace(' ', 'T') + 'Z')
+  if (!isNaN(d.getTime())) return d
+  return null
+}
+
 const formatDateTime = (dateString) => {
   if (!dateString) return '—'
+  const date = parseDate(dateString)
+  if (!date) return dateString
   try {
-    return new Date(dateString).toLocaleString('fr-FR', {
+    return date.toLocaleString('fr-FR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -2227,8 +2243,10 @@ const loadMessagesDirections = async () => {
 
 const formatDate = (dateString) => {
   if (!dateString) return 'N/A'
+  const date = parseDate(dateString)
+  if (!date) return dateString
   try {
-    return new Date(dateString).toLocaleDateString('fr-FR', {
+    return date.toLocaleDateString('fr-FR', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
