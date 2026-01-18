@@ -36,109 +36,10 @@
       <div
         class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 max-w-7xl mx-auto"
       >
-        <!-- Gestion des Paiements -->
-        <div
-          class="welcome-card group bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-cyan-500/20 transition-all duration-500 hover:border-cyan-400/40 hover:shadow-cyan-500/20 relative overflow-hidden"
-          @mouseenter="startParticleAnimation(0)"
-        >
-          <!-- Animated Background -->
-          <div class="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          
-          <!-- Floating Particles -->
-          <div class="particles-container absolute inset-0 overflow-hidden">
-            <div 
-              v-for="i in 5" 
-              :key="i" 
-              class="particle absolute w-2 h-2 bg-cyan-400/30 rounded-full"
-              :style="particleStyles[0]?.[i-1]"
-            ></div>
-          </div>
-
-          <div class="relative z-10 flex flex-col items-center text-center">
-            <div
-              class="w-20 h-20 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 shadow-lg"
-            >
-              <q-icon
-                name="account_balance_wallet"
-                class="text-3xl text-white"
-              />
-            </div>
-
-            <h3
-              class="text-2xl font-bold text-white mb-4"
-            >
-              Gestion des Paiements
-            </h3>
-            <p
-              class="text-gray-300 leading-relaxed mb-6"
-            >
-              Consultez l'historique de vos paiements, suivez vos transactions
-              et gérez vos factures en temps réel.
-            </p>
-
-            <div
-              class="flex items-center text-cyan-400 font-semibold cursor-pointer transition-all duration-300 hover:scale-105"
-            >
-              <q-icon name="trending_up" class="mr-2 transition-transform duration-300 group-hover:translate-x-1" />
-              <span>Suivi en temps réel</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Facture Proforma -->
-        <div
-          class="welcome-card group bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-orange-500/20 transition-all duration-500 hover:border-orange-400/40 hover:shadow-orange-500/20 relative overflow-hidden"
-          @mouseenter="startParticleAnimation(1)"
-        >
-          <!-- Animated Background -->
-          <div class="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-red-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          
-          <!-- Floating Particles -->
-          <div class="particles-container absolute inset-0 overflow-hidden">
-            <div 
-              v-for="i in 5" 
-              :key="i" 
-              class="particle absolute w-2 h-2 bg-orange-400/30 rounded-full"
-              :style="particleStyles[1]?.[i-1]"
-            ></div>
-          </div>
-
-          <div class="relative z-10 flex flex-col items-center text-center">
-            <div
-              class="w-20 h-20 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-6 transition-all duration-500 group-hover:scale-110 group-hover:-rotate-3 shadow-lg"
-            >
-              <q-icon
-                name="analytics"
-                class="text-3xl text-white"
-              />
-            </div>
-
-            <h3
-              class="text-2xl font-bold text-white mb-4"
-            >
-              Facture Proforma
-            </h3>
-            <p
-              class="text-gray-300 leading-relaxed mb-6"
-            >
-              Générez vos factures proforma en quelques clics et gardez un
-              contrôle total grâce à un suivi détaillé et une gestion
-              simplifiée.
-            </p>
-
-            <div
-              class="flex items-center text-orange-400 font-semibold cursor-pointer transition-all duration-300 hover:scale-105"
-            >
-              <q-icon name="bar_chart" class="mr-2 transition-transform duration-300 group-hover:translate-x-1" />
-              <span>Suivi précis</span>
-            </div>
-          </div>
-        </div>
-
         <!-- Réclamation Client -->
         <div
           class="welcome-card group bg-gradient-to-br from-slate-800/60 to-slate-900/60 backdrop-blur-xl rounded-2xl p-8 shadow-2xl border border-teal-500/20 transition-all duration-500 hover:border-teal-400/40 hover:shadow-teal-500/20 relative overflow-hidden"
-          @mouseenter="startParticleAnimation(2)"
+          @mouseenter="startParticleAnimation(0)"
         >
           <!-- Animated Background -->
           <div class="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-green-600/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -149,7 +50,7 @@
               v-for="i in 5" 
               :key="i" 
               class="particle absolute w-2 h-2 bg-teal-400/30 rounded-full"
-              :style="particleStyles[2]?.[i-1]"
+              :style="particleStyles[0]?.[i-1]"
             ></div>
           </div>
 
@@ -240,11 +141,11 @@
 <script setup>
 import { ref, reactive } from 'vue'
 
-// Particle animation states
+// Particle animation state
 const particleStyles = reactive([
-  Array(5).fill(null).map(() => ({})),
-  Array(5).fill(null).map(() => ({})),
-  Array(5).fill(null).map(() => ({}))
+  Array(5)
+    .fill(null)
+    .map(() => ({}))
 ])
 
 const startParticleAnimation = (cardIndex) => {
