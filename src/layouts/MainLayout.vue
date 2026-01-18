@@ -209,7 +209,7 @@
               <div class="stellar-badge">📢</div>
             </template>
 
-            <q-item v-if="AllPrivilege?.privilege_dasboard_global?.role=='Admin'" to="/reclamations/dashboard2" clickable v-ripple class="stellar-submenu nebula-subcard">
+            <!-- <q-item v-if="AllPrivilege?.privilege_dasboard_global?.role=='Admin'" to="/reclamations/dashboard2" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
                   <q-icon name="pie_chart" color="orange" />
@@ -220,7 +220,7 @@
                   <span class="text-dark submenu-text">Dashboard global</span>
                 </div>
               </q-item-section>
-            </q-item>
+            </q-item> -->
 
             <q-item v-if="AllPrivilege?.privilege_dasboard_détaillé?.role=='Admin'" to="/reclamations/dashboard" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
