@@ -138,142 +138,75 @@
 
       <q-scroll-area class="flex-grow nebula-scroll" :horizontal-thumb-style="{ opacity: 1 }">
         <q-list padding class="stellar-list">
-          <!-- Dashboard avec effet holographique -->
-          <q-item to="/" clickable v-ripple class="stellar-menu-item nebula-card" data-category="dashboard">
+          <!-- Dashboard Global -->
+          <q-item v-if="AllPrivilege?.privilege_dasboard_global?.role=='Admin'" to="/reclamations/dashboard2" clickable v-ripple class="stellar-menu-item nebula-card">
             <q-item-section avatar>
-              <div class="hologram-container">
-                <div class="hologram-base hologram-blue">
-                  <div class="hologram-grid"></div>
-                  <div class="hologram-glow"></div>
-                  <svg viewBox="0 0 24 24" class="hologram-icon">
-                    <path fill="currentColor" d="M3 13h1v7c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-7h1c.6 0 1-.4 1-1s-.4-1-1-1h-1V4c0-1.1-.9-2-2-2H6C4.9 2 4 2.9 4 4v7H3c-.6 0-1 .4-1 1s.4 1 1 1zM6 4h12v7H6V4z"/>
-                  </svg>
-                  <div class="energy-beam beam-1"></div>
-                  <div class="energy-beam beam-2"></div>
-                </div>
+              <div class="submenu-icon">
+                <q-icon name="pie_chart" color="orange" />
               </div>
             </q-item-section>
             <q-item-section>
               <div class="menu-text">
-                <span class="text-dark">Dashboard</span>
-                <div class="text-underline"></div>
+                <span class="text-dark">Dashboard global</span>
               </div>
             </q-item-section>
-            <div class="stellar-badge">✨</div>
           </q-item>
 
-
-          <!-- Réclamation client avec effet néon -->
-          <!-- <q-item to="/under-development" clickable v-ripple class="stellar-menu-item nebula-card" data-category="support">
+          <!-- Dashboard Détaillé -->
+          <q-item v-if="AllPrivilege?.privilege_dasboard_détaillé?.role=='Admin'" to="/reclamations/dashboard" clickable v-ripple class="stellar-menu-item nebula-card">
             <q-item-section avatar>
-              <div class="neon-container">
-                <div class="neon-sign neon-orange">
-                  <div class="neon-tube"></div>
-                  <div class="neon-glow"></div>
-                  <svg viewBox="0 0 24 24" class="neon-icon">
-                    <path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z"/>
-                  </svg>
-                  <div class="neon-spark" v-for="i in 4" :key="i" :style="neonSparkStyle(i)"></div>
-                </div>
+              <div class="submenu-icon">
+                <q-icon name="stacked_bar_chart" color="orange" />
               </div>
             </q-item-section>
             <q-item-section>
               <div class="menu-text">
-                <span class="text-dark">Réclamation client</span>
-                <div class="text-underline"></div>
+                <span class="text-dark">Dashboard détaillé</span>
               </div>
             </q-item-section>
-            <div class="stellar-badge">📢</div>
-          </q-item> -->
+          </q-item>
 
-           <q-expansion-item class="stellar-expansion nebula-card" data-category="support">
-            <template v-slot:header="{ expanded }">
-              <q-item-section avatar>
-                <div class="neon-container">
-                  <div class="neon-sign neon-orange">
-                    <div class="neon-tube"></div>
-                    <div class="neon-glow"></div>
-                    <svg viewBox="0 0 24 24" class="neon-icon">
-                      <path fill="currentColor" d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 9h-2V5h2v6zm0 4h-2v-2h2v2z"/>
-                    </svg>
-                    <div class="neon-spark" v-for="i in 4" :key="i" :style="neonSparkStyle(i)"></div>
-                  </div>
-                </div>
-              </q-item-section>
-              <q-item-section>
-                <div class="menu-text">
-                  <span class="text-dark">Réclamation client</span>
-                  <div class="text-underline"></div>
-                </div>
-              </q-item-section>
-              <div class="stellar-badge">📢</div>
-            </template>
+          <!-- Liste des réclamations -->
+          <q-item to="/reclamations/allTicket" clickable v-ripple class="stellar-menu-item nebula-card">
+            <q-item-section avatar>
+              <div class="submenu-icon">
+                <q-icon name="list_alt" color="orange" />
+              </div>
+            </q-item-section>
+            <q-item-section>
+              <div class="menu-text">
+                <span class="text-dark">Liste des réclamations</span>
+              </div>
+            </q-item-section>
+          </q-item>
 
-            <!-- <q-item v-if="AllPrivilege?.privilege_dasboard_global?.role=='Admin'" to="/reclamations/dashboard2" clickable v-ripple class="stellar-submenu nebula-subcard">
-              <q-item-section avatar>
-                <div class="submenu-icon">
-                  <q-icon name="pie_chart" color="orange" />
-                </div>
-              </q-item-section>
-              <q-item-section>
-                <div class="menu-text">
-                  <span class="text-dark submenu-text">Dashboard global</span>
-                </div>
-              </q-item-section>
-            </q-item> -->
+          <!-- Nouvelle réclamation -->
+          <q-item to="/reclamations/ticket" clickable v-ripple class="stellar-menu-item nebula-card">
+            <q-item-section avatar>
+              <div class="submenu-icon">
+                <q-icon name="add_circle" color="orange" />
+              </div>
+            </q-item-section>
+            <q-item-section>
+              <div class="menu-text">
+                <span class="text-dark">Nouvelle réclamation</span>
+              </div>
+            </q-item-section>
+          </q-item>
 
-            <q-item v-if="AllPrivilege?.privilege_dasboard_détaillé?.role=='Admin'" to="/reclamations/dashboard" clickable v-ripple class="stellar-submenu nebula-subcard">
-              <q-item-section avatar>
-                <div class="submenu-icon">
-                  <q-icon name="stacked_bar_chart" color="orange" />
-                </div>
-              </q-item-section>
-              <q-item-section>
-                <div class="menu-text">
-                  <span class="text-dark submenu-text">Dashboard détaillé</span>
-                </div>
-              </q-item-section>
-            </q-item>
-
-            <q-item to="/reclamations/allTicket" clickable v-ripple class="stellar-submenu nebula-subcard">
-              <q-item-section avatar>
-                <div class="submenu-icon">
-                  <q-icon name="list_alt" color="orange" />
-                </div>
-              </q-item-section>
-              <q-item-section>
-                <div class="menu-text">
-                  <span class="text-dark submenu-text">Liste des réclamations</span>
-                </div>
-              </q-item-section>
-            </q-item>
-
-            <q-item to="/reclamations/ticket" clickable v-ripple class="stellar-submenu nebula-subcard">
-              <q-item-section avatar>
-                <div class="submenu-icon">
-                  <q-icon name="add_circle" color="orange" />
-                </div>
-              </q-item-section>
-              <q-item-section>
-                <div class="menu-text">
-                  <span class="text-dark submenu-text">Nouvelle réclamation</span>
-                </div>
-              </q-item-section>
-            </q-item>
-
-            <q-item v-if="AllPrivilege?.privilege_parametrage?.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr?.role=='Admin'" to="/reclamations/parametrage" clickable v-ripple class="stellar-submenu nebula-subcard">
-              <q-item-section avatar>
-                <div class="submenu-icon">
-                  <q-icon name="tune" color="orange" />
-                </div>
-              </q-item-section>
-              <q-item-section>
-                <div class="menu-text">
-                  <span class="text-dark submenu-text">Paramétrage</span>
-                </div>
-              </q-item-section>
-            </q-item>
-          </q-expansion-item>
+          <!-- Paramétrage -->
+          <q-item v-if="AllPrivilege?.privilege_parametrage?.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr?.role=='Admin'" to="/reclamations/parametrage" clickable v-ripple class="stellar-menu-item nebula-card">
+            <q-item-section avatar>
+              <div class="submenu-icon">
+                <q-icon name="tune" color="orange" />
+              </div>
+            </q-item-section>
+            <q-item-section>
+              <div class="menu-text">
+                <span class="text-dark">Paramétrage</span>
+              </div>
+            </q-item-section>
+          </q-item>
 
           <!-- Gestion des utilisateurs avec effet data-stream -->
           <!-- <q-item to="/under-development" clickable v-ripple class="stellar-menu-item nebula-card" data-category="management">
