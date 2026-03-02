@@ -133,12 +133,12 @@
                         <div class="text-sm font-medium text-gray-600 mb-2">Détails :</div>
                         <div v-for="detail in type.details" :key="detail.id" class="flex items-center space-x-2">
                           <q-checkbox
-                            :model-value="form.typeDetails[type.id]?.details?.includes(detail.id) || false"
-                            @update:model-value="toggleDetail(type.id, detail.id, $event)"
+                            :model-value="form.typeDetails[type.id]?.details?.includes(Number(detail.id)) || false"
+                            @update:model-value="toggleDetail(type.id, Number(detail.id), $event)"
                             color="green-6"
                             size="sm"
                           />
-                          <label class="text-sm text-gray-700 cursor-pointer" @click="toggleDetail(type.id, detail.id, !form.typeDetails[type.id]?.details?.includes(detail.id))">
+                          <label class="text-sm text-gray-700 cursor-pointer" @click="toggleDetail(type.id, Number(detail.id), !form.typeDetails[type.id]?.details?.includes(Number(detail.id)))">
                             {{ detail.libelle }}
                           </label>
                         </div>
@@ -613,7 +613,7 @@ const initializeFormFromTicketData = (data) => {
 
       // Initialiser les détails du type
       form.value.typeDetails[type.b_rec_type_id] = {
-        details: type.details ? type.details.map(d => d.b_rec_detail_id) : [],
+        details: type.details ? type.details.map(d => Number(d.b_rec_detail_id)) : [],
         autre: type.autre || ''
       }
     })
@@ -700,11 +700,12 @@ const toggleDetail = (typeId, detailId, isSelected) => {
     form.value.typeDetails[typeId] = { details: [], autre: '' }
   }
 
+  const dId = Number(detailId)
   const details = form.value.typeDetails[typeId].details
-  const index = details.indexOf(detailId)
+  const index = details.indexOf(dId)
 
   if (isSelected && index === -1) {
-    details.push(detailId)
+    details.push(dId)
   } else if (!isSelected && index !== -1) {
     details.splice(index, 1)
   }
