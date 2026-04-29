@@ -1,0 +1,115 @@
+const routes = [
+  {
+    path: '/acceuil',
+    component: () => import('layouts/AcceuilLayout.vue'),
+    children: [
+      { path: '', component: () => import('pages/acceuil.vue') }
+    ]
+  },
+
+  {
+    path: "/login", name: 'login', component: () => import("src/pages/auth/Login.vue")
+  },
+  {
+    path: "/forgot-password", name: 'forgot-password', component: () => import("src/pages/auth/ForgotPassword.vue")
+  },
+  {
+    path: "/changePasswrod", name: 'changePasswrod', component: () => import("src/pages/auth/ChangePasswrod.vue")
+  },
+
+  {
+    path: '/',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', redirect: '/reclamations/dashboard2' },
+    ]
+  },
+  {
+    path: '/reclamations/',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: 'dashboard', name: 'reclamations-dashboard', component: () => import('src/pages/reclamation/dashboard/Timeline.vue') },
+      { path: 'dashboard2', name: 'reclamations-dashboard2', component: () => import('src/pages/reclamation/dashboard/DashboardStatsCombined.vue') },
+      { path: 'client', component: () => import('src/pages/reclamation/Index.vue') },
+      { path: 'client/:id', component: () => import('src/pages/reclamation/show.vue') },
+      { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },
+      { path: 'edit', component: () => import('src/pages/reclamation/Edit.vue') },
+      { path: 'nature', component: () => import('src/pages/reclamation/nature/index.vue') },
+      { path: 'allTicket', name: 'tickets-all', component: () => import('src/pages/reclamation/tickets/index.vue') },
+      { path: 'ticket', name: 'tickets-create', component: () => import('src/pages/reclamation/tickets/create.vue') },
+      { path: 'ticket2', name: 'tickets-create2', component: () => import('src/pages/reclamation/tickets/create2.vue') },
+      { path: 'tickets/edit/:id', name: 'tickets-edit', component: () => import('src/pages/reclamation/tickets/edit2.vue') },
+      { path: 'tickets/messages', name: 'tickets-messages', component: () => import('src/pages/reclamation/tickets/messages.vue') },
+      { path: 'tickets/messages_recours', name: 'tickets-messages-recours', component: () => import('src/pages/reclamation/tickets/message_recours.vue') },
+      { path: 'parametrage', component: () => import('src/pages/reclamation/parametrage/Index.vue') }
+    ]
+  },
+  // {
+  //   path: '/tickets/',
+  //   component: () => import('layouts/MainLayout.vue'),
+  //   children: [
+  //     { path: 'create', name: 'tickets-create', component: () => import('src/pages/tickets/create.vue') }
+  //   ]
+  // },
+  {
+    path: '/profile',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('src/pages/profile/Show.vue') }
+    ]
+  },
+  {
+    path: '/profil',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('src/pages/Profil.vue') }
+    ]
+  },
+  {
+    path: '/privilege',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('src/pages/privilege/Index.vue') },
+      { path: ':code', component: () => import('src/pages/privilege/Show.vue') }
+    ]
+  },
+   {
+    path: "/volets",
+    component: () => import("layouts/MainLayout.vue"),
+    children: [
+      {
+        path: "",
+        component: () => import("pages/volets/Index.vue"),
+      },
+    ],
+  },
+  {
+    path: '/utilisateur',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('src/pages/utilisateur/Index.vue') }
+    ]
+  },
+  {
+    path: '/under-development',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', component: () => import('components/Developement.vue') }
+    ]
+
+  },
+  {
+    path: '/log-history',
+    component: () => import('layouts/MainLayout.vue'),
+    children: [
+      { path: '', name: 'logHistory', component: () => import('pages/logHistory/Index.vue') },
+    ]
+  },
+
+  {
+    path: '/:catchAll(.*)*',
+    component: () => import('pages/ErrorNotFound.vue')
+  }
+]
+
+export default routes
