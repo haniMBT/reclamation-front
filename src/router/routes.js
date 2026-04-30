@@ -51,13 +51,13 @@ const routes = [
   //     { path: 'create', name: 'tickets-create', component: () => import('src/pages/tickets/create.vue') }
   //   ]
   // },
-  {
-    path: '/profile',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [
-      { path: '', component: () => import('src/pages/profile/Show.vue') }
-    ]
-  },
+  //{
+  //  path: '/profile',
+  //  component: () => import('layouts/MainLayout.vue'),
+  //  children: [
+ //     { path: '', component: () => import('src/pages/profile/Show.vue') }
+ //   ]
+ // },
   {
     path: '/profil',
     component: () => import('layouts/MainLayout.vue'),
