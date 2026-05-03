@@ -17,7 +17,7 @@ COPY . .
 # ARG VITE_API_URL
 # ENV VITE_API_URL="https://api-treclamation.epal.dz"
 ARG VITE_MODE=production
-RUN npm run build -- --mode $VITE_MODE
+RUN npm run build -m spa --env $VITE_MODE
 
 # RUN npm run build
 
