@@ -1,7 +1,5 @@
 # Build stage
 FROM node:18-alpine AS build-stage
-ARG VITE_MODE=production
-RUN npm run build -- --mode $VITE_MODE
 # Set working directory
 WORKDIR /app
 
