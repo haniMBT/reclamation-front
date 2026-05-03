@@ -14,10 +14,12 @@ RUN npm ci
 COPY . .
 
 # Build the app with API URL (optional build argument)
-ARG VITE_API_URL
-ENV VITE_API_URL="https://api-treclamation.epal.dz"
+# ARG VITE_API_URL
+# ENV VITE_API_URL="https://api-treclamation.epal.dz"
+ARG VITE_MODE=production
+RUN npm run build -- --mode $VITE_MODE
 
-RUN npm run build
+# RUN npm run build
 
 
 
