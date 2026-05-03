@@ -17,7 +17,9 @@ COPY . .
 ARG API_BASE_URL
 ENV API_BASE_URL="https://api-treclamation.epal.dz"
 
-RUN npm run build
+RUN npm run build \
+--build-arg API_BASE_URL="https://api-treclamation.epal.dz"
+
 
 # Production stage with Nginx
 FROM nginx:stable-alpine AS production-stage
@@ -33,6 +35,8 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose port 80
 EXPOSE 80
+
+
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
