@@ -8,7 +8,7 @@
   "scripts": {
     "test": "echo \"No test specified\" && exit 0",
     "serve": "quasar dev",
-    "build": "quasar build",
+    "build": "quasar build -m spa", 
     "build-mac": "quasar build -m electron --target darwin -P always",
     "build-win": "quasar build -m electron --target win32 -P always",
     "build-win-32": "quasar build -m electron --target win32 --arch ia32 -P always",

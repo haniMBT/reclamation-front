@@ -11,6 +11,8 @@
 
 const { configure } = require('quasar/wrappers');
 const path = require('path');
+const envFile = `.env.${process.env.APP_ENV || 'production'}`
+
 
 module.exports = configure(function (ctx) {
   return {
@@ -58,7 +60,8 @@ module.exports = configure(function (ctx) {
       },
 
       env: require('dotenv').config({
-        path: '.env'
+        
+        path: envFile
       }).parsed,
 
       vueRouterMode: 'history', // available values: 'hash', 'history'
