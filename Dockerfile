@@ -1,6 +1,7 @@
 # Build stage
 FROM node:18-alpine AS build-stage
-
+ARG VITE_MODE=production
+RUN npm run build -- --mode $VITE_MODE
 # Set working directory
 WORKDIR /app
 
@@ -13,13 +14,10 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Build the app with API URL (optional build argument)
-# ARG VITE_API_URL
-# ENV VITE_API_URL="https://api-treclamation.epal.dz"
-ARG VITE_MODE=production
-RUN npm run build -m spa --env $VITE_MODE
+ARG APP_ENV=production
+ENV APP_ENV=$APP_ENV
 
-# RUN npm run build
+RUN npm run build
 
 
 
