@@ -30,11 +30,11 @@ const routes = [
     children: [
       { path: 'dashboard', name: 'reclamations-dashboard', component: () => import('src/pages/reclamation/dashboard/Timeline.vue') },
       { path: 'dashboard2', name: 'reclamations-dashboard2', component: () => import('src/pages/reclamation/dashboard/DashboardStatsCombined.vue') },
-      { path: 'client', component: () => import('src/pages/reclamation/Index.vue') },
-      { path: 'client/:id', component: () => import('src/pages/reclamation/show.vue') },
-      { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },
-      { path: 'edit', component: () => import('src/pages/reclamation/Edit.vue') },
-      { path: 'nature', component: () => import('src/pages/reclamation/nature/index.vue') },
+      //{ path: 'client', component: () => import('src/pages/reclamation/Index.vue') },
+     // { path: 'client/:id', component: () => import('src/pages/reclamation/show.vue') },
+     // { path: 'all', component: () => import('src/pages/reclamation/index2.vue') },
+      //{ path: 'edit', component: () => import('src/pages/reclamation/Edit.vue') },
+      //{ path: 'nature', component: () => import('src/pages/reclamation/nature/index.vue') },
       { path: 'allTicket', name: 'tickets-all', component: () => import('src/pages/reclamation/tickets/index.vue') },
       { path: 'ticket', name: 'tickets-create', component: () => import('src/pages/reclamation/tickets/create.vue') },
       { path: 'ticket2', name: 'tickets-create2', component: () => import('src/pages/reclamation/tickets/create2.vue') },
@@ -51,13 +51,13 @@ const routes = [
   //     { path: 'create', name: 'tickets-create', component: () => import('src/pages/tickets/create.vue') }
   //   ]
   // },
-  {
-    path: '/profile',
-    component: () => import('layouts/MainLayout.vue'),
-    children: [
-      { path: '', component: () => import('src/pages/profile/Show.vue') }
-    ]
-  },
+  //{
+  //  path: '/profile',
+  //  component: () => import('layouts/MainLayout.vue'),
+  //  children: [
+ //     { path: '', component: () => import('src/pages/profile/Show.vue') }
+ //   ]
+ // },
   {
     path: '/profil',
     component: () => import('layouts/MainLayout.vue'),

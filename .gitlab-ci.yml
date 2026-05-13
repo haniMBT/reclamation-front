@@ -1,0 +1,44 @@
+# CI/CD pipeline for auth_s 
+# DEV → STAG → PROD workflow
+# The TL can choose environment manually when running a pipeline 
+
+variables:
+  DEPLOY_ENVIRONMENT:
+    value: "STAG"
+    options:
+      - "DEV"  
+      - "STAG"
+      - "PROD"
+    description: "The deployment env target. Set to 'dev' by default."
+
+
+
+    
+  Infra:
+    value: "Docker"
+    options:
+      - "Docker"  
+      - "Kubernetes"
+    description: "The deployment tech target. Set to 'Docker' by default."
+
+
+
+
+include:
+  - project: 'legacy/ci-cd-templates'
+    ref: 'main'  # Use main branch templates for main branch
+    file: '/application_ci.yml'
+
+workflow:
+
+  rules:
+    # Règle 1 : Autoriser les pipelines UNIQUEMENT sur la branche 'develop'.
+    # Cela se déclenche après une fusion (qui est un "push" sur la branche 'develop').
+    - if: '$CI_COMMIT_BRANCH == "develop"'
+
+    # Règle 2 :  vérifier si MANUAL_DEPLOY est défini
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+
+    # blocker dans tous les autres cas
+    - when: never
+    
