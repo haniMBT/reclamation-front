@@ -42,7 +42,7 @@
             <q-btn
               icon="groups"
               color="purple-6"
-              v-if="privilege_pcr.role=='Admin' && privilege_pcr.modification==1 && privilege_pcr.insertion==1"
+              v-if="privilege_pcr.role=='Admin'"
               no-caps
               class="px-6"
               @click="openCommissionDialog"
@@ -1899,7 +1899,7 @@ const router = useRouter();
 const canAccessParametrage = computed(() => {
   const p = privilege.value;
   if (!p) return false;
-  const hasConsultation = p.consultation === true || p.consultation === 1;
+  const hasConsultation = p.consultation == 1 || p.consultation == true;
   const role = typeof p.role === 'string' ? p.role.toLowerCase() : '';
   return hasConsultation && role === 'admin';
 });
