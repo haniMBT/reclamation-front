@@ -1563,6 +1563,7 @@ watch(form, (newVal, oldVal) => {
   myErrors.value = false;
   submiting.value = false;
 });
+const AllPrivilege = ref(null);
 
 const handleLogin = async () => {
   submiting.value = true;
@@ -1576,12 +1577,20 @@ const handleLogin = async () => {
       "Vous devez changer votre mot de passe pour continuer!"
     ) {
       router.push("/changePasswrod");
-    } else if (!authStore.loginErrors && authStore.isResponsable == true) {
-      router.push("/essais/essaisPV");
-    } else if (!authStore.loginErrors && authStore.isOperateur == true) {
-      router.push("/essais/ecrasements");
     } else if (!authStore.loginErrors) {
-      router.push("/");
+      // Récupérer le privilège côté backend et le stocker uniquement en ref
+       const res = await api.get('api/all/privileges');;
+      AllPrivilege.value = res?.data ?? null;
+
+      console.log(AllPrivilege.value,'1');
+      console.log(AllPrivilege.value.privilege_dasboard_global,'2');
+      console.log(AllPrivilege.value.privilege_dasboard_global.role,'3');
+
+      if(AllPrivilege.value.privilege_dasboard_global.role=='Admin'){
+        router.push("/reclamations/dashboard2");
+        return
+      }
+        router.push("/reclamations/allTicket");
     }
   } catch (error) {
     submiting.value = false;

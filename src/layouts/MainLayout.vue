@@ -269,7 +269,7 @@
             </q-item-section>
             <div class="stellar-badge">👥</div>
           </q-item> -->
-           <q-expansion-item class="stellar-expansion nebula-card" data-category="management">
+           <q-expansion-item v-if="AllPrivilege?.privilege_utilisateurs?.role=='Admin' || AllPrivilege?.privilege_privileges?.role=='Admin' || AllPrivilege?.privilege_volets?.role=='Admin'" class="stellar-expansion nebula-card" data-category="management">
             <template v-slot:header="{ expanded }">
               <q-item-section avatar>
                 <div class="datastream-container">
@@ -293,7 +293,7 @@
               <div class="stellar-badge">👥</div>
             </template>
 
-            <q-item to="/utilisateur" clickable v-ripple class="stellar-submenu nebula-subcard">
+            <q-item v-if="AllPrivilege?.privilege_utilisateurs?.role=='Admin'"  to="/utilisateur" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
                   <q-icon name="group" color="teal" />
@@ -306,7 +306,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item to="/privilege" clickable v-ripple class="stellar-submenu nebula-subcard">
+            <q-item v-if="AllPrivilege?.privilege_privileges?.role=='Admin'" to="/privilege" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
                   <q-icon name="verified_user" color="teal" />
@@ -319,7 +319,7 @@
               </q-item-section>
             </q-item>
 
-            <q-item to="/volets" clickable v-ripple class="stellar-submenu nebula-subcard">
+            <q-item v-if="AllPrivilege?.privilege_volets?.role=='Admin'" to="/volets" clickable v-ripple class="stellar-submenu nebula-subcard">
               <q-item-section avatar>
                 <div class="submenu-icon">
                   <q-icon name="view_module" color="teal" />
@@ -383,7 +383,7 @@ const fetchAllPrivilege = async () => {
   try {
     const res = await api.get('api/all/privileges');
     AllPrivilege.value = res?.data ?? null;
-    console.log(AllPrivilege.value.privilege_parametrage?.role,'AllPrivilege');
+    console.log(AllPrivilege.value,'AllPrivilege');
   } catch (error) {
     console.error('Erreur lors de la récupération du privilège liste_des_reclamations:', error);
   }

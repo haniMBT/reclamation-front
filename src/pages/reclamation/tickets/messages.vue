@@ -2149,7 +2149,7 @@ const canShowRefusalMotifButton = computed(() => {
 
 // Bouton "Supprimer" — visible si l’utilisateur possède type_orientation == 'changement_accepter'
 const hasAcceptedChangeForUserDirection = computed(() => {
-  if (!authStore.user?.direction) return false
+  if (!authStore.user?.direction || ticket_direction!=null || ticket_direction.statut_direction=='traitement') return false
   return (directionOptions.value || []).some(d => d?.value === authStore.user.direction && d?.type_orientation === 'changement_accepter')
 })
 const canShowDeleteSelfDirectionButton = computed(() => hasAcceptedChangeForUserDirection.value)
