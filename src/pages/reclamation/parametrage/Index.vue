@@ -932,9 +932,10 @@
                 emit-value
                 map-options
                 outlined
-                label="Libellé du ticket (optionnel)"
+                :label="isVisibiliteL ? 'Libellé du ticket *' : 'Libellé du ticket (optionnel)'"
                 dense
-                :clearable="true"
+                :clearable="!isVisibiliteL"
+                :rules="isVisibiliteL ? [val => !!val || 'Le libellé du ticket est requis'] : []"
               />
             </div>
             <div class="flex justify-end mb-4">
@@ -951,7 +952,7 @@
 
             <!-- Tableau des directions auto -->
             <q-table
-              :rows="defaultDirections"
+              :rows="filteredDefaultDirections"
               :columns="defaultDirectionsColumns"
               row-key="id"
               flat
@@ -967,7 +968,7 @@
                     round
                     dense
                     @click="confirmDeleteDefaultDirection(props.row)"
-                    v-if="privilege.suppression==1"
+                    v-if="privilege.suppression==1 && canDeleteDefaultDirectionRow(props.row)"
                   />
                 </q-td>
               </template>
@@ -1734,8 +1735,11 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
 import ErrorValidation from 'src/components/ErrorValidation.vue';
+import { useAuthStore } from 'stores/auth';
 
 import draggable from 'vuedraggable';
+
+const authStore = useAuthStore();
 
 // Reactive variables
 const tickets = ref([]);
@@ -2039,6 +2043,8 @@ const statutOptions = [
 ];
 
 const directionOptions = computed(() => {
+  // Le backend renvoie la liste appropriée dans `directions` (complète pour L,
+  // filtrée pour P). On l'utilise directement.
   return (directions.value || []).map(d => ({
     label: d.DIRECTION ?? d.direction ?? d.label ?? String(d),
     value: d.DIRECTION ?? d.direction ?? d.value ?? String(d)
@@ -2053,9 +2059,38 @@ const bticketOptions = computed(() => {
   }));
 });
 
+const isVisibiliteL = computed(() => privilege.value?.visibilite == 'L');
+
+const currentUserDirection = computed(() => authStore.user?.direction ?? null);
+
+const ticketDirectionById = computed(() => {
+  const map = new Map();
+  (tickets.value || []).forEach(t => {
+    const dir = Array.isArray(t.direction) ? t.direction[0] : t.direction;
+    map.set(t.id, dir);
+  });
+  return map;
+});
+
+const filteredDefaultDirections = computed(() => {
+  if (!isVisibiliteL.value) return defaultDirections.value;
+  const userDir = currentUserDirection.value;
+  return (defaultDirections.value || []).filter(row => {
+    if (!row.bticket_id) return true;
+    return ticketDirectionById.value.get(row.bticket_id) === userDir;
+  });
+});
+
+const canDeleteDefaultDirectionRow = (row) => {
+  if (!isVisibiliteL.value) return true;
+  if (!row?.bticket_id) return false;
+  return ticketDirectionById.value.get(row.bticket_id) === currentUserDirection.value;
+};
+
 const isDefaultDirectionFormValid = computed(() => {
   const f = newDefaultDirection.value;
-  // bticket_id est optionnel
+  // En visibilité L, le libellé du ticket devient obligatoire
+  if (isVisibiliteL.value && !f.bticket_id) return false;
   return !!(f.direction && f.statut_direction);
 });
 
