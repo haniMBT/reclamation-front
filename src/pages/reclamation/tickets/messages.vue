@@ -6,7 +6,7 @@
         <div class="flex items-center mb-4">
           <q-icon name="message" size="2rem" class="text-blue-600 mr-3" />
           <div>
-<h1 class="text-2xl font-bold text-gray-800 mb-1 flex items-center">
+<h1 class="text-2xl font-bold text-gray-800 mb-1 flex items-center flex-wrap gap-2">
   Messages du Ticket
   <q-chip
     v-if="hasTicketStatus"
@@ -18,6 +18,30 @@
   >
     {{ ticket.status }}
   </q-chip>
+  <q-chip
+    v-if="hasCurrentTicket && ticket?.priorite"
+    square
+    dense
+    :color="getPrioriteColor(ticket.priorite)"
+    text-color="white"
+    icon="flag"
+  >
+    {{ getPrioriteLabel(ticket.priorite) }}
+    <q-tooltip>Priorité actuelle</q-tooltip>
+  </q-chip>
+  <q-btn
+    v-if="canChangePriorite"
+    icon="tune"
+    color="amber-8"
+    size="sm"
+    dense
+    no-caps
+    label="Changer la priorité"
+    @click="openPrioriteDialog"
+    class="ml-2"
+  >
+    <q-tooltip>Modifier la priorité (pilote uniquement)</q-tooltip>
+  </q-btn>
 </h1>
             <div v-if="hasCurrentTicket">
               <p class="text-gray-600 text-sm">
@@ -1812,6 +1836,63 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialog: changement de priorité (pilote uniquement) -->
+    <q-dialog v-model="showPrioriteDialog" persistent>
+      <q-card class="w-full" style="min-width: 420px; max-width: 520px;">
+        <q-card-section class="flex items-center bg-amber-50">
+          <q-icon name="flag" class="text-amber-700 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-amber-900">Changer la priorité</div>
+            <div class="text-sm text-amber-700">Choisissez le nouveau niveau de priorité de la réclamation</div>
+          </div>
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="q-pa-lg">
+          <q-select
+            v-model="prioriteForm.priorite"
+            :options="prioriteOptions"
+            option-value="value"
+            option-label="label"
+            emit-value
+            map-options
+            outlined
+            dense
+            label="Priorité"
+          >
+            <template #prepend>
+              <q-icon name="flag" class="text-amber-700" />
+            </template>
+            <template #option="scope">
+              <q-item v-bind="scope.itemProps">
+                <q-item-section avatar>
+                  <q-badge :color="scope.opt.color" :label="scope.opt.label" />
+                </q-item-section>
+                <q-item-section>{{ scope.opt.label }}</q-item-section>
+              </q-item>
+            </template>
+            <template #selected>
+              <q-badge
+                v-if="prioriteForm.priorite"
+                :color="getPrioriteColor(prioriteForm.priorite)"
+                :label="getPrioriteLabel(prioriteForm.priorite)"
+              />
+            </template>
+          </q-select>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right" class="q-pa-md bg-white">
+          <q-btn flat label="Annuler" color="grey-7" @click="closePrioriteDialog" :disable="prioriteSaving" />
+          <q-btn
+            label="Enregistrer"
+            color="amber-8"
+            :loading="prioriteSaving"
+            :disable="!prioriteForm.priorite || prioriteSaving"
+            @click="savePriorite"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
       </div>
     </div>
   </div>
@@ -1824,6 +1905,7 @@ import { useRouter } from 'vue-router'
 import { useTicketStore } from 'src/stores/ticket'
 import { api } from 'src/boot/axios'
 import { useAuthStore } from "stores/auth";
+import { PRIORITE_OPTIONS, getPrioriteLabel, getPrioriteColor } from 'src/composables/usePriorite';
 
 const authStore = useAuthStore()
 const $q = useQuasar()
@@ -1865,6 +1947,59 @@ const recourMessage = ref({
   content: '',
   attachments: []
 })
+
+// Changement de priorité (pilote uniquement)
+const prioriteOptions = PRIORITE_OPTIONS
+const showPrioriteDialog = ref(false)
+const prioriteForm = ref({ priorite: null })
+const prioriteSaving = ref(false)
+
+// Pilote = role 'employe_Répondeur' + direction == direction du ticket avec type_orientation='ticket'
+const isPilot = computed(() => {
+  if (!privilege.value || privilege.value?.role !== 'employe_Répondeur') return false
+  if (!authStore.user?.direction) return false
+  return ticket_direction.value?.type_orientation === 'ticket'
+    && ticket_direction.value?.direction === authStore.user.direction
+})
+
+const canChangePriorite = computed(() => {
+  if (!isPilot.value) return false
+  const status = ticket.value?.status
+  if (status === 'clôturé' || status === 'Recours clôturé') return false
+  return true
+})
+
+const openPrioriteDialog = () => {
+  prioriteForm.value.priorite = ticket.value?.priorite || 'normal'
+  showPrioriteDialog.value = true
+}
+
+const closePrioriteDialog = () => {
+  showPrioriteDialog.value = false
+}
+
+const savePriorite = async () => {
+  if (!currentTicketId.value || !prioriteForm.value.priorite) return
+  prioriteSaving.value = true
+  try {
+    const resp = await api.put(`/api/rec/tickets/${currentTicketId.value}/priorite`, {
+      priorite: prioriteForm.value.priorite
+    })
+    if (resp.data?.success) {
+      if (ticket.value) ticket.value.priorite = resp.data.data.priorite
+      $q.notify({ type: 'positive', message: resp.data.message || 'Priorité mise à jour' })
+      closePrioriteDialog()
+    } else {
+      $q.notify({ type: 'negative', message: resp.data?.message || 'Échec de la mise à jour' })
+    }
+  } catch (error) {
+    console.error('Erreur mise à jour priorité:', error)
+    const msg = error.response?.data?.message || 'Erreur lors de la mise à jour de la priorité'
+    $q.notify({ type: 'negative', message: msg })
+  } finally {
+    prioriteSaving.value = false
+  }
+}
 
 // Upload
 const newFiles = ref(null)
