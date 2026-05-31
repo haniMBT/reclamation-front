@@ -60,7 +60,7 @@ module.exports = configure(function (ctx) {
       },
 
       env: require('dotenv').config({
-        
+
         path: envFile
       }).parsed,
 

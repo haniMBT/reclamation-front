@@ -118,10 +118,40 @@
               </template>
             </q-select>
           </div>
+
+          <!-- Priorité (multi-sélection) -->
+          <div>
+            <q-select
+              v-model="selectedPriorites"
+              :options="prioriteOptions"
+              option-value="value"
+              option-label="label"
+              multiple
+              use-chips
+              outlined
+              dense
+              label="Priorité"
+              class="w-full"
+              emit-value
+              map-options
+            >
+              <template v-slot:prepend>
+                <q-icon name="priority_high" class="text-gray-500" />
+              </template>
+              <template #option="scope">
+                <q-item v-bind="scope.itemProps">
+                  <q-item-section avatar>
+                    <q-badge :color="scope.opt.color" :label="scope.opt.label" />
+                  </q-item-section>
+                  <q-item-section>{{ scope.opt.label }}</q-item-section>
+                </q-item>
+              </template>
+            </q-select>
+          </div>
         </div>
 
         <!-- Bouton de réinitialisation des filtres -->
-        <div class="flex justify-end mt-4" v-if="searchQuery || dateFrom || dateTo || selectedStatuses.length || selectedBaseTicketId">
+        <div class="flex justify-end mt-4" v-if="searchQuery || dateFrom || dateTo || selectedStatuses.length || selectedBaseTicketId || selectedPriorites.length">
           <q-btn
             @click="clearFilters"
             color="grey-6"
@@ -175,6 +205,14 @@
                   :label="ticket.status || 'OUVERT'"
                   class="text-xs"
                 />
+                <q-badge
+                  :color="getPrioriteColor(ticket.priorite)"
+                  :label="getPrioriteLabel(ticket.priorite)"
+                  class="text-xs"
+                >
+                  <q-icon name="flag" size="xs" class="mr-1" />
+                  <q-tooltip>Priorité</q-tooltip>
+                </q-badge>
                 <!-- <q-badge
                   v-if="isTicketValidated(ticket)"
                   color="green"
@@ -290,6 +328,7 @@ import { useQuasar } from 'quasar'
 import { api } from 'boot/axios'
 import { useRouter } from 'vue-router'
 import { useTicketStore } from 'src/stores/ticket'
+import { PRIORITE_OPTIONS, getPrioriteLabel, getPrioriteColor } from 'src/composables/usePriorite'
 
 const $q = useQuasar()
 const router = useRouter()
@@ -307,6 +346,8 @@ const selectedStatuses = ref([])
 const statusOptions = ref([])
 const baseTicketOptions = ref([])
 const selectedBaseTicketId = ref(null)
+const selectedPriorites = ref([])
+const prioriteOptions = PRIORITE_OPTIONS
 
 const pagination = reactive({
   page: 1,
@@ -328,7 +369,9 @@ const fetchTickets = async (props = {}) => {
         date_from: dateFrom.value,
         date_to: dateTo.value,
         statuses: selectedStatuses.value.join(','),
-        bticket_id: selectedBaseTicketId.value
+        bticket_id: selectedBaseTicketId.value,
+        priorites: selectedPriorites.value.join(','),
+        sort_by_priorite: true
       }
     })
 
@@ -481,6 +524,8 @@ const clearFilters = () => {
   dateFrom.value = ''
   dateTo.value = ''
   selectedStatuses.value = []
+  selectedBaseTicketId.value = null
+  selectedPriorites.value = []
   pagination.page = 1
   fetchTickets({ pagination })
 }
@@ -507,6 +552,11 @@ watch([selectedStatuses], () => {
 }, { debounce: 400 })
 
 watch(selectedBaseTicketId, () => {
+  pagination.page = 1
+  fetchTickets({ pagination })
+}, { debounce: 300 })
+
+watch([selectedPriorites], () => {
   pagination.page = 1
   fetchTickets({ pagination })
 }, { debounce: 300 })

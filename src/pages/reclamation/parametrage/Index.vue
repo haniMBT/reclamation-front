@@ -42,7 +42,7 @@
             <q-btn
               icon="groups"
               color="purple-6"
-              v-if="privilege_pcr.role=='Admin' && privilege_pcr.modification==1 && privilege_pcr.insertion==1"
+              v-if="privilege_pcr.role=='Admin'"
               no-caps
               class="px-6"
               @click="openCommissionDialog"
@@ -122,7 +122,15 @@
                 <div class="flex items-center space-x-3">
                   <q-icon name="confirmation_number" class="text-blue-600" size="1.5rem" />
                   <div>
-                    <div class="font-semibold text-gray-900">{{ ticket.libelle }}</div>
+                    <div class="font-semibold text-gray-900 flex items-center gap-2">
+                      {{ ticket.libelle }}
+                      <q-badge
+                        :color="getPrioriteColor(ticket.priorite_defaut)"
+                        :label="getPrioriteLabel(ticket.priorite_defaut)"
+                      >
+                        <q-tooltip>Priorité par défaut</q-tooltip>
+                      </q-badge>
+                    </div>
                     <div class="text-sm text-gray-600">Direction: {{ ticket.direction }}</div>
                   </div>
                 </div>
@@ -538,6 +546,43 @@
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
                   </div>
 
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Priorité par défaut
+                    </label>
+                    <q-select
+                      v-model="form.priorite_defaut"
+                      :options="prioriteOptions"
+                      option-value="value"
+                      option-label="label"
+                      emit-value
+                      map-options
+                      outlined
+                      dense
+                      placeholder="Sélectionnez la priorité par défaut"
+                    >
+                      <template #prepend>
+                        <q-icon name="flag" class="text-blue-600" />
+                      </template>
+                      <template #option="scope">
+                        <q-item v-bind="scope.itemProps">
+                          <q-item-section avatar>
+                            <q-badge :color="scope.opt.color" :label="scope.opt.label" />
+                          </q-item-section>
+                          <q-item-section>{{ scope.opt.label }}</q-item-section>
+                        </q-item>
+                      </template>
+                      <template #selected>
+                        <q-badge
+                          v-if="form.priorite_defaut"
+                          :color="getPrioriteColor(form.priorite_defaut)"
+                          :label="getPrioriteLabel(form.priorite_defaut)"
+                        />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.priorite_defaut" :myerrors="myerrors?.priorite_defaut" />
+                  </div>
+
                   <!-- <div v-if="false">
                     <label class="block text-sm font-medium text-gray-700 mb-2">
                       Document à fournir
@@ -932,9 +977,10 @@
                 emit-value
                 map-options
                 outlined
-                label="Libellé du ticket (optionnel)"
+                :label="isVisibiliteL ? 'Libellé du ticket *' : 'Libellé du ticket (optionnel)'"
                 dense
-                :clearable="true"
+                :clearable="!isVisibiliteL"
+                :rules="isVisibiliteL ? [val => !!val || 'Le libellé du ticket est requis'] : []"
               />
             </div>
             <div class="flex justify-end mb-4">
@@ -951,7 +997,7 @@
 
             <!-- Tableau des directions auto -->
             <q-table
-              :rows="defaultDirections"
+              :rows="filteredDefaultDirections"
               :columns="defaultDirectionsColumns"
               row-key="id"
               flat
@@ -967,7 +1013,7 @@
                     round
                     dense
                     @click="confirmDeleteDefaultDirection(props.row)"
-                    v-if="privilege.suppression==1"
+                    v-if="privilege.suppression==1 && canDeleteDefaultDirectionRow(props.row)"
                   />
                 </q-td>
               </template>
@@ -1037,6 +1083,43 @@
                       </template>
                     </q-select>
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Priorité par défaut
+                    </label>
+                    <q-select
+                      v-model="form.priorite_defaut"
+                      :options="prioriteOptions"
+                      option-value="value"
+                      option-label="label"
+                      emit-value
+                      map-options
+                      outlined
+                      dense
+                      placeholder="Sélectionnez la priorité par défaut"
+                    >
+                      <template #prepend>
+                        <q-icon name="flag" class="text-orange-600" />
+                      </template>
+                      <template #option="scope">
+                        <q-item v-bind="scope.itemProps">
+                          <q-item-section avatar>
+                            <q-badge :color="scope.opt.color" :label="scope.opt.label" />
+                          </q-item-section>
+                          <q-item-section>{{ scope.opt.label }}</q-item-section>
+                        </q-item>
+                      </template>
+                      <template #selected>
+                        <q-badge
+                          v-if="form.priorite_defaut"
+                          :color="getPrioriteColor(form.priorite_defaut)"
+                          :label="getPrioriteLabel(form.priorite_defaut)"
+                        />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.priorite_defaut" :myerrors="myerrors?.priorite_defaut" />
                   </div>
 
                   <!-- <div v-if="false">
@@ -1734,8 +1817,13 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { api } from 'boot/axios';
 import ErrorValidation from 'src/components/ErrorValidation.vue';
+import { useAuthStore } from 'stores/auth';
+import { PRIORITE_OPTIONS, PRIORITE_DEFAULT, getPrioriteLabel, getPrioriteColor } from 'src/composables/usePriorite';
 
 import draggable from 'vuedraggable';
+
+const authStore = useAuthStore();
+const prioriteOptions = PRIORITE_OPTIONS;
 
 // Reactive variables
 const tickets = ref([]);
@@ -1777,6 +1865,7 @@ const form = ref({
   libelle: '',
   direction: '',
   documentAfornir: '',
+  priorite_defaut: PRIORITE_DEFAULT,
   infos_generales: [],
   files_demandes: []
 });
@@ -1899,7 +1988,7 @@ const router = useRouter();
 const canAccessParametrage = computed(() => {
   const p = privilege.value;
   if (!p) return false;
-  const hasConsultation = p.consultation === true || p.consultation === 1;
+  const hasConsultation = p.consultation == 1 || p.consultation == true;
   const role = typeof p.role === 'string' ? p.role.toLowerCase() : '';
   return hasConsultation && role === 'admin';
 });
@@ -2039,6 +2128,8 @@ const statutOptions = [
 ];
 
 const directionOptions = computed(() => {
+  // Le backend renvoie la liste appropriée dans `directions` (complète pour L,
+  // filtrée pour P). On l'utilise directement.
   return (directions.value || []).map(d => ({
     label: d.DIRECTION ?? d.direction ?? d.label ?? String(d),
     value: d.DIRECTION ?? d.direction ?? d.value ?? String(d)
@@ -2053,9 +2144,38 @@ const bticketOptions = computed(() => {
   }));
 });
 
+const isVisibiliteL = computed(() => privilege.value?.visibilite == 'L');
+
+const currentUserDirection = computed(() => authStore.user?.direction ?? null);
+
+const ticketDirectionById = computed(() => {
+  const map = new Map();
+  (tickets.value || []).forEach(t => {
+    const dir = Array.isArray(t.direction) ? t.direction[0] : t.direction;
+    map.set(t.id, dir);
+  });
+  return map;
+});
+
+const filteredDefaultDirections = computed(() => {
+  if (!isVisibiliteL.value) return defaultDirections.value;
+  const userDir = currentUserDirection.value;
+  return (defaultDirections.value || []).filter(row => {
+    if (!row.bticket_id) return true;
+    return ticketDirectionById.value.get(row.bticket_id) === userDir;
+  });
+});
+
+const canDeleteDefaultDirectionRow = (row) => {
+  if (!isVisibiliteL.value) return true;
+  if (!row?.bticket_id) return false;
+  return ticketDirectionById.value.get(row.bticket_id) === currentUserDirection.value;
+};
+
 const isDefaultDirectionFormValid = computed(() => {
   const f = newDefaultDirection.value;
-  // bticket_id est optionnel
+  // En visibilité L, le libellé du ticket devient obligatoire
+  if (isVisibiliteL.value && !f.bticket_id) return false;
   return !!(f.direction && f.statut_direction);
 });
 
@@ -2191,6 +2311,7 @@ const openAddTicket = () => {
     direction: '',
     documentAfornir: '',
     definition: '',
+    priorite_defaut: PRIORITE_DEFAULT,
     infos_generales: [],
     files_demandes: []
   };
@@ -2205,6 +2326,7 @@ const closeAddTicket = () => {
     direction: '',
     documentAfornir: '',
     definition: '',
+    priorite_defaut: PRIORITE_DEFAULT,
     infos_generales: [],
     files_demandes: []
   };
@@ -2238,6 +2360,7 @@ const openEditTicket = (ticket) => {
     direction: ticket.direction,
     documentAfornir: ticket.documentAfornir || '',
     definition: ticket.definition || '',
+    priorite_defaut: ticket.priorite_defaut || PRIORITE_DEFAULT,
     infos_generales: ticket.infos_generales.map(info => ({
       id: info.id || Date.now() + Math.random(),
       libelle: info.libelle,
@@ -2265,6 +2388,7 @@ const closeEditTicket = () => {
     direction: '',
     documentAfornir: '',
     definition: '',
+    priorite_defaut: PRIORITE_DEFAULT,
     infos_generales: [],
     files_demandes: []
   };
@@ -2284,6 +2408,7 @@ const sendData = async () => {
     direction: form.value.direction,
     documentAfornir: form.value.documentAfornir,
     definition: form.value.definition,
+    priorite_defaut: form.value.priorite_defaut || PRIORITE_DEFAULT,
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut,
@@ -2337,6 +2462,7 @@ const updateData = async () => {
     direction: form.value.direction,
     documentAfornir: form.value.documentAfornir,
     definition: form.value.definition,
+    priorite_defaut: form.value.priorite_defaut || PRIORITE_DEFAULT,
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut,
