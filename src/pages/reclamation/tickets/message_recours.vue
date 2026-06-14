@@ -858,12 +858,12 @@
         <q-separator />
 
         <q-card-section class="flex-1 overflow-auto p-0">
-          <div class="p-6">
+          <div class="p-6 space-y-6">
       <div v-if="hasTicketConclusion" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div class="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-purple-200">
                 <h3 class="text-lg font-semibold text-purple-800 flex items-center">
                   <q-icon name="text_snippet" class="mr-2" />
-                  Conclusion enregistrée
+                  Conclusion pilote
                 </h3>
               </div>
               <div class="p-6 prose max-w-none">
@@ -904,7 +904,53 @@
               </div>
             </div>
 
-            <div v-else class="flex flex-col items-center justify-center py-16">
+            <!-- Conclusion du recours (section distincte) -->
+            <div v-if="hasTicketConclusionRecours" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 px-6 py-4 border-b border-indigo-200">
+                <h3 class="text-lg font-semibold text-indigo-800 flex items-center">
+                  <q-icon name="gavel" class="mr-2" />
+                  Conclusion du recours
+                </h3>
+              </div>
+              <div class="p-6 prose max-w-none">
+                <div v-html="ticket.conclusion_recours"></div>
+              </div>
+
+              <!-- Fichiers de conclusion du recours -->
+              <div v-if="hasTicketConclusionRecoursFiles" class="px-6 pb-6">
+                <div class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <q-icon name="attach_file" class="text-indigo-600 mr-2" />
+                  Pièces jointes du recours ({{ ticket.files_recours.length }})
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                  <q-list class="space-y-2">
+                    <q-item v-for="file in ticket.files_recours" :key="file.id" class="bg-white rounded-lg shadow-sm">
+                      <q-item-section avatar>
+                        <q-icon :name="getFileIconVoir(file.type_fichier)" class="text-indigo-600" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label class="font-medium">{{ file.nom_fichier }}</q-item-label>
+                        <q-item-label caption class="text-gray-500">{{ formatFileSizeVoir(file.taille_fichier) }}</q-item-label>
+                      </q-item-section>
+                      <q-item-section side>
+                        <q-btn
+                          flat
+                          round
+                          icon="download"
+                          color="indigo-6"
+                          @click="downloadTicketFile(file)"
+                          class="hover:bg-indigo-50"
+                        >
+                          <q-tooltip>Télécharger</q-tooltip>
+                        </q-btn>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="!hasTicketConclusion && !hasTicketConclusionRecours" class="flex flex-col items-center justify-center py-16">
               <div class="bg-purple-50 rounded-full p-6 mb-6">
                 <q-icon name="info" size="4rem" class="text-purple-500" />
               </div>
@@ -1929,7 +1975,12 @@ const showAssociatedDirections = computed(() => !!currentTicketId.value && direc
 const canRemoveDirection = computed(() => ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
 const isLoadingDirections = computed(() => loadingDirections.value)
 
-const canShowConclusionButton = computed(() => ['clôturé','Recours clôturé'].includes(ticket.value?.status))
+const canShowConclusionButton = computed(() =>
+  ['clôturé','Recours clôturé'].includes(ticket.value?.status)
+  // Le président de la commission peut consulter la conclusion pilote
+  // pendant que le recours est encore ouvert (avant clôture).
+  || (isPresidentRecours.value && ticket.value?.status === 'Recours')
+)
 const canShowNewMessageButton = computed(() => ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
 const canShowReplyButton = computed(() => (
    canClientReply.value &&
@@ -1961,6 +2012,9 @@ const hasTicketClosedAt = computed(() => !!ticket.value?.closed_at)
 const hasTicketStatus = computed(() => !!ticket.value?.status)
 const hasTicketConclusion = computed(() => !!ticket.value?.conclusion)
 const hasTicketConclusionFiles = computed(() => !!ticket.value?.files && ticket.value.files.length > 0)
+// Conclusion du recours (séparée de la conclusion pilote)
+const hasTicketConclusionRecours = computed(() => !!ticket.value?.conclusion_recours)
+const hasTicketConclusionRecoursFiles = computed(() => !!ticket.value?.files_recours && ticket.value.files_recours.length > 0)
 
 // Vérification recours hors délai
 const isRecoursHorsDelai = computed(() => {
@@ -2141,7 +2195,10 @@ const loadMessages = async () => {
       }))
       createur.value = response.data.createur || null // Récupérer les infos du créateur
       if(!showCloseDialog.value){
-        closeConclusion.value = ticket.value.conclusion
+        // Clôture recours -> conclusion_recours ; sinon conclusion pilote
+        closeConclusion.value = ticket.value.status === 'Recours'
+          ? (ticket.value.conclusion_recours || '')
+          : (ticket.value.conclusion || '')
       }
     } else {
       messages.value = []
@@ -2191,7 +2248,10 @@ const loadMessagesDirections = async () => {
       // Créateur et conclusion
       createur.value = response.data.createur || null
       if (!showCloseDialog.value) {
-        closeConclusion.value = ticket.value?.conclusion
+        // Clôture recours -> conclusion_recours ; sinon conclusion pilote
+        closeConclusion.value = ticket.value?.status === 'Recours'
+          ? (ticket.value?.conclusion_recours || '')
+          : (ticket.value?.conclusion || '')
       }
 
       // Directions concernées et non concernées (mêmes mappings que loadDirections)
