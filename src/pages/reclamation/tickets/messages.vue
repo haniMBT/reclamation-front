@@ -2274,17 +2274,25 @@ const hasMotifRefus = computed(() => {
 })
 const isAccepterPiloterRefuse = computed(() => {
   const v = ticket.value?.accepter_piloter ?? ticketDetails.value?.accepter_piloter
-  // 0 (refus) ou false
-  return v === 0 || v === false
+  // 0 (refus) ou false — robuste au type renvoyé par SQL Server ("0", 0, false)
+  return v === 0 || v === false || v === '0'
 })
 const canShowRefusalMotifButton = computed(() => {
-  // mêmes conditions que "Ajouter une direction" + accepter_piloter == 0 + motif_refu_changement != null
-  return canAddDirection.value && isAccepterPiloterRefuse.value && hasMotifRefus.value
+  // Seul le pilote (type_orientation == 'ticket') voit ce bouton, et uniquement
+  // si un motif de refus existe. À l'acceptation le backend remet
+  // motif_refu_changement = null, donc la présence du motif suffit à indiquer un refus.
+  return isPilot.value && hasMotifRefus.value
 })
 
 // Bouton "Supprimer" — visible si l’utilisateur possède type_orientation == 'changement_accepter'
 const hasAcceptedChangeForUserDirection = computed(() => {
-  if (!authStore.user?.direction || ticket_direction!=null || ticket_direction.statut_direction=='traitement') return false
+  if (!authStore.user?.direction) return false
+  // Doit être un traiteur réellement concerné par la réclamation (répondeur de la
+  // direction), pas le réclamant/créateur du ticket — même critère que showAssociatedDirections.
+  if (privilege.value?.role !== 'employe_Répondeur' || !ticket_direction.value) return false
+  if (ticket.value?.user_id === authStore.user?.id) return false
+  // L'ancien pilote dont le changement a été accepté a sa direction marquée
+  // type_orientation === 'changement_accepter' : il peut alors supprimer sa direction.
   return (directionOptions.value || []).some(d => d?.value === authStore.user.direction && d?.type_orientation === 'changement_accepter')
 })
 const canShowDeleteSelfDirectionButton = computed(() => hasAcceptedChangeForUserDirection.value)
