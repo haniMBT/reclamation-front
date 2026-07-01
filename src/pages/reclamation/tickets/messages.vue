@@ -42,6 +42,30 @@
   >
     <q-tooltip>Modifier la priorité (pilote uniquement)</q-tooltip>
   </q-btn>
+  <q-chip
+    v-if="hasCurrentTicket && ticket?.reference"
+    square
+    dense
+    color="teal-6"
+    text-color="white"
+    icon="tag"
+  >
+    Réf : {{ ticket.reference }}
+    <q-tooltip>Référence de la réclamation</q-tooltip>
+  </q-chip>
+  <q-btn
+    v-if="canChangeReference"
+    icon="tag"
+    color="teal-7"
+    size="sm"
+    dense
+    no-caps
+    :label="ticket?.reference ? 'Modifier la référence' : 'Ajouter une référence'"
+    @click="openReferenceDialog"
+    class="ml-2"
+  >
+    <q-tooltip>Renseigner la référence de la réclamation (pilote uniquement)</q-tooltip>
+  </q-btn>
 </h1>
             <div v-if="hasCurrentTicket">
               <p class="text-gray-600 text-sm">
@@ -1939,6 +1963,46 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialog: référence de la réclamation (pilote uniquement) -->
+    <q-dialog v-model="showReferenceDialog" persistent>
+      <q-card class="w-full" style="min-width: 420px; max-width: 520px;">
+        <q-card-section class="flex items-center bg-teal-50">
+          <q-icon name="tag" class="text-teal-700 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-teal-900">Référence de la réclamation</div>
+            <div class="text-sm text-teal-700">Saisissez la référence de la réclamation (obligatoire avant la clôture)</div>
+          </div>
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="q-pa-lg">
+          <q-input
+            v-model="referenceForm.reference"
+            outlined
+            dense
+            maxlength="255"
+            counter
+            label="Référence"
+            @keyup.enter="saveReference"
+          >
+            <template #prepend>
+              <q-icon name="tag" class="text-teal-700" />
+            </template>
+          </q-input>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right" class="q-pa-md bg-white">
+          <q-btn flat label="Annuler" color="grey-7" @click="closeReferenceDialog" :disable="referenceSaving" />
+          <q-btn
+            label="Enregistrer"
+            color="teal-8"
+            :loading="referenceSaving"
+            :disable="!referenceForm.reference || !referenceForm.reference.trim() || referenceSaving"
+            @click="saveReference"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
       </div>
     </div>
   </div>
@@ -2014,6 +2078,51 @@ const canChangePriorite = computed(() => {
   if (status === 'clôturé' || status === 'Recours clôturé') return false
   return true
 })
+
+// Référence de la réclamation (pilote uniquement)
+const showReferenceDialog = ref(false)
+const referenceForm = ref({ reference: '' })
+const referenceSaving = ref(false)
+
+const canChangeReference = computed(() => {
+  if (!isPilot.value) return false
+  const status = ticket.value?.status
+  if (status === 'clôturé' || status === 'Recours clôturé') return false
+  return true
+})
+
+const openReferenceDialog = () => {
+  referenceForm.value.reference = ticket.value?.reference || ''
+  showReferenceDialog.value = true
+}
+
+const closeReferenceDialog = () => {
+  showReferenceDialog.value = false
+}
+
+const saveReference = async () => {
+  const value = (referenceForm.value.reference || '').trim()
+  if (!currentTicketId.value || !value) return
+  referenceSaving.value = true
+  try {
+    const resp = await api.put(`/api/rec/tickets/${currentTicketId.value}/reference`, {
+      reference: value
+    })
+    if (resp.data?.success) {
+      if (ticket.value) ticket.value.reference = resp.data.data.reference
+      $q.notify({ type: 'positive', message: resp.data.message || 'Référence mise à jour' })
+      closeReferenceDialog()
+    } else {
+      $q.notify({ type: 'negative', message: resp.data?.message || 'Échec de la mise à jour' })
+    }
+  } catch (error) {
+    console.error('Erreur mise à jour référence:', error)
+    const msg = error.response?.data?.message || 'Erreur lors de la mise à jour de la référence'
+    $q.notify({ type: 'negative', message: msg })
+  } finally {
+    referenceSaving.value = false
+  }
+}
 
 const openPrioriteDialog = () => {
   prioriteForm.value.priorite = ticket.value?.priorite || 'normal'
@@ -3353,6 +3462,17 @@ const getDirectionLabel = (code) => {
      return
    }
    if (canShowCloseButton.value) {
+     // Clôture pilote (hors recours) : la référence de la réclamation est obligatoire.
+     const isRecoursClosure = ticket.value?.status === 'Recours'
+     if (!isRecoursClosure && !(ticket.value?.reference || '').trim()) {
+       $q.notify({
+         type: 'warning',
+         message: 'Veuillez renseigner la référence de la réclamation avant de pouvoir la clôturer.',
+         position: 'top'
+       })
+       openReferenceDialog()
+       return
+     }
      showCloseDialog.value = true
    } else {
      $q.notify({ type: 'warning', message: 'Clôture non autorisée dans l’état actuel du ticket', position: 'top' })
