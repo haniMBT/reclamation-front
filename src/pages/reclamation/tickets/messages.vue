@@ -1273,7 +1273,7 @@
             <div class="text-sm text-green-700 space-y-1">
               <div>
                 <q-icon name="person" size="xs" class="q-mr-xs" />
-                Direction d'envoi: {{ selectedMessage.direction_envoi }}
+                Direction d'envoi: {{ selectedMessage.direction_envoi }}<span v-if="selectedMessage.nom_expediteur"> — {{ selectedMessage.nom_expediteur }}</span>
                 <span class="q-mx-sm">•</span>
                 <q-icon name="schedule" size="xs" class="q-mr-xs" />
                 {{ formatDate(selectedMessage.date_envoie) }}
@@ -2212,7 +2212,9 @@ const columns = [
     label: 'Direction Envoi',
     align: 'left',
     field: 'direction_envoi',
-    sortable: true
+    sortable: true,
+    // Affiche la direction d'envoi + le nom/prénom de l'expéditeur (via sender_id)
+    format: (val, row) => row?.nom_expediteur ? `${val} — ${row.nom_expediteur}` : val
   },
   {
     name: 'destinataires',

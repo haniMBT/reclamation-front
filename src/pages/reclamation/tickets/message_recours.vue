@@ -1027,7 +1027,7 @@
             <div class="text-sm text-green-700 space-y-1">
               <div>
                 <q-icon name="person" size="xs" class="q-mr-xs" />
-                Emetteur : {{ selectedMessage.direction_envoi }}
+                Emetteur : {{ selectedMessage.direction_envoi }}<span v-if="selectedMessage.nom_expediteur && selectedMessage.nom_expediteur !== selectedMessage.direction_envoi"> — {{ selectedMessage.nom_expediteur }}</span>
                 <span class="q-mx-sm">•</span>
                 <q-icon name="schedule" size="xs" class="q-mr-xs" />
                 {{ formatDate(selectedMessage.date_envoie) }}
@@ -1720,7 +1720,10 @@ const columns = [
     label: 'Emetteur',
     align: 'left',
     field: 'direction_envoi',
-    sortable: true
+    sortable: true,
+    // Affiche la direction d'envoi + le nom/prénom de l'expéditeur (via sender_id)
+    // Évite la duplication quand direction_envoi contient déjà le nom (messages de recours)
+    format: (val, row) => (row?.nom_expediteur && row.nom_expediteur !== val) ? `${val} — ${row.nom_expediteur}` : val
   },
   {
     name: 'destinataires',
