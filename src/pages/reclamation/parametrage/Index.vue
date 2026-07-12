@@ -59,6 +59,17 @@
             >
               Directions auto
             </q-btn>
+            <q-btn
+              icon="delete_sweep"
+              color="orange-8"
+              no-caps
+              outline
+              class="px-6"
+              v-if="privilege.role=='Admin' && privilege.suppression==1"
+              @click="openDeletedDialog"
+            >
+              Corbeille
+            </q-btn>
             <q-input
               outlined
               dense
@@ -145,6 +156,19 @@
                     @click.stop="openDeleteTicket(ticket)"
                   >
                     <q-tooltip>Supprimer</q-tooltip>
+                  </q-btn>
+                  <!-- Suppression logique : affichée quand la suppression physique
+                       n'est pas possible (ticket déjà utilisé). Jamais les deux à la fois. -->
+                  <q-btn
+                    icon="delete_sweep"
+                    size="sm"
+                    flat
+                    round
+                    v-if="privilege.role=='Admin' && privilege.suppression==1 && ticket.possibilite_suppression !== 1"
+                    color="orange-8"
+                    @click.stop="openSoftDeleteTicket(ticket)"
+                  >
+                    <q-tooltip>Suppression logique</q-tooltip>
                   </q-btn>
                   <q-btn
                     icon="content_copy"
@@ -1460,6 +1484,128 @@
           </q-card-actions>
         </q-card>
       </q-dialog>
+
+      <!-- Soft Delete (suppression logique) Dialog -->
+      <q-dialog v-model="softDeleteDialog" persistent>
+        <q-card class="w-full max-w-lg" style="display: flex; flex-direction: column;">
+          <q-card-section class="flex items-center bg-orange-50">
+            <q-icon name="delete_sweep" class="text-orange-700 mr-3" size="2.5rem" />
+            <div>
+              <div class="text-xl font-semibold text-orange-900">Suppression logique</div>
+              <div class="text-sm text-orange-700">Le ticket sera masqué mais conservé</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg" style="flex: 1;">
+            <div class="space-y-4">
+              <p class="text-gray-700 font-medium">
+                Ce ticket est déjà utilisé dans des réclamations et ne peut pas être supprimé définitivement. Voulez-vous le supprimer logiquement ?
+              </p>
+
+              <div class="bg-gray-50 p-4 rounded-lg border-l-4 border-orange-500">
+                <div class="flex items-start space-x-3">
+                  <q-icon name="confirmation_number" class="text-orange-500 mt-1" size="1.2rem" />
+                  <div class="flex-1">
+                    <h4 class="font-semibold text-gray-900">{{ selectedTicket?.libelle }}</h4>
+                    <p class="text-sm text-gray-600 mt-1">
+                      <q-icon name="business" size="xs" class="mr-1" />
+                      Direction: {{ selectedTicket?.direction }}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-blue-50 p-3 rounded border border-blue-200">
+                <div class="flex items-start space-x-2">
+                  <q-icon name="info" class="text-blue-600 mt-0.5" size="1rem" />
+                  <div class="text-sm text-blue-800">
+                    Le ticket disparaîtra du catalogue et ne sera plus proposé pour de nouvelles réclamations. Les réclamations existantes ne sont pas affectées. Vous pourrez le restaurer depuis la corbeille.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-md bg-white">
+            <q-btn
+              flat
+              label="Annuler"
+              color="grey"
+              @click="closeSoftDeleteTicket"
+              class="px-6"
+              :disable="loading"
+            />
+            <q-btn
+              label="Supprimer logiquement"
+              color="orange-8"
+              @click="softDeleteData"
+              :loading="loading"
+              class="px-6"
+              icon="delete_sweep"
+            />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Corbeille (tickets supprimés logiquement) Dialog -->
+      <q-dialog v-model="deletedDialog">
+        <q-card class="w-full" style="min-width: 60vw; max-width: 90vw; display: flex; flex-direction: column;">
+          <q-card-section class="flex items-center bg-orange-50">
+            <q-icon name="delete_sweep" class="text-orange-700 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-orange-900">Corbeille</div>
+              <div class="text-sm text-orange-700">Tickets supprimés logiquement</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
+            <q-table
+              :rows="deletedTickets"
+              :columns="deletedColumns"
+              row-key="id"
+              :loading="deletedLoading"
+              flat
+              :pagination="{ rowsPerPage: 10 }"
+              no-data-label="Aucun ticket supprimé"
+            >
+              <template #body-cell-priorite_defaut="props">
+                <q-td :props="props">
+                  <q-badge
+                    :color="getPrioriteColor(props.value)"
+                    :label="getPrioriteLabel(props.value)"
+                  />
+                </q-td>
+              </template>
+              <template #body-cell-actions="props">
+                <q-td :props="props" class="text-right">
+                  <q-btn
+                    icon="restore"
+                    color="green-7"
+                    size="sm"
+                    dense
+                    no-caps
+                    label="Restaurer"
+                    :loading="restoringId === props.row.id"
+                    @click="restoreTicket(props.row)"
+                  />
+                </q-td>
+              </template>
+            </q-table>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-md bg-white">
+            <q-btn label="Fermer" color="grey" flat no-caps class="px-6" @click="deletedDialog = false" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
     </div>
   </div>
 
@@ -1843,6 +1989,19 @@ const activeStatusOptions = computed(() => [
 const addTicket = ref(false);
 const editTicket = ref(false);
 const deleteTicket = ref(false);
+
+// Suppression logique (corbeille)
+const softDeleteDialog = ref(false);
+const deletedDialog = ref(false);
+const deletedTickets = ref([]);
+const deletedLoading = ref(false);
+const restoringId = ref(null);
+const deletedColumns = [
+  { name: 'libelle', label: 'Libellé', field: 'libelle', align: 'left', sortable: true },
+  { name: 'direction', label: 'Direction', field: 'direction', align: 'left', sortable: true },
+  { name: 'priorite_defaut', label: 'Priorité', field: 'priorite_defaut', align: 'left' },
+  { name: 'actions', label: 'Actions', field: 'actions', align: 'right' },
+];
 
 const selectedTicket = ref(null);
 const selectedType = ref(null);
@@ -2350,6 +2509,91 @@ const openDeleteTicket = (ticket) => {
 const closeDeleteTicket = () => {
   deleteTicket.value = false;
   selectedTicket.value = null;
+};
+
+// --- Suppression logique ---
+const openSoftDeleteTicket = (ticket) => {
+  selectedTicket.value = ticket;
+  softDeleteDialog.value = true;
+};
+
+const closeSoftDeleteTicket = () => {
+  softDeleteDialog.value = false;
+  selectedTicket.value = null;
+};
+
+const softDeleteData = async () => {
+  if (!selectedTicket.value) return;
+  loading.value = true;
+  try {
+    const response = await api.patch(`/api/rec/parametrage/${selectedTicket.value.id}/soft-delete`);
+    $q.notify({
+      type: 'positive',
+      message: response.data?.message || 'Ticket supprimé logiquement',
+      icon: 'check_circle',
+      position: 'top',
+      timeout: 3000
+    });
+    closeSoftDeleteTicket();
+    await fetchData();
+  } catch (error) {
+    console.error('Erreur lors de la suppression logique:', error);
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Erreur lors de la suppression logique',
+      position: 'top'
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+const openDeletedDialog = async () => {
+  deletedDialog.value = true;
+  await fetchDeletedTickets();
+};
+
+const fetchDeletedTickets = async () => {
+  deletedLoading.value = true;
+  try {
+    const response = await api.get('/api/rec/parametrage-deleted');
+    deletedTickets.value = response.data?.data || [];
+  } catch (error) {
+    console.error('Erreur lors du chargement de la corbeille:', error);
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Erreur lors du chargement de la corbeille',
+      position: 'top'
+    });
+  } finally {
+    deletedLoading.value = false;
+  }
+};
+
+const restoreTicket = async (ticket) => {
+  if (!ticket) return;
+  restoringId.value = ticket.id;
+  try {
+    const response = await api.patch(`/api/rec/parametrage/${ticket.id}/restore`);
+    $q.notify({
+      type: 'positive',
+      message: response.data?.message || 'Ticket restauré',
+      icon: 'check_circle',
+      position: 'top',
+      timeout: 3000
+    });
+    await fetchDeletedTickets();
+    await fetchData();
+  } catch (error) {
+    console.error('Erreur lors de la restauration:', error);
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Erreur lors de la restauration',
+      position: 'top'
+    });
+  } finally {
+    restoringId.value = null;
+  }
 };
 
 const openEditTicket = (ticket) => {
