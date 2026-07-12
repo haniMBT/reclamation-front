@@ -42,6 +42,30 @@
   >
     <q-tooltip>Modifier la priorité (pilote uniquement)</q-tooltip>
   </q-btn>
+  <q-chip
+    v-if="hasCurrentTicket && ticket?.reference"
+    square
+    dense
+    color="teal-6"
+    text-color="white"
+    icon="tag"
+  >
+    Réf : {{ ticket.reference }}
+    <q-tooltip>Référence de la réclamation</q-tooltip>
+  </q-chip>
+  <q-btn
+    v-if="canChangeReference"
+    icon="tag"
+    color="teal-7"
+    size="sm"
+    dense
+    no-caps
+    :label="ticket?.reference ? 'Modifier la référence' : 'Ajouter une référence'"
+    @click="openReferenceDialog"
+    class="ml-2"
+  >
+    <q-tooltip>Renseigner la référence de la réclamation (pilote uniquement)</q-tooltip>
+  </q-btn>
 </h1>
             <div v-if="hasCurrentTicket">
               <p class="text-gray-600 text-sm">
@@ -1128,12 +1152,12 @@
         <q-separator />
 
         <q-card-section class="flex-1 overflow-auto p-0">
-          <div class="p-6">
+          <div class="p-6 space-y-6">
       <div v-if="hasTicketConclusion" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
               <div class="bg-gradient-to-r from-purple-50 to-purple-100 px-6 py-4 border-b border-purple-200">
                 <h3 class="text-lg font-semibold text-purple-800 flex items-center">
                   <q-icon name="text_snippet" class="mr-2" />
-                  Conclusion enregistrée
+                  Conclusion pilote
                 </h3>
               </div>
               <div class="p-6 prose max-w-none">
@@ -1174,7 +1198,53 @@
               </div>
             </div>
 
-            <div v-else class="flex flex-col items-center justify-center py-16">
+            <!-- Conclusion du recours (section distincte) -->
+            <div v-if="hasTicketConclusionRecours" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div class="bg-gradient-to-r from-indigo-50 to-indigo-100 px-6 py-4 border-b border-indigo-200">
+                <h3 class="text-lg font-semibold text-indigo-800 flex items-center">
+                  <q-icon name="gavel" class="mr-2" />
+                  Conclusion du recours
+                </h3>
+              </div>
+              <div class="p-6 prose max-w-none">
+                <div v-html="ticket.conclusion_recours"></div>
+              </div>
+
+              <!-- Fichiers de conclusion du recours -->
+              <div v-if="hasTicketConclusionRecoursFiles" class="px-6 pb-6">
+                <div class="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                  <q-icon name="attach_file" class="text-indigo-600 mr-2" />
+                  Pièces jointes du recours ({{ ticket.files_recours.length }})
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border">
+                  <q-list class="space-y-2">
+                    <q-item v-for="file in ticket.files_recours" :key="file.id" class="bg-white rounded-lg shadow-sm">
+                      <q-item-section avatar>
+                        <q-icon :name="getFileIconVoir(file.type_fichier)" class="text-indigo-600" />
+                      </q-item-section>
+                      <q-item-section>
+                        <q-item-label class="font-medium">{{ file.nom_fichier }}</q-item-label>
+                        <q-item-label caption class="text-gray-500">{{ formatFileSizeVoir(file.taille_fichier) }}</q-item-label>
+                      </q-item-section>
+                      <q-item-section side>
+                        <q-btn
+                          flat
+                          round
+                          icon="download"
+                          color="indigo-6"
+                          @click="downloadTicketFile(file)"
+                          class="hover:bg-indigo-50"
+                        >
+                          <q-tooltip>Télécharger</q-tooltip>
+                        </q-btn>
+                      </q-item-section>
+                    </q-item>
+                  </q-list>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="!hasTicketConclusion && !hasTicketConclusionRecours" class="flex flex-col items-center justify-center py-16">
               <div class="bg-purple-50 rounded-full p-6 mb-6">
                 <q-icon name="info" size="4rem" class="text-purple-500" />
               </div>
@@ -1203,7 +1273,7 @@
             <div class="text-sm text-green-700 space-y-1">
               <div>
                 <q-icon name="person" size="xs" class="q-mr-xs" />
-                Direction d'envoi: {{ selectedMessage.direction_envoi }}
+                Direction d'envoi: {{ selectedMessage.direction_envoi }}<span v-if="selectedMessage.nom_expediteur"> — {{ selectedMessage.nom_expediteur }}</span>
                 <span class="q-mx-sm">•</span>
                 <q-icon name="schedule" size="xs" class="q-mr-xs" />
                 {{ formatDate(selectedMessage.date_envoie) }}
@@ -1893,6 +1963,46 @@
         </q-card-actions>
       </q-card>
     </q-dialog>
+
+    <!-- Dialog: référence de la réclamation (pilote uniquement) -->
+    <q-dialog v-model="showReferenceDialog" persistent>
+      <q-card class="w-full" style="min-width: 420px; max-width: 520px;">
+        <q-card-section class="flex items-center bg-teal-50">
+          <q-icon name="tag" class="text-teal-700 mr-3" size="2rem" />
+          <div>
+            <div class="text-xl font-semibold text-teal-900">Référence de la réclamation</div>
+            <div class="text-sm text-teal-700">Saisissez la référence de la réclamation (obligatoire avant la clôture)</div>
+          </div>
+        </q-card-section>
+        <q-separator />
+        <q-card-section class="q-pa-lg">
+          <q-input
+            v-model="referenceForm.reference"
+            outlined
+            dense
+            maxlength="255"
+            counter
+            label="Référence"
+            @keyup.enter="saveReference"
+          >
+            <template #prepend>
+              <q-icon name="tag" class="text-teal-700" />
+            </template>
+          </q-input>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right" class="q-pa-md bg-white">
+          <q-btn flat label="Annuler" color="grey-7" @click="closeReferenceDialog" :disable="referenceSaving" />
+          <q-btn
+            label="Enregistrer"
+            color="teal-8"
+            :loading="referenceSaving"
+            :disable="!referenceForm.reference || !referenceForm.reference.trim() || referenceSaving"
+            @click="saveReference"
+          />
+        </q-card-actions>
+      </q-card>
+    </q-dialog>
       </div>
     </div>
   </div>
@@ -1968,6 +2078,51 @@ const canChangePriorite = computed(() => {
   if (status === 'clôturé' || status === 'Recours clôturé') return false
   return true
 })
+
+// Référence de la réclamation (pilote uniquement)
+const showReferenceDialog = ref(false)
+const referenceForm = ref({ reference: '' })
+const referenceSaving = ref(false)
+
+const canChangeReference = computed(() => {
+  if (!isPilot.value) return false
+  const status = ticket.value?.status
+  if (status === 'clôturé' || status === 'Recours clôturé') return false
+  return true
+})
+
+const openReferenceDialog = () => {
+  referenceForm.value.reference = ticket.value?.reference || ''
+  showReferenceDialog.value = true
+}
+
+const closeReferenceDialog = () => {
+  showReferenceDialog.value = false
+}
+
+const saveReference = async () => {
+  const value = (referenceForm.value.reference || '').trim()
+  if (!currentTicketId.value || !value) return
+  referenceSaving.value = true
+  try {
+    const resp = await api.put(`/api/rec/tickets/${currentTicketId.value}/reference`, {
+      reference: value
+    })
+    if (resp.data?.success) {
+      if (ticket.value) ticket.value.reference = resp.data.data.reference
+      $q.notify({ type: 'positive', message: resp.data.message || 'Référence mise à jour' })
+      closeReferenceDialog()
+    } else {
+      $q.notify({ type: 'negative', message: resp.data?.message || 'Échec de la mise à jour' })
+    }
+  } catch (error) {
+    console.error('Erreur mise à jour référence:', error)
+    const msg = error.response?.data?.message || 'Erreur lors de la mise à jour de la référence'
+    $q.notify({ type: 'negative', message: msg })
+  } finally {
+    referenceSaving.value = false
+  }
+}
 
 const openPrioriteDialog = () => {
   prioriteForm.value.priorite = ticket.value?.priorite || 'normal'
@@ -2057,7 +2212,9 @@ const columns = [
     label: 'Direction Envoi',
     align: 'left',
     field: 'direction_envoi',
-    sortable: true
+    sortable: true,
+    // Affiche la direction d'envoi + le nom/prénom de l'expéditeur (via sender_id)
+    format: (val, row) => row?.nom_expediteur ? `${val} — ${row.nom_expediteur}` : val
   },
   {
     name: 'destinataires',
@@ -2220,6 +2377,9 @@ const hasTicketClosedAt = computed(() => !!ticket.value?.closed_at)
 const hasTicketStatus = computed(() => !!ticket.value?.status)
 const hasTicketConclusion = computed(() => !!ticket.value?.conclusion)
 const hasTicketConclusionFiles = computed(() => !!ticket.value?.files && ticket.value.files.length > 0)
+// Conclusion du recours (séparée de la conclusion pilote)
+const hasTicketConclusionRecours = computed(() => !!ticket.value?.conclusion_recours)
+const hasTicketConclusionRecoursFiles = computed(() => !!ticket.value?.files_recours && ticket.value.files_recours.length > 0)
 
 // Vérification recours hors délai
 const isRecoursHorsDelai = computed(() => {
@@ -2272,19 +2432,22 @@ const hasMotifRefus = computed(() => {
   // Accepte HTML; présence non nulle
   return m != null && String(m).trim().length > 0
 })
-const isAccepterPiloterRefuse = computed(() => {
-  const v = ticket.value?.accepter_piloter ?? ticketDetails.value?.accepter_piloter
-  // 0 (refus) ou false
-  return v === 0 || v === false
-})
 const canShowRefusalMotifButton = computed(() => {
-  // mêmes conditions que "Ajouter une direction" + accepter_piloter == 0 + motif_refu_changement != null
-  return canAddDirection.value && isAccepterPiloterRefuse.value && hasMotifRefus.value
+  // Seul le pilote (type_orientation == 'ticket') voit ce bouton, et uniquement
+  // si un motif de refus existe. À l'acceptation le backend remet
+  // motif_refu_changement = null, donc la présence du motif suffit à indiquer un refus.
+  return isPilot.value && hasMotifRefus.value
 })
 
 // Bouton "Supprimer" — visible si l’utilisateur possède type_orientation == 'changement_accepter'
 const hasAcceptedChangeForUserDirection = computed(() => {
-  if (!authStore.user?.direction || ticket_direction!=null || ticket_direction.statut_direction=='traitement') return false
+  if (!authStore.user?.direction) return false
+  // Doit être un traiteur réellement concerné par la réclamation (répondeur de la
+  // direction), pas le réclamant/créateur du ticket — même critère que showAssociatedDirections.
+  if (privilege.value?.role !== 'employe_Répondeur' || !ticket_direction.value) return false
+  if (ticket.value?.user_id === authStore.user?.id) return false
+  // L'ancien pilote dont le changement a été accepté a sa direction marquée
+  // type_orientation === 'changement_accepter' : il peut alors supprimer sa direction.
   return (directionOptions.value || []).some(d => d?.value === authStore.user.direction && d?.type_orientation === 'changement_accepter')
 })
 const canShowDeleteSelfDirectionButton = computed(() => hasAcceptedChangeForUserDirection.value)
@@ -2474,7 +2637,10 @@ const loadMessages = async () => {
       privilege.value = response.data.privilege || null
       createur.value = response.data.createur || null // Récupérer les infos du créateur
       if(!showCloseDialog.value){
-        closeConclusion.value = ticket.value.conclusion
+        // Clôture recours -> conclusion_recours ; sinon conclusion pilote
+        closeConclusion.value = ticket.value.status === 'Recours'
+          ? (ticket.value.conclusion_recours || '')
+          : (ticket.value.conclusion || '')
       }
     } else {
       messages.value = []
@@ -2513,7 +2679,10 @@ const loadMessagesDirections = async () => {
       privilege.value = response.data.privilege || null
       createur.value = response.data.createur || null
       if (!showCloseDialog.value && ticket.value) {
-        closeConclusion.value = ticket.value.conclusion
+        // Clôture recours -> conclusion_recours ; sinon conclusion pilote
+        closeConclusion.value = ticket.value.status === 'Recours'
+          ? (ticket.value.conclusion_recours || '')
+          : (ticket.value.conclusion || '')
       }
 
       // Directions (même mapping que loadDirections)
@@ -3295,6 +3464,17 @@ const getDirectionLabel = (code) => {
      return
    }
    if (canShowCloseButton.value) {
+     // Clôture pilote (hors recours) : la référence de la réclamation est obligatoire.
+     const isRecoursClosure = ticket.value?.status === 'Recours'
+     if (!isRecoursClosure && !(ticket.value?.reference || '').trim()) {
+       $q.notify({
+         type: 'warning',
+         message: 'Veuillez renseigner la référence de la réclamation avant de pouvoir la clôturer.',
+         position: 'top'
+       })
+       openReferenceDialog()
+       return
+     }
      showCloseDialog.value = true
    } else {
      $q.notify({ type: 'warning', message: 'Clôture non autorisée dans l’état actuel du ticket', position: 'top' })

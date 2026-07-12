@@ -32,7 +32,7 @@
           <div class="md:col-span-1">
             <q-input
               v-model="searchQuery"
-              placeholder="Rechercher dans l'objet ou description..."
+              placeholder="Rechercher dans l'objet, la description ou la référence..."
               outlined
               dense
               clearable
@@ -192,6 +192,10 @@
                 <p class="text-gray-600 text-sm mb-3" v-if="ticket.objet">
                   <q-icon name="subject" size="sm" class="mr-1" />
                   {{ ticket.objet }}
+                </p>
+                <p class="text-teal-700 text-sm mb-2" v-if="ticket.reference">
+                  <q-icon name="tag" size="sm" class="mr-1" />
+                  Référence : {{ ticket.reference }}
                 </p>
                 <!-- Affichage conditionnel du créateur -->
                 <p class="text-blue-600 text-sm mb-2" v-if="ticket.createur">
