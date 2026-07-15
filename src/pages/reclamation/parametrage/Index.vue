@@ -181,6 +181,19 @@
                     <q-tooltip>Modification globale des types et détails</q-tooltip>
                   </q-btn>
 
+                  <!-- Modifier pilotes/collaborateurs : disponible même si le ticket est déjà utilisé -->
+                  <q-btn
+                    icon="manage_accounts"
+                    size="sm"
+                    flat
+                    round
+                    color="teal-6"
+                    v-if="privilege.role=='Admin' && privilege.modification==1"
+                    @click.stop="openDesignationsDialog(ticket)"
+                  >
+                    <q-tooltip>Modifier pilotes / collaborateurs</q-tooltip>
+                  </q-btn>
+
                   <!-- Toggle Actif -->
                   <div class="flex items-center ml-2" v-if="privilege?.modification==1 || privilege?.insertion==1">
                     <q-toggle
@@ -220,6 +233,56 @@
                   Définition
                 </h4>
                 <div class="bg-white p-3 rounded border text-sm" v-html="ticket.definition"></div>
+              </div>
+
+              <!-- Section Personnes concernées (pilotes / collaborateurs) -->
+              <div class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <q-icon name="groups" class="mr-2 text-teal-500" />
+                  Personnes concernées
+                </h4>
+                <div class="bg-white p-3 rounded border text-sm space-y-2">
+                  <div>
+                    <span class="text-xs font-medium text-gray-600">Pilotes ({{ ticket.direction }}) :</span>
+                    <template v-if="ticket.pilotes?.length">
+                      <q-chip v-for="id in ticket.pilotes" :key="'p'+id" size="sm" color="teal-2" text-color="teal-9" icon="engineering">{{ repondeurName(id) }}</q-chip>
+                    </template>
+                    <span v-else class="text-gray-400 italic ml-1">Toute la direction (aucun pilote désigné)</span>
+                  </div>
+                  <div>
+                    <span class="text-xs font-medium text-gray-600">Collaborateurs ({{ ticket.direction }}) :</span>
+                    <template v-if="ticket.collaborateurs?.length">
+                      <q-chip v-for="id in ticket.collaborateurs" :key="'c'+id" size="sm" color="blue-2" text-color="blue-9" icon="person">{{ repondeurName(id) }}</q-chip>
+                    </template>
+                    <span v-else class="text-gray-400 italic ml-1">Aucun</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Section Directions automatiques (avec collaborateurs) -->
+              <div v-if="ticket.default_directions?.length" class="mb-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3 flex items-center">
+                  <q-icon name="alt_route" class="mr-2 text-orange-500" />
+                  Directions automatiques
+                  <q-badge :label="ticket.default_directions.length" color="orange-6" class="ml-2" />
+                </h4>
+                <q-list bordered separator class="rounded bg-white">
+                  <q-item v-for="d in ticket.default_directions" :key="'dd'+d.id" class="py-2">
+                    <q-item-section>
+                      <q-item-label class="font-medium">
+                        {{ d.direction }}
+                        <q-badge :color="getStatutColor(d.statut_direction)" :label="d.statut_direction || 'Non défini'" class="ml-2 text-xs" />
+                      </q-item-label>
+                      <q-item-label caption>
+                        <span class="text-xs text-gray-600">Collaborateurs : </span>
+                        <template v-if="d.collaborateurs?.length">
+                          <q-chip v-for="id in d.collaborateurs" :key="'ddc'+id" size="sm" dense color="blue-2" text-color="blue-9">{{ repondeurName(id) }}</q-chip>
+                        </template>
+                        <span v-else class="text-gray-400 italic">Toute la direction</span>
+                      </q-item-label>
+                    </q-item-section>
+                  </q-item>
+                </q-list>
               </div>
 
               <!-- Section Infos générales -->
@@ -341,6 +404,13 @@
                             :label="type.statut_direction || 'Non défini'"
                             class="text-xs"
                           />
+                          <!-- Collaborateurs du type par direction -->
+                          <div v-if="collabParDirectionEntries(type.collaborateurs_par_direction).length" class="mt-2 space-y-1">
+                            <div v-for="e in collabParDirectionEntries(type.collaborateurs_par_direction)" :key="'tc'+type.id+e.direction" class="text-xs">
+                              <span class="text-gray-500">{{ e.direction }} :</span>
+                              <q-chip v-for="id in e.ids" :key="'tci'+id" size="sm" dense color="blue-2" text-color="blue-9">{{ repondeurName(id) }}</q-chip>
+                            </div>
+                          </div>
                         </div>
 
                       </div>
@@ -373,6 +443,16 @@
                           </q-td>
                         </template>
                       </q-table>
+                      <!-- Collaborateurs des détails par direction -->
+                      <div v-for="detail in type.details" :key="'dc'+detail.id">
+                        <div v-if="collabParDirectionEntries(detail.collaborateurs_par_direction).length" class="mt-2 text-xs">
+                          <div class="text-gray-500 font-medium">{{ detail.libelle }} — collaborateurs :</div>
+                          <div v-for="e in collabParDirectionEntries(detail.collaborateurs_par_direction)" :key="'dce'+detail.id+e.direction" class="ml-2">
+                            <span class="text-gray-500">{{ e.direction }} :</span>
+                            <q-chip v-for="id in e.ids" :key="'dci'+id" size="sm" dense color="blue-2" text-color="blue-9">{{ repondeurName(id) }}</q-chip>
+                          </div>
+                        </div>
+                      </div>
                     </q-card-section>
                     <q-card-section v-else class="pt-0">
                       <q-separator class="mb-3" />
@@ -538,12 +618,66 @@
                       dense
                       placeholder="Sélectionnez une direction"
                       :rules="[val => !!val || 'La direction est requise']"
+                      @update:model-value="onTicketDirectionChange"
                     >
                       <template #prepend>
                         <q-icon name="business" class="text-blue-600" />
                       </template>
                     </q-select>
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
+                  </div>
+
+                  <!-- Pilotes et collaborateurs désignés (répondeurs de la direction) -->
+                  <div v-if="form.direction">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Pilotes du ticket
+                    </label>
+                    <q-select
+                      v-model="form.pilotes"
+                      :options="repondeursByDirection(form.direction)"
+                      option-value="value"
+                      option-label="label"
+                      emit-value
+                      map-options
+                      multiple
+                      use-chips
+                      outlined
+                      dense
+                      placeholder="Sélectionnez un ou plusieurs pilotes"
+                    >
+                      <template #prepend>
+                        <q-icon name="engineering" class="text-blue-600" />
+                      </template>
+                      <template #no-option>
+                        <q-item><q-item-section class="text-grey">Aucun répondeur pour cette direction</q-item-section></q-item>
+                      </template>
+                    </q-select>
+                  </div>
+
+                  <div v-if="form.direction">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Collaborateurs du ticket
+                    </label>
+                    <q-select
+                      v-model="form.collaborateurs"
+                      :options="collaborateursOptions"
+                      option-value="value"
+                      option-label="label"
+                      emit-value
+                      map-options
+                      multiple
+                      use-chips
+                      outlined
+                      dense
+                      placeholder="Sélectionnez un ou plusieurs collaborateurs"
+                    >
+                      <template #prepend>
+                        <q-icon name="groups" class="text-blue-600" />
+                      </template>
+                      <template #no-option>
+                        <q-item><q-item-section class="text-grey">Aucun répondeur disponible</q-item-section></q-item>
+                      </template>
+                    </q-select>
                   </div>
 
                   <div>
@@ -957,6 +1091,7 @@
                 outlined
                 label="Direction"
                 dense
+                @update:model-value="onDefaultDirectionChange"
               />
               <q-select
                 v-model="newDefaultDirection.statut_direction"
@@ -983,6 +1118,29 @@
                 :rules="isVisibiliteL ? [val => !!val || 'Le libellé du ticket est requis'] : []"
               />
             </div>
+            <!-- Collaborateurs désignés pour cette direction auto -->
+            <div v-if="newDefaultDirection.direction" class="mb-4">
+              <q-select
+                v-model="newDefaultDirection.collaborateurs"
+                :options="repondeursByDirection(newDefaultDirection.direction)"
+                option-value="value"
+                option-label="label"
+                emit-value
+                map-options
+                multiple
+                use-chips
+                outlined
+                dense
+                label="Collaborateurs (optionnel)"
+              >
+                <template #prepend>
+                  <q-icon name="groups" class="text-blue-600" />
+                </template>
+                <template #no-option>
+                  <q-item><q-item-section class="text-grey">Aucun répondeur pour cette direction</q-item-section></q-item>
+                </template>
+              </q-select>
+            </div>
             <div class="flex justify-end mb-4">
               <q-btn
                 label="Ajouter"
@@ -1004,6 +1162,14 @@
               bordered
               :loading="defaultDirectionsLoading"
             >
+              <template v-slot:body-cell-collaborateurs="props">
+                <q-td :props="props">
+                  <template v-if="props.row.collaborateurs?.length">
+                    <q-chip v-for="id in props.row.collaborateurs" :key="'ddtc'+props.row.id+id" size="sm" dense color="blue-2" text-color="blue-9">{{ repondeurName(id) }}</q-chip>
+                  </template>
+                  <span v-else class="text-gray-400 italic text-xs">Toute la direction</span>
+                </q-td>
+              </template>
               <template v-slot:body-cell-actions="props">
                 <q-td :props="props">
                   <q-btn
@@ -1024,6 +1190,68 @@
           <q-card-actions class="p-4 bg-gray-50">
             <q-space />
             <q-btn label="Fermer" color="grey" flat no-caps class="px-6" @click="closeDefaultDirectionsDialog" />
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Dialog Modifier pilotes / collaborateurs (même si ticket utilisé) -->
+      <q-dialog v-model="showDesignationsDialog" persistent>
+        <q-card class="w-full" style="min-width: 50vw; max-width: 70vw;">
+          <q-card-section class="flex items-center bg-teal-50">
+            <q-icon name="manage_accounts" class="text-teal-600 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-teal-900">Pilotes & collaborateurs</div>
+              <div class="text-sm text-teal-700">{{ designationsForm.libelle }} — Direction {{ designationsForm.direction }}</div>
+            </div>
+          </q-card-section>
+          <q-separator />
+          <q-card-section class="q-pa-lg space-y-6">
+            <div class="text-xs text-gray-500">
+              Les changements ne s'appliquent qu'aux <b>futures</b> réclamations créées à partir de ce ticket.
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Pilotes du ticket</label>
+              <q-select
+                v-model="designationsForm.pilotes"
+                :options="repondeursByDirection(designationsForm.direction)"
+                option-value="value"
+                option-label="label"
+                emit-value
+                map-options
+                multiple
+                use-chips
+                outlined
+                dense
+                placeholder="Sélectionnez un ou plusieurs pilotes"
+              >
+                <template #prepend><q-icon name="engineering" class="text-teal-600" /></template>
+                <template #no-option><q-item><q-item-section class="text-grey">Aucun répondeur pour cette direction</q-item-section></q-item></template>
+              </q-select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Collaborateurs du ticket</label>
+              <q-select
+                v-model="designationsForm.collaborateurs"
+                :options="designationCollabOptions"
+                option-value="value"
+                option-label="label"
+                emit-value
+                map-options
+                multiple
+                use-chips
+                outlined
+                dense
+                placeholder="Sélectionnez un ou plusieurs collaborateurs"
+              >
+                <template #prepend><q-icon name="groups" class="text-teal-600" /></template>
+                <template #no-option><q-item><q-item-section class="text-grey">Aucun répondeur disponible</q-item-section></q-item></template>
+              </q-select>
+            </div>
+          </q-card-section>
+          <q-separator />
+          <q-card-actions align="right" class="q-pa-md bg-white">
+            <q-btn flat label="Annuler" color="grey" class="px-6" @click="closeDesignationsDialog" />
+            <q-btn label="Enregistrer" color="teal-6" :loading="designationsSaving" class="px-6" @click="saveDesignations" />
           </q-card-actions>
         </q-card>
       </q-dialog>
@@ -1077,12 +1305,66 @@
                       dense
                       placeholder="Sélectionnez une direction"
                       :rules="[val => !!val || 'La direction est requise']"
+                      @update:model-value="onTicketDirectionChange"
                     >
                       <template #prepend>
                         <q-icon name="business" class="text-orange-600" />
                       </template>
                     </q-select>
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
+                  </div>
+
+                  <!-- Pilotes et collaborateurs désignés (répondeurs de la direction) -->
+                  <div v-if="form.direction">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Pilotes du ticket
+                    </label>
+                    <q-select
+                      v-model="form.pilotes"
+                      :options="repondeursByDirection(form.direction)"
+                      option-value="value"
+                      option-label="label"
+                      emit-value
+                      map-options
+                      multiple
+                      use-chips
+                      outlined
+                      dense
+                      placeholder="Sélectionnez un ou plusieurs pilotes"
+                    >
+                      <template #prepend>
+                        <q-icon name="engineering" class="text-orange-600" />
+                      </template>
+                      <template #no-option>
+                        <q-item><q-item-section class="text-grey">Aucun répondeur pour cette direction</q-item-section></q-item>
+                      </template>
+                    </q-select>
+                  </div>
+
+                  <div v-if="form.direction">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Collaborateurs du ticket
+                    </label>
+                    <q-select
+                      v-model="form.collaborateurs"
+                      :options="collaborateursOptions"
+                      option-value="value"
+                      option-label="label"
+                      emit-value
+                      map-options
+                      multiple
+                      use-chips
+                      outlined
+                      dense
+                      placeholder="Sélectionnez un ou plusieurs collaborateurs"
+                    >
+                      <template #prepend>
+                        <q-icon name="groups" class="text-orange-600" />
+                      </template>
+                      <template #no-option>
+                        <q-item><q-item-section class="text-grey">Aucun répondeur disponible</q-item-section></q-item>
+                      </template>
+                    </q-select>
                   </div>
 
                   <div>
@@ -1618,6 +1900,37 @@
                           />
                         </div>
                       </div>
+
+                      <!-- Collaborateurs par direction (type) -->
+                      <div v-if="Array.isArray(type.direction) && type.direction.length" class="mt-4 space-y-3">
+                        <div v-for="dir in type.direction" :key="'type-collab-' + dir">
+                          <label class="block text-xs font-medium text-gray-600 mb-1">
+                            Collaborateurs — {{ dir }}
+                          </label>
+                          <q-select
+                            :model-value="getCollab(type, dir)"
+                            @update:model-value="val => setCollab(type, dir, val)"
+                            :options="repondeursByDirection(dir)"
+                            option-value="value"
+                            option-label="label"
+                            emit-value
+                            map-options
+                            multiple
+                            use-chips
+                            outlined
+                            dense
+                            placeholder="Collaborateurs de cette direction"
+                            class="bg-white"
+                          >
+                            <template #prepend>
+                              <q-icon name="groups" class="text-purple-600" size="xs" />
+                            </template>
+                            <template #no-option>
+                              <q-item><q-item-section class="text-grey">Aucun répondeur pour cette direction</q-item-section></q-item>
+                            </template>
+                          </q-select>
+                        </div>
+                      </div>
                     </div>
 
                     <!-- Section des détails -->
@@ -1730,6 +2043,37 @@
                                   </q-btn>
                                 </div>
                               </div>
+
+                              <!-- Collaborateurs par direction (détail) -->
+                              <div v-if="Array.isArray(detail.direction) && detail.direction.length" class="mt-3 space-y-2">
+                                <div v-for="dir in detail.direction" :key="'detail-collab-' + dir">
+                                  <q-select
+                                    :model-value="getCollab(detail, dir)"
+                                    @update:model-value="val => setCollab(detail, dir, val)"
+                                    :options="repondeursByDirection(dir)"
+                                    option-value="value"
+                                    option-label="label"
+                                    emit-value
+                                    map-options
+                                    multiple
+                                    use-chips
+                                    outlined
+                                    dense
+                                    :placeholder="'Collaborateurs — ' + dir"
+                                    class="text-sm"
+                                  >
+                                    <template #before>
+                                      <span class="text-xs text-gray-500 mr-2">Collab. {{ dir }}:</span>
+                                    </template>
+                                    <template #prepend>
+                                      <q-icon name="groups" class="text-purple-600" size="xs" />
+                                    </template>
+                                    <template #no-option>
+                                      <q-item><q-item-section class="text-grey">Aucun répondeur</q-item-section></q-item>
+                                    </template>
+                                  </q-select>
+                                </div>
+                              </div>
                             </q-item-section>
                           </q-item>
                         </template>
@@ -1829,6 +2173,8 @@ const prioriteOptions = PRIORITE_OPTIONS;
 const tickets = ref([]);
 const directions_visibilite = ref([]);
 const directions = ref([]);
+// Répondeurs (employe_repondeur) disponibles pour désigner pilotes/collaborateurs
+const repondeurs = ref([]);
 const privilege = ref('');
 const privilege_pcr = ref('');
 const searchTickets = ref('');
@@ -1866,6 +2212,8 @@ const form = ref({
   direction: '',
   documentAfornir: '',
   priorite_defaut: PRIORITE_DEFAULT,
+  pilotes: [],
+  collaborateurs: [],
   infos_generales: [],
   files_demandes: []
 });
@@ -2044,6 +2392,7 @@ const fetchData = async () => {
     tickets.value = response.data.tickets || [];
     directions_visibilite.value = response.data.directions_visibilite || [];
     directions.value = response.data.directions || [];
+    repondeurs.value = response.data.repondeurs || [];
     privilege.value = response.data.privilege || null;
     privilege_pcr.value = response.data.privilege_pcr || null;
     usersRaw.value = response.data.users || [];
@@ -2112,6 +2461,7 @@ const defaultDirectionsColumns = [
   { name: 'direction', label: 'Direction', field: row => row.direction, align: 'left', sortable: true },
   { name: 'statut_direction', label: 'Statut', field: row => row.statut_direction, align: 'left', sortable: true },
   { name: 'bticket_libelle', label: 'Libellé du ticket', field: row => row.bticket_libelle, align: 'left', sortable: true },
+  { name: 'collaborateurs', label: 'Collaborateurs', field: row => row.collaborateurs, align: 'left' },
   { name: 'actions', label: 'Actions', field: 'actions', align: 'center' }
 ];
 
@@ -2119,8 +2469,14 @@ const defaultDirectionsColumns = [
 const newDefaultDirection = ref({
   direction: null,
   statut_direction: null,
-  bticket_id: null
+  bticket_id: null,
+  collaborateurs: []
 });
+
+// Réinitialise les collaborateurs si la direction auto change (interaction utilisateur)
+const onDefaultDirectionChange = () => {
+  newDefaultDirection.value.collaborateurs = [];
+};
 
 const statutOptions = [
   { label: 'Consultation', value: 'consultation' },
@@ -2135,6 +2491,45 @@ const directionOptions = computed(() => {
     value: d.DIRECTION ?? d.direction ?? d.value ?? String(d)
   }));
 });
+
+// Options de répondeurs (employe_repondeur) d'une direction donnée, pour les
+// sélecteurs de pilotes / collaborateurs.
+const repondeursByDirection = (dir) => {
+  if (!dir) return [];
+  return (repondeurs.value || [])
+    .filter(u => u.direction === dir)
+    .map(u => ({
+      value: String(u.id),
+      label: `${u.Prenom ?? ''} ${u.Nom ?? ''}`.trim() || String(u.id)
+    }));
+};
+
+// Options collaborateurs = répondeurs de la direction non déjà choisis comme pilotes
+const collaborateursOptions = computed(() => {
+  const pilotes = new Set((form.value.pilotes || []).map(String));
+  return repondeursByDirection(form.value.direction).filter(o => !pilotes.has(o.value));
+});
+
+// Nom affichable d'un répondeur à partir de son id
+const repondeurName = (id) => {
+  const u = (repondeurs.value || []).find(r => String(r.id) === String(id));
+  return u ? (`${u.Prenom ?? ''} ${u.Nom ?? ''}`.trim() || String(id)) : String(id);
+};
+// Liste de noms à partir d'une liste d'ids
+const repondeurNames = (ids) => (Array.isArray(ids) ? ids.map(repondeurName) : []);
+// Entrées {direction, ids} non vides d'une map collaborateurs_par_direction
+const collabParDirectionEntries = (map) => {
+  if (!map || typeof map !== 'object') return [];
+  return Object.keys(map)
+    .filter(dir => Array.isArray(map[dir]) && map[dir].length)
+    .map(dir => ({ direction: dir, ids: map[dir] }));
+};
+
+// Réinitialiser les désignations lors d'un changement de direction (interaction utilisateur)
+const onTicketDirectionChange = () => {
+  form.value.pilotes = [];
+  form.value.collaborateurs = [];
+};
 
 const bticketOptions = computed(() => {
   return (tickets.value || []).map(t => ({
@@ -2215,7 +2610,7 @@ const addDefaultDirection = async () => {
       defaultDirections.value = [created, ...defaultDirections.value];
       $q.notify({ type: 'positive', message: res.data?.message || 'Direction automatique ajoutée' });
       // reset form
-      newDefaultDirection.value = { direction: null, statut_direction: null, bticket_id: null };
+      newDefaultDirection.value = { direction: null, statut_direction: null, bticket_id: null, collaborateurs: [] };
     }
   } catch (error) {
     console.error('Erreur ajout direction auto:', error);
@@ -2312,6 +2707,8 @@ const openAddTicket = () => {
     documentAfornir: '',
     definition: '',
     priorite_defaut: PRIORITE_DEFAULT,
+    pilotes: [],
+    collaborateurs: [],
     infos_generales: [],
     files_demandes: []
   };
@@ -2327,6 +2724,8 @@ const closeAddTicket = () => {
     documentAfornir: '',
     definition: '',
     priorite_defaut: PRIORITE_DEFAULT,
+    pilotes: [],
+    collaborateurs: [],
     infos_generales: [],
     files_demandes: []
   };
@@ -2361,6 +2760,8 @@ const openEditTicket = (ticket) => {
     documentAfornir: ticket.documentAfornir || '',
     definition: ticket.definition || '',
     priorite_defaut: ticket.priorite_defaut || PRIORITE_DEFAULT,
+    pilotes: Array.isArray(ticket.pilotes) ? ticket.pilotes.map(String) : [],
+    collaborateurs: Array.isArray(ticket.collaborateurs) ? ticket.collaborateurs.map(String) : [],
     infos_generales: ticket.infos_generales.map(info => ({
       id: info.id || Date.now() + Math.random(),
       libelle: info.libelle,
@@ -2380,6 +2781,56 @@ const openEditTicket = (ticket) => {
   editTicket.value = true;
 };
 
+// --- Modifier pilotes/collaborateurs (dialog dédié, même si ticket utilisé) ---
+const showDesignationsDialog = ref(false);
+const designationsSaving = ref(false);
+const designationsForm = ref({ id: null, libelle: '', direction: '', pilotes: [], collaborateurs: [] });
+
+const designationCollabOptions = computed(() => {
+  const pilotes = new Set((designationsForm.value.pilotes || []).map(String));
+  return repondeursByDirection(designationsForm.value.direction).filter(o => !pilotes.has(o.value));
+});
+
+const openDesignationsDialog = (ticket) => {
+  designationsForm.value = {
+    id: ticket.id,
+    libelle: ticket.libelle,
+    direction: ticket.direction,
+    pilotes: Array.isArray(ticket.pilotes) ? ticket.pilotes.map(String) : [],
+    collaborateurs: Array.isArray(ticket.collaborateurs) ? ticket.collaborateurs.map(String) : []
+  };
+  showDesignationsDialog.value = true;
+};
+
+const closeDesignationsDialog = () => {
+  showDesignationsDialog.value = false;
+  designationsForm.value = { id: null, libelle: '', direction: '', pilotes: [], collaborateurs: [] };
+};
+
+const saveDesignations = async () => {
+  if (!designationsForm.value.id) return;
+  designationsSaving.value = true;
+  try {
+    const res = await api.put(`/api/rec/parametrage/${designationsForm.value.id}/designations`, {
+      pilotes: designationsForm.value.pilotes || [],
+      collaborateurs: designationsForm.value.collaborateurs || []
+    });
+    // Mettre à jour le ticket dans la liste
+    const t = (tickets.value || []).find(x => x.id === designationsForm.value.id);
+    if (t) {
+      t.pilotes = res.data?.pilotes || [];
+      t.collaborateurs = res.data?.collaborateurs || [];
+    }
+    $q.notify({ type: 'positive', message: res.data?.message || 'Pilotes et collaborateurs mis à jour' });
+    closeDesignationsDialog();
+  } catch (error) {
+    console.error('Erreur maj désignations:', error);
+    $q.notify({ type: 'negative', message: error.response?.data?.message || 'Erreur lors de la mise à jour' });
+  } finally {
+    designationsSaving.value = false;
+  }
+};
+
 const closeEditTicket = () => {
   editTicket.value = false;
   selectedTicket.value = null;
@@ -2389,6 +2840,8 @@ const closeEditTicket = () => {
     documentAfornir: '',
     definition: '',
     priorite_defaut: PRIORITE_DEFAULT,
+    pilotes: [],
+    collaborateurs: [],
     infos_generales: [],
     files_demandes: []
   };
@@ -2409,6 +2862,8 @@ const sendData = async () => {
     documentAfornir: form.value.documentAfornir,
     definition: form.value.definition,
     priorite_defaut: form.value.priorite_defaut || PRIORITE_DEFAULT,
+    pilotes: form.value.pilotes || [],
+    collaborateurs: form.value.collaborateurs || [],
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut,
@@ -2463,6 +2918,8 @@ const updateData = async () => {
     documentAfornir: form.value.documentAfornir,
     definition: form.value.definition,
     priorite_defaut: form.value.priorite_defaut || PRIORITE_DEFAULT,
+    pilotes: form.value.pilotes || [],
+    collaborateurs: form.value.collaborateurs || [],
     infos_generales: form.value.infos_generales.map(info => ({
       libelle: info.libelle,
       key_attribut: info.key_attribut,
@@ -2734,6 +3191,7 @@ const openGlobalEdit = (ticket) => {
     libelle: type.libelle || '',
     direction: normalizeDirections(type.direction),
     statut_direction: type.statut_direction || null,
+    collaborateurs_par_direction: normalizeCollabMap(type.collaborateurs_par_direction),
     expanded: false, // Accordéons fermés par défaut
     isDragging: false, // État de drag
     details: type.details ? type.details.map(detail => ({
@@ -2741,6 +3199,7 @@ const openGlobalEdit = (ticket) => {
       libelle: detail.libelle || '',
       direction: normalizeDirections(detail.direction),
       statut_direction: detail.statut_direction || null,
+      collaborateurs_par_direction: normalizeCollabMap(detail.collaborateurs_par_direction),
       isDragging: false // État de drag pour les détails
     })) : []
   })) : [];
@@ -2755,12 +3214,31 @@ const closeGlobalEdit = () => {
   myerrors.value = null;
 };
 
+// Normalise une map { direction: [user_id,...] } venant du backend (peut être un tableau vide)
+const normalizeCollabMap = (m) => {
+  const out = {};
+  if (m && typeof m === 'object' && !Array.isArray(m)) {
+    for (const k of Object.keys(m)) {
+      out[k] = Array.isArray(m[k]) ? m[k].map(String) : [];
+    }
+  }
+  return out;
+};
+
+// v-model get/set des collaborateurs d'une direction sur un type/détail
+const getCollab = (container, dir) => (container.collaborateurs_par_direction?.[dir]) || [];
+const setCollab = (container, dir, val) => {
+  if (!container.collaborateurs_par_direction) container.collaborateurs_par_direction = {};
+  container.collaborateurs_par_direction[dir] = val;
+};
+
 const addType = () => {
   globalEditForm.value.types.push({
     id: Date.now() + Math.random(),
     libelle: '',
     direction: [],
     statut_direction: null,
+    collaborateurs_par_direction: {},
     expanded: true, // Nouveau type ouvert par défaut
     isDragging: false,
     details: []
@@ -2780,6 +3258,7 @@ const addDetail = (typeIndex) => {
     libelle: '',
     direction: [],
     statut_direction: null,
+    collaborateurs_par_direction: {},
     isDragging: false
   });
 };
@@ -2835,15 +3314,26 @@ const saveGlobalEdit = async () => {
   loading.value = true;
   myerrors.value = null;
 
+  // Ne conserver que les collaborateurs des directions encore sélectionnées
+  const pickCollabs = (container) => {
+    const dirs = Array.isArray(container.direction) ? container.direction : (container.direction ? [container.direction] : []);
+    const src = container.collaborateurs_par_direction || {};
+    const out = {};
+    dirs.forEach(d => { if (Array.isArray(src[d]) && src[d].length) out[d] = src[d]; });
+    return out;
+  };
+
   const data = {
     types: globalEditForm.value.types.map(type => ({
       libelle: type.libelle,
       direction: type.direction,
       statut_direction: type.statut_direction,
+      collaborateurs_par_direction: pickCollabs(type),
       details: type.details.map(detail => ({
         libelle: detail.libelle,
         direction: detail.direction,
-        statut_direction: detail.statut_direction
+        statut_direction: detail.statut_direction,
+        collaborateurs_par_direction: pickCollabs(detail)
       }))
     }))
   };

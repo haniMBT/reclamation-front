@@ -457,7 +457,7 @@
               <!-- Sélection multiple des directions -->
               <div class="space-y-2">
                 <label class="block text-sm font-medium text-gray-700">
-                  Directions destinataires *
+                  Directions destinataires
                 </label>
                 <q-select
                   v-model="newMessage.directions"
@@ -484,6 +484,40 @@
                     </q-item>
                   </template>
                 </q-select>
+              </div>
+
+              <!-- Sélection d'utilisateurs concernés (destinataires ciblés) -->
+              <div class="space-y-2">
+                <label class="block text-sm font-medium text-gray-700">
+                  Ou destinataires par utilisateur (personnes concernées)
+                </label>
+                <q-select
+                  v-model="newMessage.users"
+                  :options="concernedUserOptions"
+                  label="Sélectionnez un ou plusieurs utilisateurs concernés"
+                  multiple
+                  outlined
+                  use-chips
+                  option-label="label"
+                  option-value="value"
+                  emit-value
+                  map-options
+                  stack-label
+                >
+                  <template #prepend>
+                    <q-icon name="person" class="text-teal-600" />
+                  </template>
+                  <template v-slot:no-option>
+                    <q-item>
+                      <q-item-section class="text-grey">
+                        Aucune personne concernée
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                </q-select>
+                <div class="text-xs text-gray-500">
+                  Indiquez au moins une direction <b>ou</b> un utilisateur destinataire.
+                </div>
               </div>
 
               <!-- Upload de fichiers -->
@@ -1710,6 +1744,17 @@
         </q-card-section>
 
         <q-card-section class="q-pt-md">
+          <q-option-group
+            v-model="addDirectionMode"
+            :options="[
+              { label: 'Toute la direction', value: 'toute' },
+              { label: 'Personnes précises', value: 'precises' }
+            ]"
+            color="green"
+            inline
+            class="q-mb-md"
+          />
+
           <q-select
             v-model="selectedStatutDirection"
             :options="['traitement', 'consultation']"
@@ -1718,7 +1763,10 @@
             dense
             class="q-mb-md"
           />
+
+          <!-- Mode toute la direction : plusieurs directions -->
           <q-select
+            v-if="addDirectionMode === 'toute'"
             v-model="selectedAdditionalDirections"
             :options="directionsNonConcerneOptions"
             label="Sélectionner les directions"
@@ -1731,6 +1779,40 @@
             map-options
             class="q-mb-md"
           />
+
+          <!-- Mode personnes précises : une direction + ses répondeurs -->
+          <template v-else>
+            <q-select
+              v-model="selectedPreciseDirection"
+              :options="directionsNonConcerneOptions"
+              label="Direction"
+              stack-label
+              option-value="value"
+              option-label="label"
+              emit-value
+              map-options
+              class="q-mb-md"
+              @update:model-value="selectedPreciseUsers = []"
+            />
+            <q-select
+              v-model="selectedPreciseUsers"
+              :options="preciseUsersOptions"
+              label="Personnes précises (répondeurs de la direction)"
+              multiple
+              use-chips
+              stack-label
+              option-value="value"
+              option-label="label"
+              emit-value
+              map-options
+              :disable="!selectedPreciseDirection"
+              class="q-mb-md"
+            >
+              <template v-slot:no-option>
+                <q-item><q-item-section class="text-grey">Aucun répondeur pour cette direction</q-item-section></q-item>
+              </template>
+            </q-select>
+          </template>
         </q-card-section>
 
         <q-card-actions align="right">
@@ -1759,7 +1841,19 @@
         </q-card-section>
 
         <q-card-section class="q-pt-md">
+          <q-option-group
+            v-model="removeMode"
+            :options="[
+              { label: 'Directions entières', value: 'directions' },
+              { label: 'Personnes précises', value: 'users' }
+            ]"
+            color="red"
+            inline
+            class="q-mb-md"
+          />
+
           <q-select
+            v-if="removeMode === 'directions'"
             v-model="selectedRemoveDirections"
             :options="directionOptionsForRemoval"
             label="Sélectionner les directions à supprimer"
@@ -1772,6 +1866,25 @@
             map-options
             class="q-mb-md"
           />
+
+          <q-select
+            v-else
+            v-model="selectedRemoveUsers"
+            :options="concernedUsersRemoveOptions"
+            label="Sélectionner les personnes à retirer"
+            multiple
+            use-chips
+            stack-label
+            option-value="value"
+            option-label="label"
+            emit-value
+            map-options
+            class="q-mb-md"
+          >
+            <template v-slot:no-option>
+              <q-item><q-item-section class="text-grey">Aucune personne désignée</q-item-section></q-item>
+            </template>
+          </q-select>
         </q-card-section>
 
         <q-card-actions align="right">
@@ -2046,7 +2159,26 @@ const newMessage = ref({
   subject: '',
   content: '',
   directions: [],
+  users: [],
   attachments: []
+})
+
+// Personnes concernées (pilotes/collaborateurs) du ticket, pour l'envoi ciblé
+const concernedUsers = ref([])
+// Tous les répondeurs (pour désigner des personnes précises lors de l'ajout d'une direction)
+const repondeurs = ref([])
+const repondeursByDirection = (dir) => {
+  if (!dir) return []
+  return (repondeurs.value || [])
+    .filter(u => u.direction === dir)
+    .map(u => ({ value: String(u.id), label: `${u.Prenom ?? ''} ${u.Nom ?? ''}`.trim() || String(u.id) }))
+}
+// Options utilisateurs (concernés) pour le sélecteur, avec libellé "Nom (direction)"
+const concernedUserOptions = computed(() => {
+  const seen = new Set()
+  return (concernedUsers.value || [])
+    .filter(u => { if (seen.has(u.user_id)) return false; seen.add(u.user_id); return true })
+    .map(u => ({ value: String(u.user_id), label: `${u.label} (${u.direction}${u.role ? ' - ' + u.role : ''})` }))
 })
 
 // Recour message
@@ -2064,12 +2196,29 @@ const showPrioriteDialog = ref(false)
 const prioriteForm = ref({ priorite: null })
 const prioriteSaving = ref(false)
 
+// Permissions de l'utilisateur sur ce ticket (pilote/collaborateur/repli) renvoyées par le backend
+const myTicketPerms = ref(null)
+
+// can_pilot : peut effectuer les actions pilote (répondre client, conclure, clôturer, priorité…).
+// Permissif tant que les permissions ne sont pas chargées ou si l'utilisateur n'est pas concerné
+// par la nouvelle logique (le backend reste l'autorité de contrôle).
+const canPilotPerm = computed(() => {
+  if (!myTicketPerms.value || !myTicketPerms.value.has_access) return true
+  return !!myTicketPerms.value.can_pilot
+})
+const canReplyClientPerm = computed(() => {
+  if (!myTicketPerms.value || !myTicketPerms.value.has_access) return true
+  return !!myTicketPerms.value.can_reply_client
+})
+
 // Pilote = role 'employe_Répondeur' + direction == direction du ticket avec type_orientation='ticket'
+// ET, si des pilotes sont désignés, l'utilisateur en fait partie (can_pilot).
 const isPilot = computed(() => {
   if (!privilege.value || privilege.value?.role !== 'employe_Répondeur') return false
   if (!authStore.user?.direction) return false
-  return ticket_direction.value?.type_orientation === 'ticket'
+  const baseIsPilot = ticket_direction.value?.type_orientation === 'ticket'
     && ticket_direction.value?.direction === authStore.user.direction
+  return baseIsPilot && canPilotPerm.value
 })
 
 const canChangePriorite = computed(() => {
@@ -2165,9 +2314,23 @@ const directionsNonConcerneOptions = ref([])
 const showAddDirectionDialog = ref(false)
 const selectedAdditionalDirections = ref([])
 const selectedStatutDirection = ref('traitement')
+// Ajout : mode "toute la direction" ou "personnes précises"
+const addDirectionMode = ref('toute') // 'toute' | 'precises'
+const selectedPreciseDirection = ref(null)
+const selectedPreciseUsers = ref([])
+const preciseUsersOptions = computed(() => repondeursByDirection(selectedPreciseDirection.value))
 // Suppression de directions
 const showRemoveDirectionDialog = ref(false)
 const selectedRemoveDirections = ref([])
+// Suppression : mode "directions entières" ou "personnes précises"
+const removeMode = ref('directions') // 'directions' | 'users'
+const selectedRemoveUsers = ref([])
+const concernedUsersRemoveOptions = computed(() => {
+  return (concernedUsers.value || []).map(u => ({
+    value: JSON.stringify({ user_id: String(u.user_id), direction: u.direction }),
+    label: `${u.label} (${u.direction}${u.role ? ' - ' + u.role : ''})`
+  }))
+})
 // Clôture
 const showCloseDialog = ref(false)
 const isClosing = ref(false)
@@ -2345,14 +2508,14 @@ const canShowReplyButton = computed(() => (
   ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé'
 ) || (
   ticket_direction.value!=null && ticket_direction.value.statut_direction=='traitement' &&
-  ticket_direction.value.type_orientation=='ticket' && canClientReply.value &&
+  ticket_direction.value.type_orientation=='ticket' && canClientReply.value && canReplyClientPerm.value &&
   (ticket.value?.privilege_crateur?.role!='employe_Répondeur' || ticket.value?.ticket_direction_crateur==null) &&
   ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé'
 ))
 const canShowRecourButton = computed(() => ticket.value?.user_id==authStore.user.id && ticket.value?.status=='clôturé' && (ticket.value?.privilege_crateur?.role!='employe_Répondeur' || ticket.value?.ticket_direction_crateur==null))
 const canShowCloseButton = computed(() => (
   ticket_direction.value!=null && ticket_direction.value.statut_direction=='traitement' &&
-  ticket_direction.value.type_orientation=='ticket' &&
+  ticket_direction.value.type_orientation=='ticket' && canPilotPerm.value &&
   (hasMessageVersClient.value || ticket.value?.status=='Recours' || (ticket.value?.privilege_crateur?.role=='employe_Répondeur' && ticket.value?.ticket_direction_crateur!=null))
 ) && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
 
@@ -2635,7 +2798,10 @@ const loadMessages = async () => {
       requesting_direction.value = response.data.requesting_direction || null
       ticket.value = response.data.ticket || null
       privilege.value = response.data.privilege || null
-      createur.value = response.data.createur || null // Récupérer les infos du créateur
+      createur.value = response.data.createur || null
+      myTicketPerms.value = response.data.my_ticket_permissions || null
+      concernedUsers.value = response.data.concerned_users || []
+      repondeurs.value = response.data.repondeurs || [] // Récupérer les infos du créateur
       if(!showCloseDialog.value){
         // Clôture recours -> conclusion_recours ; sinon conclusion pilote
         closeConclusion.value = ticket.value.status === 'Recours'
@@ -2678,6 +2844,9 @@ const loadMessagesDirections = async () => {
       ticket.value = response.data.ticket || null
       privilege.value = response.data.privilege || null
       createur.value = response.data.createur || null
+      myTicketPerms.value = response.data.my_ticket_permissions || null
+      concernedUsers.value = response.data.concerned_users || []
+      repondeurs.value = response.data.repondeurs || []
       if (!showCloseDialog.value && ticket.value) {
         // Clôture recours -> conclusion_recours ; sinon conclusion pilote
         closeConclusion.value = ticket.value.status === 'Recours'
@@ -2687,13 +2856,16 @@ const loadMessagesDirections = async () => {
 
       // Directions (même mapping que loadDirections)
       const dirs = response.data.directions || []
-      directionOptions.value = dirs.map(direction => ({
-        label: direction.label,
-        value: direction.value,
-        id: direction.id,
-        type_orientation: direction.type_orientation,
-        statut_direction: direction.statut_direction
-      }))
+      directionOptions.value = dirs
+        .map(direction => ({
+          label: direction.label,
+          value: direction.value,
+          id: direction.id,
+          type_orientation: direction.type_orientation,
+          statut_direction: direction.statut_direction
+        }))
+        // Une direction n'apparaît qu'une seule fois (sécurité côté client)
+        .filter((d, i, a) => a.findIndex(x => x.value === d.value) === i)
 
       const nonConcerne = response.data.directionsNonConcerne || []
       directionsNonConcerneOptions.value = nonConcerne.map(direction => ({
@@ -2815,6 +2987,22 @@ const viewMessageDetail = async (message) => {
     }
   }
 
+  // Message ciblé sur cette personne précise (destinataire = nom complet)
+  const userFullName = `${authStore.user?.Prenom ?? ''} ${authStore.user?.Nom ?? ''}`.trim().toLowerCase()
+  const memberIdx = (Array.isArray(message?.destinataires) && userFullName)
+    ? message.destinataires.findIndex(d => (d?.direction_destinataire || '').toLowerCase() === userFullName && d?.statut !== 'lu' && !d?.date_lecture)
+    : -1
+  if (memberIdx !== -1) {
+    try {
+      await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { recipient: 'member' })
+      message.destinataires[memberIdx].statut = 'lu'
+      message.destinataires[memberIdx].lu = 1
+      message.destinataires[memberIdx].date_lecture = new Date().toISOString()
+    } catch (error) {
+      console.error('Erreur lors du marquage (personne) comme lu:', error)
+    }
+  }
+
   // Si destinataire = client et l'utilisateur a une direction, marquer comme lu côté client
   // const hasNoDirection = !authStore.user?.direction //n'a pas de direction
   const clientIdx = Array.isArray(message?.destinataires)
@@ -2891,7 +3079,8 @@ const sendMessage = async () => {
      const formData = new FormData()
      formData.append('titre', newMessage.value.subject)
      formData.append('description', newMessage.value.content)
-     formData.append('directions', JSON.stringify(newMessage.value.directions))
+     formData.append('directions', JSON.stringify(newMessage.value.directions || []))
+     formData.append('users', JSON.stringify(newMessage.value.users || []))
 
     // Ajouter les fichiers au FormData
     newMessage.value.attachments.forEach((attachment, index) => {
@@ -2918,6 +3107,7 @@ const sendMessage = async () => {
          content: '',
          description: '',
          directions: [],
+         users: [],
          attachments: []
        }
        newFiles.value = null
@@ -3121,6 +3311,7 @@ const closeNewMessageDialog = () => {
     subject: '',
     content: '',
     directions: [],
+    users: [],
     attachments: []
   }
   newFiles.value = null
@@ -3695,21 +3886,35 @@ const addAdditionalDirections = async () => {
     return
   }
 
-  if (selectedAdditionalDirections.value.length === 0) {
+  const isPrecise = addDirectionMode.value === 'precises'
+  if (!isPrecise && selectedAdditionalDirections.value.length === 0) {
     $q.notify({ type: 'warning', message: 'Sélectionnez au moins une direction' })
-    // Fermer le q-dialog
     showAddDirectionDialog.value = false
+    return
+  }
+  if (isPrecise && !selectedPreciseDirection.value) {
+    $q.notify({ type: 'warning', message: 'Sélectionnez une direction' })
     return
   }
 
   try {
      let addedCount = 0
-     for (const dirValue of selectedAdditionalDirections.value) {
+     if (isPrecise) {
+       // Une direction + personnes précises (vide => toute la direction)
        await api.post(`/api/rec/directions_ticket/${currentTicketId.value}`, {
-         direction: dirValue,
-         statut_direction: selectedStatutDirection.value
+         direction: selectedPreciseDirection.value,
+         statut_direction: selectedStatutDirection.value,
+         users: selectedPreciseUsers.value || []
        })
-       addedCount++
+       addedCount = 1
+     } else {
+       for (const dirValue of selectedAdditionalDirections.value) {
+         await api.post(`/api/rec/directions_ticket/${currentTicketId.value}`, {
+           direction: dirValue,
+           statut_direction: selectedStatutDirection.value
+         })
+         addedCount++
+       }
      }
 
      // Rafraîchir les listes depuis le backend
@@ -3731,6 +3936,9 @@ const addAdditionalDirections = async () => {
      // Réinitialiser et fermer le dialog
      selectedAdditionalDirections.value = []
      selectedStatutDirection.value = 'traitement'
+     selectedPreciseDirection.value = null
+     selectedPreciseUsers.value = []
+     addDirectionMode.value = 'toute'
      showAddDirectionDialog.value = false
    }
  }
@@ -3753,37 +3961,50 @@ const removeSelectedDirections = async () => {
     return
   }
 
-  if (selectedRemoveDirections.value.length === 0) {
+  const isUsersMode = removeMode.value === 'users'
+  if (!isUsersMode && selectedRemoveDirections.value.length === 0) {
     $q.notify({ type: 'warning', message: 'Sélectionnez au moins une direction à supprimer' })
-    // Fermer le q-dialog
     showRemoveDirectionDialog.value = false
+    return
+  }
+  if (isUsersMode && selectedRemoveUsers.value.length === 0) {
+    $q.notify({ type: 'warning', message: 'Sélectionnez au moins une personne à retirer' })
     return
   }
 
   try {
-     const response = await api.post(`/api/rec/directions_ticket/${currentTicketId.value}/delete`, {
-       directions: selectedRemoveDirections.value
-     })
+     let payload
+     if (isUsersMode) {
+       const users = selectedRemoveUsers.value.map(v => JSON.parse(v))
+       payload = { mode: 'users', users }
+     } else {
+       payload = { directions: selectedRemoveDirections.value }
+     }
+     const response = await api.post(`/api/rec/directions_ticket/${currentTicketId.value}/delete`, payload)
 
      // Rafraîchir les listes depuis le backend
      await loadDirections()
 
-     const deletedCount = response?.data?.data?.deleted_count ?? selectedRemoveDirections.value.length
+     const count = isUsersMode
+       ? (response?.data?.data?.removed_count ?? selectedRemoveUsers.value.length)
+       : (response?.data?.data?.deleted_count ?? selectedRemoveDirections.value.length)
      $q.notify({
        type: 'positive',
-       message: `${deletedCount} direction(s) supprimée(s) avec succès`,
+       message: isUsersMode ? `${count} personne(s) retirée(s)` : `${count} direction(s) supprimée(s) avec succès`,
        position: 'top'
      })
    } catch (error) {
-     console.error('Erreur lors de la suppression des directions:', error)
+     console.error('Erreur lors de la suppression:', error)
      $q.notify({
        type: 'negative',
-       message: 'Erreur lors de la suppression des directions',
+       message: 'Erreur lors de la suppression',
        position: 'top'
      })
    } finally {
      // Réinitialiser et fermer le dialog
      selectedRemoveDirections.value = []
+     selectedRemoveUsers.value = []
+     removeMode.value = 'directions'
      showRemoveDirectionDialog.value = false
   }
 }
