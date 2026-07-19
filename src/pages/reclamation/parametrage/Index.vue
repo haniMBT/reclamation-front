@@ -2706,7 +2706,9 @@ const ticketDirectionById = computed(() => {
   const map = new Map();
   (tickets.value || []).forEach(t => {
     const dir = Array.isArray(t.direction) ? t.direction[0] : t.direction;
-    map.set(t.id, dir);
+    // Clé en String : l'API SQL Server renvoie bticket_id en chaîne ("25") alors
+    // que t.id est un nombre (25) — sans normalisation, Map.get échouerait.
+    map.set(String(t.id), dir);
   });
   return map;
 });
@@ -2716,14 +2718,14 @@ const filteredDefaultDirections = computed(() => {
   const userDir = currentUserDirection.value;
   return (defaultDirections.value || []).filter(row => {
     if (!row.bticket_id) return true;
-    return ticketDirectionById.value.get(row.bticket_id) === userDir;
+    return ticketDirectionById.value.get(String(row.bticket_id)) === userDir;
   });
 });
 
 const canDeleteDefaultDirectionRow = (row) => {
   if (!isVisibiliteL.value) return true;
   if (!row?.bticket_id) return false;
-  return ticketDirectionById.value.get(row.bticket_id) === currentUserDirection.value;
+  return ticketDirectionById.value.get(String(row.bticket_id)) === currentUserDirection.value;
 };
 
 const isDefaultDirectionFormValid = computed(() => {
