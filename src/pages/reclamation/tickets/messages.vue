@@ -658,6 +658,7 @@
                 map-options
                 :loading="loadingDirections"
                 stack-label
+                @update:model-value="selectedMotifUsers = []"
               >
                 <template #prepend>
                   <q-icon name="business" class="text-green-600" />
@@ -668,6 +669,42 @@
                   </q-item>
                 </template>
               </q-select>
+            </div>
+
+            <!-- Personnes précises (optionnel) : nouveaux pilotes dans la direction choisie -->
+            <div class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">
+                Personnes (optionnel)
+              </label>
+              <q-select
+                v-model="selectedMotifUsers"
+                :options="motifUsersOptions"
+                label="Laisser vide = toute la direction"
+                outlined
+                dense
+                multiple
+                use-chips
+                option-label="label"
+                option-value="value"
+                emit-value
+                map-options
+                stack-label
+                :disable="!selectedDirectionMotif"
+              >
+                <template #prepend>
+                  <q-icon name="person" class="text-green-600" />
+                </template>
+                <template v-slot:no-option>
+                  <q-item>
+                    <q-item-section class="text-grey">
+                      {{ selectedDirectionMotif ? 'Aucun répondeur pour cette direction' : 'Sélectionnez d’abord une direction' }}
+                    </q-item-section>
+                  </q-item>
+                </template>
+              </q-select>
+              <div class="text-xs text-gray-500">
+                Sélectionnez une ou plusieurs personnes pour leur demander de devenir pilote de cette réclamation, ou laissez vide pour solliciter toute la direction.
+              </div>
             </div>
 
             <!-- Motif via QEditor -->
@@ -835,10 +872,40 @@
         <q-separator />
 
         <q-card-section class="q-pa-lg overflow-auto" style="flex: 1;">
-          <div class="space-y-3 text-gray-800">
-            <p>
-              Si vous confirmez la suppression, vous ne serez plus concerné par cette réclamation.
-            </p>
+          <div class="space-y-4 text-gray-800">
+            <p>Que souhaitez-vous faire pour votre ancienne direction pilote ?</p>
+            <q-option-group
+              v-model="deleteSelfMode"
+              type="radio"
+              color="red-6"
+              :options="[
+                { label: 'Retirer toute la direction de la réclamation', value: 'direction' },
+                { label: 'Retirer des personnes précises de cette direction', value: 'users' }
+              ]"
+            />
+            <div v-if="deleteSelfMode === 'users'" class="space-y-2">
+              <label class="block text-sm font-medium text-gray-700">Personnes à retirer</label>
+              <q-select
+                v-model="deleteSelfSelectedUsers"
+                :options="formerPilotDirectionUsersOptions"
+                multiple
+                use-chips
+                outlined
+                dense
+                emit-value
+                map-options
+                option-label="label"
+                option-value="value"
+                label="Sélectionner une ou plusieurs personnes"
+              >
+                <template v-slot:no-option>
+                  <q-item><q-item-section class="text-grey">Aucune personne désignée</q-item-section></q-item>
+                </template>
+              </q-select>
+              <div class="text-xs text-gray-500">
+                Si vous retirez la dernière personne désignée, la direction sera retirée entièrement.
+              </div>
+            </div>
           </div>
         </q-card-section>
 
@@ -847,7 +914,7 @@
         <q-card-actions class="p-6 bg-gray-50">
           <q-space />
           <q-btn @click="closeDeleteSelfDirectionDialog" color="grey-6" outline no-caps class="px-6">Annuler</q-btn>
-          <q-btn @click="confirmDeleteSelfDirection" color="negative" no-caps unelevated class="px-6 ml-3">Confirmer la suppression</q-btn>
+          <q-btn @click="confirmDeleteSelfDirection" color="negative" no-caps unelevated class="px-6 ml-3">Confirmer</q-btn>
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -2167,6 +2234,11 @@ const newMessage = ref({
 const concernedUsers = ref([])
 // Tous les répondeurs (pour désigner des personnes précises lors de l'ajout d'une direction)
 const repondeurs = ref([])
+// Personnes ciblées par une demande de changement de pilote en attente [{direction, user_id}]
+const pilotChangeTargets = ref([])
+// L'utilisateur courant est-il l'ancien pilote autorisé à supprimer sa direction
+// (état 'changement_accepter') ? Renvoyé par le backend.
+const canDeleteFormerPilotDirection = ref(false)
 const repondeursByDirection = (dir) => {
   if (!dir) return []
   return (repondeurs.value || [])
@@ -2200,14 +2272,19 @@ const prioriteSaving = ref(false)
 const myTicketPerms = ref(null)
 
 // can_pilot : peut effectuer les actions pilote (répondre client, conclure, clôturer, priorité…).
-// Permissif tant que les permissions ne sont pas chargées ou si l'utilisateur n'est pas concerné
-// par la nouvelle logique (le backend reste l'autorité de contrôle).
+// Permissif UNIQUEMENT tant que les permissions ne sont pas chargées (évite le
+// clignotement). Une fois chargées, un utilisateur sans accès (has_access=false,
+// ex. répondeur NON désigné de la direction pilote) n'est PAS pilote : on renvoie
+// false — sinon il hériterait à tort de toutes les fonctionnalités pilote.
+// Le backend reste l'autorité de contrôle.
 const canPilotPerm = computed(() => {
-  if (!myTicketPerms.value || !myTicketPerms.value.has_access) return true
+  if (!myTicketPerms.value) return true
+  if (!myTicketPerms.value.has_access) return false
   return !!myTicketPerms.value.can_pilot
 })
 const canReplyClientPerm = computed(() => {
-  if (!myTicketPerms.value || !myTicketPerms.value.has_access) return true
+  if (!myTicketPerms.value) return true
+  if (!myTicketPerms.value.has_access) return false
   return !!myTicketPerms.value.can_reply_client
 })
 
@@ -2326,10 +2403,13 @@ const selectedRemoveDirections = ref([])
 const removeMode = ref('directions') // 'directions' | 'users'
 const selectedRemoveUsers = ref([])
 const concernedUsersRemoveOptions = computed(() => {
-  return (concernedUsers.value || []).map(u => ({
-    value: JSON.stringify({ user_id: String(u.user_id), direction: u.direction }),
-    label: `${u.label} (${u.direction}${u.role ? ' - ' + u.role : ''})`
-  }))
+  return (concernedUsers.value || [])
+    // Le pilote ne peut pas se retirer lui-même.
+    .filter(u => String(u.user_id) !== String(authStore.user?.id))
+    .map(u => ({
+      value: JSON.stringify({ user_id: String(u.user_id), direction: u.direction }),
+      label: `${u.label} (${u.direction}${u.role ? ' - ' + u.role : ''})`
+    }))
 })
 // Clôture
 const showCloseDialog = ref(false)
@@ -2344,6 +2424,10 @@ const closeAttachments = ref([])
 const showAddMotifDirectionDialog = ref(false)
 const selectedDirectionMotif = ref(null)
 const motifDirectionContent = ref('')
+// Personnes précises (optionnel) demandées comme nouveaux pilotes lors du changement.
+// Options = répondeurs de la direction sélectionnée ; vide => toute la direction.
+const selectedMotifUsers = ref([])
+const motifUsersOptions = computed(() => repondeursByDirection(selectedDirectionMotif.value))
 
 // Décision orientation pilote
 const showOrientationDecisionDialog = ref(false)
@@ -2352,9 +2436,23 @@ const hasChangeRequestForUserDirection = computed(() => {
   if (!authStore.user?.direction) return false
   return directionOptions.value?.some(d => d.value === authStore.user.direction && d.type_orientation === 'changement')
 })
+// Personnes ciblées par la demande de changement pour la direction de l'utilisateur.
+const myDirectionChangeTargets = computed(() =>
+  (pilotChangeTargets.value || [])
+    .filter(t => t.direction === authStore.user?.direction)
+    .map(t => String(t.user_id))
+)
+// Seul l'utilisateur autorisé à décider voit le bouton :
+// - scénario "personne(s)" : uniquement les personnes ciblées ;
+// - scénario "toute la direction" (aucune cible) : tout répondeur de la direction.
+const canDecideOrientationChange = computed(() => {
+  if (!hasChangeRequestForUserDirection.value) return false
+  const targets = myDirectionChangeTargets.value
+  if (targets.length > 0) return targets.includes(String(authStore.user?.id))
+  return true
+})
 const canShowOrientationDecisionButton = computed(() => {
-  return  hasChangeRequestForUserDirection.value
-  // return canShowNewMessageButton.value && hasChangeRequestForUserDirection.value
+  return canDecideOrientationChange.value
 })
 
 
@@ -2480,8 +2578,10 @@ const hasMessageVersClient = computed(() => {
 const hasCurrentTicket = computed(() => !!currentTicketId.value)
 const isNoTicketSelected = computed(() => !currentTicketId.value)
 const showAssociatedDirections = computed(() => !!currentTicketId.value && directionOptions.value.length > 0 && privilege.value?.role=='employe_Répondeur' && ticket_direction.value!=null)
-const canAddDirection = computed(() => ticket_direction.value?.statut_direction=='traitement' && ticket_direction.value?.type_orientation=='ticket' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
-const canRemoveDirection = computed(() => ticket_direction.value?.statut_direction=='traitement' && ticket_direction.value?.type_orientation=='ticket' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
+// Ajouter / supprimer une direction et changer le pilote : réservé au PILOTE réel
+// (can_pilot), pas à tout répondeur de la direction pilote.
+const canAddDirection = computed(() => canPilotPerm.value && ticket_direction.value?.statut_direction=='traitement' && ticket_direction.value?.type_orientation=='ticket' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
+const canRemoveDirection = computed(() => canPilotPerm.value && ticket_direction.value?.statut_direction=='traitement' && ticket_direction.value?.type_orientation=='ticket' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
 const isLoadingDirections = computed(() => loadingDirections.value)
 
 // Options combinées (directions associées + non concernées), sans duplications
@@ -2502,7 +2602,13 @@ const isMotifValid = computed(() => {
 })
 
 const canShowConclusionButton = computed(() => ['clôturé','Recours clôturé'].includes(ticket.value?.status))
-const canShowNewMessageButton = computed(() => ticket_direction.value!=null && ticket_direction.value.statut_direction=='traitement' && ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
+// Bouton "nouveau message" (répondeurs) : réservé aux personnes réellement autorisées
+// à envoyer. Si la direction a été ajoutée à une personne précise, seuls les concernés
+// (has_access) et autorisés (can_send_message) le voient — pas tous les répondeurs.
+const canShowNewMessageButton = computed(() =>
+  ticket_direction.value!=null && ticket_direction.value.statut_direction=='traitement' &&
+  !!myTicketPerms.value?.has_access && !!myTicketPerms.value?.can_send_message &&
+  ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
 const canShowReplyButton = computed(() => (
   ticket.value?.user_id==authStore.user.id && canClientReply.value && ticket_direction.value==null &&
   ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé'
@@ -2613,7 +2719,10 @@ const hasAcceptedChangeForUserDirection = computed(() => {
   // type_orientation === 'changement_accepter' : il peut alors supprimer sa direction.
   return (directionOptions.value || []).some(d => d?.value === authStore.user.direction && d?.type_orientation === 'changement_accepter')
 })
-const canShowDeleteSelfDirectionButton = computed(() => hasAcceptedChangeForUserDirection.value)
+// Le bouton n'apparaît que pour l'ANCIEN PILOTE (pas tous les répondeurs de sa
+// direction) : le backend renvoie can_delete_former_pilot_direction.
+const canShowDeleteSelfDirectionButton = computed(() =>
+  hasAcceptedChangeForUserDirection.value && canDeleteFormerPilotDirection.value)
 
 // Méthodes
 const goBack = () => {
@@ -2694,23 +2803,51 @@ const deleteSelfDirection = async () => {
     return
   }
 
+  // Mode "personnes précises" : au moins une personne doit être sélectionnée.
+  if (deleteSelfMode.value === 'users' && (deleteSelfSelectedUsers.value?.length || 0) === 0) {
+    $q.notify({ type: 'warning', message: 'Sélectionnez au moins une personne à retirer', position: 'top' })
+    throw new Error('no-selection')
+  }
+
   try {
-    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/directions/self/delete`)
+    const payload = { mode: deleteSelfMode.value }
+    if (deleteSelfMode.value === 'users') {
+      payload.users = deleteSelfSelectedUsers.value
+    }
+    const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/directions/self/delete`, payload)
     if (response.data?.success) {
-      $q.notify({ type: 'positive', message: 'Direction supprimée avec succès', position: 'top' })
+      $q.notify({ type: 'positive', message: response.data?.message || 'Opération effectuée', position: 'top' })
+      // L'utilisateur reste concerné si la direction n'a pas été retirée ET qu'il ne
+      // s'est pas retiré lui-même. Sinon on repart à la liste.
+      const removedSelf = deleteSelfMode.value === 'users' &&
+        (deleteSelfSelectedUsers.value || []).map(String).includes(String(authStore.user?.id))
+      const stillConcerned = response.data?.data?.direction_removed === false && !removedSelf
       await loadMessagesDirections()
+      return { stillConcerned }
     } else {
       throw new Error(response.data?.message || 'Échec de la suppression de la direction')
     }
   } catch (error) {
     console.error('Erreur suppression direction (self):', error)
     $q.notify({ type: 'negative', message: 'Erreur lors de la suppression de la direction', position: 'top' })
+    throw error
   }
 }
 
 // Modale affichage du motif de refus de changement de pilote
 const showRefusalMotifDialog = ref(false)
 const showDeleteSelfDirectionDialog = ref(false)
+// Mode de retrait de l'ancien pilote : 'direction' (toute la direction) | 'users' (personnes précises)
+const deleteSelfMode = ref('direction')
+const deleteSelfSelectedUsers = ref([])
+// Personnes désignées de la direction de l'ancien pilote (dédupliquées) — candidates au retrait.
+const formerPilotDirectionUsersOptions = computed(() => {
+  const seen = new Set()
+  return (concernedUsers.value || [])
+    .filter(u => u.direction === authStore.user?.direction)
+    .filter(u => { const id = String(u.user_id); if (seen.has(id)) return false; seen.add(id); return true })
+    .map(u => ({ value: String(u.user_id), label: `${u.label}${u.role ? ' - ' + u.role : ''}` }))
+})
 const openRefusalMotifDialog = async () => {
   await loadMessagesDirections()
   if (!currentTicketId.value) {
@@ -2728,6 +2865,8 @@ const closeRefusalMotifDialog = () => {
 }
 
 const openDeleteSelfDirectionDialog = () => {
+  deleteSelfMode.value = 'direction'
+  deleteSelfSelectedUsers.value = []
   showDeleteSelfDirectionDialog.value = true
 }
 const closeDeleteSelfDirectionDialog = () => {
@@ -2735,9 +2874,13 @@ const closeDeleteSelfDirectionDialog = () => {
 }
 const confirmDeleteSelfDirection = async () => {
   try {
-    await deleteSelfDirection()
+    const res = await deleteSelfDirection()
     showDeleteSelfDirectionDialog.value = false
-    $q.notify({ type: 'positive', message: 'Direction supprimée. Redirection en cours…' })
+    // Si l'utilisateur reste concerné (retrait de soi sans suppression de la
+    // direction), on ne redirige pas ; sinon on repart à la liste.
+    if (res?.stillConcerned) {
+      return
+    }
     router.push({ path: '/reclamations/allTicket' })
   } catch (e) {
     // L’erreur est notifiée dans deleteSelfDirection(); on laisse le modal ouvert
@@ -2802,6 +2945,8 @@ const loadMessages = async () => {
       myTicketPerms.value = response.data.my_ticket_permissions || null
       concernedUsers.value = response.data.concerned_users || []
       repondeurs.value = response.data.repondeurs || [] // Récupérer les infos du créateur
+      pilotChangeTargets.value = response.data.pilot_change_targets || []
+      canDeleteFormerPilotDirection.value = !!response.data.can_delete_former_pilot_direction
       if(!showCloseDialog.value){
         // Clôture recours -> conclusion_recours ; sinon conclusion pilote
         closeConclusion.value = ticket.value.status === 'Recours'
@@ -2847,6 +2992,8 @@ const loadMessagesDirections = async () => {
       myTicketPerms.value = response.data.my_ticket_permissions || null
       concernedUsers.value = response.data.concerned_users || []
       repondeurs.value = response.data.repondeurs || []
+      pilotChangeTargets.value = response.data.pilot_change_targets || []
+      canDeleteFormerPilotDirection.value = !!response.data.can_delete_former_pilot_direction
       if (!showCloseDialog.value && ticket.value) {
         // Clôture recours -> conclusion_recours ; sinon conclusion pilote
         closeConclusion.value = ticket.value.status === 'Recours'
@@ -3703,6 +3850,7 @@ const getDirectionLabel = (code) => {
     showAddMotifDirectionDialog.value = false
     selectedDirectionMotif.value = null
     motifDirectionContent.value = ''
+    selectedMotifUsers.value = []
   }
 
   // Envoyer le motif comme message vers la direction sélectionnée
@@ -3729,7 +3877,9 @@ const getDirectionLabel = (code) => {
     try {
       const payload = {
         direction: selectedDirectionMotif.value,
-        motif: motifDirectionContent.value
+        motif: motifDirectionContent.value,
+        // Personnes précises (répondeurs de la direction) ; vide => toute la direction
+        users: Array.isArray(selectedMotifUsers.value) ? selectedMotifUsers.value : []
       }
 
       const response = await api.post(`/api/rec/tickets/${currentTicketId.value}/orientation-changement`, payload)
@@ -4044,6 +4194,10 @@ const openOrientationDecisionDialog = async () => {
   }
   if (!hasChangeRequestForUserDirection.value) {
     $q.notify({ type: 'warning', message: 'Aucune demande de changement pour votre direction', position: 'top' })
+    return
+  }
+  if (!canDecideOrientationChange.value) {
+    $q.notify({ type: 'warning', message: 'Seule la personne désignée peut décider de ce changement', position: 'top' })
     return
   }
   orientationDecision.value = { decision: null, motifRefus: '' }
