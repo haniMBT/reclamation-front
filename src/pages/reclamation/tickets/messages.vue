@@ -3150,9 +3150,11 @@ const viewMessageDetail = async (message) => {
     }
   }
 
-  // Si destinataire = client et l'utilisateur a une direction, marquer comme lu côté client
-  // const hasNoDirection = !authStore.user?.direction //n'a pas de direction
-  const clientIdx = Array.isArray(message?.destinataires)
+  // Message adressé au client (destinataire 'client') = accusé de lecture DU client.
+  // Seul le client (créateur du ticket) le marque comme lu en l'ouvrant ; un employé
+  // (pilote ou collaborateur) qui le consulte ne doit PAS déclencher cet accusé.
+  const isClientReader = ticket.value?.user_id == authStore.user?.id
+  const clientIdx = (isClientReader && Array.isArray(message?.destinataires))
     ? message.destinataires.findIndex(d => d?.direction_destinataire === 'client' && d?.statut !== 'lu' && !d?.date_lecture)
     : -1
 
@@ -3173,7 +3175,10 @@ const viewMessageDetail = async (message) => {
     ? message.destinataires.findIndex(d => d?.direction_destinataire === 'directions' && d?.statut !== 'lu' && !d?.date_lecture)
     : -1
 
-  if (pilotIdx !== -1 && ticket_direction.value!=null && ticket_direction.value?.type_orientation=='ticket') {
+  // Réponse du client (destinataire 'directions') : seul le PILOTE la marque comme lue.
+  // Un autre répondeur de la même direction (pilote) la voit mais ne déclenche pas
+  // l'appel API — d'où canReplyClientPerm (= can_reply_client du backend).
+  if (pilotIdx !== -1 && ticket_direction.value!=null && ticket_direction.value?.type_orientation=='ticket' && canReplyClientPerm.value) {
     try {
       await api.put(`/api/rec/messages/${message.id}/mark-as-read`, { recipient: 'directions' })
       // Mettre à jour localement le destinataire client
