@@ -1224,14 +1224,25 @@
           <q-card-section class="flex items-center bg-teal-50">
             <q-icon name="manage_accounts" class="text-teal-600 mr-3" size="2rem" />
             <div>
-              <div class="text-xl font-semibold text-teal-900">Pilotes & collaborateurs</div>
-              <div class="text-sm text-teal-700">{{ designationsForm.libelle }} — Direction {{ designationsForm.direction }}</div>
+              <div class="text-xl font-semibold text-teal-900">Ticket — Pilotes & collaborateurs</div>
+              <div class="text-sm text-teal-700">Direction {{ designationsForm.direction }}</div>
             </div>
           </q-card-section>
           <q-separator />
           <q-card-section class="q-pa-lg space-y-6">
             <div class="text-xs text-gray-500">
               Les changements ne s'appliquent qu'aux <b>futures</b> réclamations créées à partir de ce ticket.
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Libellé du ticket</label>
+              <q-input
+                v-model="designationsForm.libelle"
+                outlined
+                dense
+                placeholder="Libellé du ticket"
+              >
+                <template #prepend><q-icon name="label" class="text-teal-600" /></template>
+              </q-input>
             </div>
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-2">Pilotes du ticket</label>
@@ -3055,19 +3066,26 @@ const closeDesignationsDialog = () => {
 
 const saveDesignations = async () => {
   if (!designationsForm.value.id) return;
+  const libelle = (designationsForm.value.libelle || '').trim();
+  if (!libelle) {
+    $q.notify({ type: 'warning', message: 'Le libellé du ticket est obligatoire' });
+    return;
+  }
   designationsSaving.value = true;
   try {
     const res = await api.put(`/api/rec/parametrage/${designationsForm.value.id}/designations`, {
+      libelle,
       pilotes: designationsForm.value.pilotes || [],
       collaborateurs: designationsForm.value.collaborateurs || []
     });
     // Mettre à jour le ticket dans la liste
     const t = (tickets.value || []).find(x => x.id === designationsForm.value.id);
     if (t) {
+      if (res.data?.libelle !== undefined) t.libelle = res.data.libelle;
       t.pilotes = res.data?.pilotes || [];
       t.collaborateurs = res.data?.collaborateurs || [];
     }
-    $q.notify({ type: 'positive', message: res.data?.message || 'Pilotes et collaborateurs mis à jour' });
+    $q.notify({ type: 'positive', message: res.data?.message || 'Ticket mis à jour' });
     closeDesignationsDialog();
   } catch (error) {
     console.error('Erreur maj désignations:', error);
