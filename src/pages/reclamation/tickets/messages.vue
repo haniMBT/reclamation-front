@@ -1847,11 +1847,14 @@
             class="q-mb-md"
           />
 
-          <!-- Mode personnes précises : une direction + ses répondeurs -->
+          <!-- Mode personnes précises : une direction + ses répondeurs.
+               Ici on propose TOUTES les directions, y compris celles déjà ajoutées
+               (pour pouvoir désigner de nouvelles personnes précises d'une direction
+               déjà concernée). Spécifique à ce mode uniquement. -->
           <template v-else>
             <q-select
               v-model="selectedPreciseDirection"
-              :options="directionsNonConcerneOptions"
+              :options="allDirectionsOptions"
               label="Direction"
               stack-label
               option-value="value"
