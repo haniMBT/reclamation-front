@@ -144,7 +144,6 @@
                 <label class="block text-sm font-medium text-gray-700">
                   {{ info.libelle }}
                   <span v-if="info.obligatoire" class="text-red-500">*</span>
-                  <q-icon v-if="info.obligatoire" name="star" class="text-amber-500 ml-1" size="sm" />
                 </label>
                 <!-- Champ DATE -->
                 <q-input
@@ -447,6 +446,13 @@ const selectTicket = (ticket) => {
 
   // Réinitialiser les erreurs de validation à l'ouverture du modal
   validationErrors.value = {}
+
+  // Si le ticket n'a aucun champ d'information générale, inutile d'ouvrir le modal :
+  // on passe directement à l'étape suivante (vérif doublon + création + redirection).
+  if (!ticket.infos_generales || ticket.infos_generales.length === 0) {
+    submitForm()
+    return
+  }
 
   showModal.value = true
 }
