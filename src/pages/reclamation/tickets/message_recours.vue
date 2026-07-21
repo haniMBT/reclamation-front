@@ -119,7 +119,7 @@
     </div>
 
     <!-- Section des membres de la commission de recours -->
-    <div v-if="commissionMemberOptions.length > 0" class="bg-white rounded-lg shadow-sm p-6 mb-6">
+    <div v-if="commissionMemberOptions.length > 0 && !isReclamantNonRepondeur" class="bg-white rounded-lg shadow-sm p-6 mb-6">
       <div class="flex items-center justify-between mb-4">
         <div class="flex items-center">
           <q-icon name="groups" size="1.5rem" class="text-blue-600 mr-3" />
@@ -1974,7 +1974,14 @@ const hasMessageVersClient = computed(() => {
 // Visibilité UI (computed) — garde la logique inchangée
 const hasCurrentTicket = computed(() => !!currentTicketId.value)
 const isNoTicketSelected = computed(() => !currentTicketId.value)
-const showAssociatedDirections = computed(() => !!currentTicketId.value && directionOptions.value.length > 0 )
+// Réclamant (créateur du ticket) qui n'est PAS un employé répondeur : il ne doit voir
+// ni les directions associées ni les membres de la commission de recours. Aucun impact
+// pour les autres profils (répondeurs, membres de commission, etc.).
+const isReclamantNonRepondeur = computed(() =>
+  ticket.value?.user_id == authStore.user?.id &&
+  privilege.value?.role !== 'employe_Répondeur'
+)
+const showAssociatedDirections = computed(() => !!currentTicketId.value && directionOptions.value.length > 0 && !isReclamantNonRepondeur.value)
 const canRemoveDirection = computed(() => ticket.value?.status!='clôturé' && ticket.value?.status!='Recours clôturé')
 const isLoadingDirections = computed(() => loadingDirections.value)
 
