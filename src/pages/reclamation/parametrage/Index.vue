@@ -658,7 +658,7 @@
                     </label>
                     <q-select
                       v-model="form.pilotes"
-                      :options="repondeursByDirection(form.direction)"
+                      :options="pilotesOptions"
                       option-value="value"
                       option-label="label"
                       emit-value
@@ -1248,7 +1248,7 @@
               <label class="block text-sm font-medium text-gray-700 mb-2">Pilotes du ticket</label>
               <q-select
                 v-model="designationsForm.pilotes"
-                :options="repondeursByDirection(designationsForm.direction)"
+                :options="designationPiloteOptions"
                 option-value="value"
                 option-label="label"
                 emit-value
@@ -1356,7 +1356,7 @@
                     </label>
                     <q-select
                       v-model="form.pilotes"
-                      :options="repondeursByDirection(form.direction)"
+                      :options="pilotesOptions"
                       option-value="value"
                       option-label="label"
                       emit-value
@@ -2680,6 +2680,13 @@ const collaborateursOptions = computed(() => {
   return repondeursByDirection(form.value.direction).filter(o => !pilotes.has(o.value));
 });
 
+// Options pilotes = répondeurs de la direction non déjà choisis comme collaborateurs
+// (exclusivité : une personne est soit pilote soit collaborateur, jamais les deux)
+const pilotesOptions = computed(() => {
+  const collabs = new Set((form.value.collaborateurs || []).map(String));
+  return repondeursByDirection(form.value.direction).filter(o => !collabs.has(o.value));
+});
+
 // Nom affichable d'un répondeur à partir de son id
 const repondeurName = (id) => {
   const u = (repondeurs.value || []).find(r => String(r.id) === String(id));
@@ -3046,6 +3053,11 @@ const designationsForm = ref({ id: null, libelle: '', direction: '', pilotes: []
 const designationCollabOptions = computed(() => {
   const pilotes = new Set((designationsForm.value.pilotes || []).map(String));
   return repondeursByDirection(designationsForm.value.direction).filter(o => !pilotes.has(o.value));
+});
+
+const designationPiloteOptions = computed(() => {
+  const collabs = new Set((designationsForm.value.collaborateurs || []).map(String));
+  return repondeursByDirection(designationsForm.value.direction).filter(o => !collabs.has(o.value));
 });
 
 const openDesignationsDialog = (ticket) => {
