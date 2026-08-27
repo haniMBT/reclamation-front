@@ -92,7 +92,7 @@
             </q-btn>
 
             <q-btn
-              v-if="authStore.privileges.modification=1"
+              v-if="privilege && privilege.modification==1"
               icon="edit"
               color="orange-6"
               no-caps
@@ -375,6 +375,8 @@ const authStore = useAuthStore();
 const router = useRouter();
 
 let privileges = ref([]);
+// Privilège de l'utilisateur connecté sur le volet « privileges »
+let privilege = ref(null);
 let profil_privilege = ref([]);
 let Code = ref(false);
 let showPrivilegestable = ref(true);
@@ -522,6 +524,7 @@ onMounted(async () => {
     console.log(156, response.data.privileges);
     console.log(157, form.value);
     privileges.value = response.data.privileges;
+    privilege.value = response.data.privilege;
     profil_privilege.value = response.data.profil_privilege;
     if (profil_privilege.value.limitation === "G") {
       profil_privilege.value.limitation =

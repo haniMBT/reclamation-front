@@ -406,16 +406,6 @@
       message="Nom d'utilisateur et/ou mot de passe incorrect(s)"
     />
 
-    <!-- Lien mot de passe oublié -->
-    <div class="text-right -mt-1">
-      <router-link
-        to="/forgot-password"
-        class="text-blue-600 hover:text-white text-xs font-medium transition-colors underline"
-      >
-        Mot de passe oublié ?
-      </router-link>
-    </div>
-
     <!-- Bouton de connexion -->
     <div class="pt-1">
       <PrimaryButton

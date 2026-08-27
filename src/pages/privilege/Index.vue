@@ -80,6 +80,19 @@
                     flat
                     round
                     dense
+                    icon="edit"
+                    size="sm"
+                    color="orange-8"
+                    @click="openEditModel(props.row)"
+                    class="hover:bg-orange-50"
+                    v-if="privilege && privilege.modification==1"
+                  >
+                    <q-tooltip>Modifier le profil</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    flat
+                    round
+                    dense
                     icon="vpn_key"
                     size="sm"
                     color="warning"
@@ -88,6 +101,19 @@
                     v-if="privilege && privilege.consultation==1"
                   >
                     <q-tooltip>Gérer les privilèges</q-tooltip>
+                  </q-btn>
+                  <q-btn
+                    flat
+                    round
+                    dense
+                    icon="group_add"
+                    size="sm"
+                    color="teal-7"
+                    @click="openDelegations(props.row)"
+                    class="hover:bg-teal-50"
+                    v-if="privilege && privilege.modification==1"
+                  >
+                    <q-tooltip>Profils délégables</q-tooltip>
                   </q-btn>
                 </div>
               </q-td>
@@ -106,6 +132,23 @@
               </q-td>
               <q-td key="limitation" :props="props">
                 <span class="text-gray-800">{{ props.row.limitation }}</span>
+              </q-td>
+              <q-td key="delegations_count" :props="props">
+                <q-chip
+                  dense
+                  square
+                  :color="props.row.delegations_count > 0 ? 'teal-1' : 'grey-3'"
+                  :text-color="props.row.delegations_count > 0 ? 'teal-9' : 'grey-7'"
+                  class="font-medium"
+                >
+                  {{ props.row.delegations_count }}
+                  <q-tooltip v-if="props.row.delegations_count > 0">
+                    Ce profil peut attribuer {{ props.row.delegations_count }} profil(s)
+                  </q-tooltip>
+                  <q-tooltip v-else>
+                    Ce profil ne peut attribuer aucun profil
+                  </q-tooltip>
+                </q-chip>
               </q-td>
             </q-tr>
           </template>
@@ -246,6 +289,227 @@
               label="Enregistrer le nouveau profil"
               @click="sendData"
               :loading="false"
+              class="px-8"
+            >
+              <q-icon name="save" class="mr-2" />
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Edit Profile Dialog -->
+      <q-dialog v-model="editProfil" persistent>
+        <q-card class="w-full max-w-4xl">
+          <q-card-section class="flex items-center bg-orange-50">
+            <q-icon name="edit" class="text-orange-700 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-orange-900">
+                {{ 'Modifier le profil : ' + Code }}
+              </div>
+              <div class="text-sm text-orange-800">
+                Le code n'est pas modifiable : il rattache les privilèges, les délégations et les utilisateurs
+              </div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg" style="max-height: 70vh;">
+            <div class="overflow-auto">
+              <form class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Code
+                    </label>
+                    <q-input
+                      v-model="form.code"
+                      outlined
+                      dense
+                      readonly
+                      bg-color="grey-2"
+                    >
+                      <template #prepend>
+                        <q-icon name="code" class="text-gray-500" />
+                      </template>
+                    </q-input>
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Libellé <span class="text-red-500">*</span>
+                    </label>
+                    <q-input
+                      v-model="form.libelle"
+                      outlined
+                      dense
+                      placeholder="Entrez le libellé"
+                      :rules="[val => !!val || 'Le libellé est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="label" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.libelle" :myerrors="myerrors?.libelle" />
+                  </div>
+
+                  <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <q-input
+                      v-model="form.description"
+                      outlined
+                      dense
+                      placeholder="Entrez la description"
+                      type="textarea"
+                      autogrow
+                    >
+                      <template #prepend>
+                        <q-icon name="description" class="text-blue-600" />
+                      </template>
+                    </q-input>
+                    <ErrorValidation v-if="myerrors?.description" :myerrors="myerrors?.description" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Visibilité <span class="text-red-500">*</span>
+                    </label>
+                    <q-select
+                      v-model="form.limitation"
+                      :options="limitations"
+                      option-label="value"
+                      option-value="code"
+                      outlined
+                      dense
+                      placeholder="Sélectionnez la visibilité"
+                      :rules="[val => !!val || 'La visibilité est requise']"
+                    >
+                      <template #prepend>
+                        <q-icon name="visibility" class="text-blue-600" />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.limitation" :myerrors="myerrors?.limitation" />
+                  </div>
+
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                      Rôle <span class="text-red-500">*</span>
+                    </label>
+                    <q-select
+                      v-model="form.role"
+                      :options="Roles"
+                      option-label="value"
+                      option-value="code"
+                      outlined
+                      dense
+                      placeholder="Sélectionnez le rôle"
+                      :rules="[val => !!val || 'Le rôle est requis']"
+                    >
+                      <template #prepend>
+                        <q-icon name="admin_panel_settings" class="text-blue-600" />
+                      </template>
+                    </q-select>
+                    <ErrorValidation v-if="myerrors?.role" :myerrors="myerrors?.role" />
+                  </div>
+                </div>
+
+                <div class="text-sm text-gray-600 border-l-4 border-gray-300 pl-4">
+                  La visibilité et le rôle du profil ne sont pas reportés sur la matrice
+                  des privilèges déjà enregistrée : elle se règle volet par volet depuis
+                  « Gérer les privilèges ».
+                </div>
+              </form>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-lg">
+            <q-btn
+              flat
+              color="grey-7"
+              label="Annuler"
+              @click="closeEditProfil"
+              class="px-6"
+            />
+            <q-btn
+              color="orange-8"
+              label="Enregistrer"
+              @click="updateData"
+              :loading="editSaving"
+              class="px-8"
+            >
+              <q-icon name="save" class="mr-2" />
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
+
+      <!-- Delegations Dialog -->
+      <q-dialog v-model="showDelegations" persistent>
+        <q-card class="w-full max-w-2xl">
+          <q-card-section class="flex items-center bg-teal-50">
+            <q-icon name="group_add" class="text-teal-700 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-teal-900">
+                {{ 'Profils délégables : ' + delegationProfil.libelle }}
+              </div>
+              <div class="text-sm text-teal-800">
+                Les profils qu'un utilisateur portant ce profil pourra attribuer à d'autres utilisateurs
+              </div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg" style="max-height: 60vh;">
+            <div class="overflow-auto">
+              <div v-if="delegationOptions.length === 0" class="text-sm text-gray-600">
+                Aucun profil n'existe encore.
+              </div>
+              <div v-else class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <q-checkbox
+                  v-for="option in delegationOptions"
+                  :key="option.code"
+                  v-model="delegationSelection"
+                  :val="option.code"
+                  color="teal-7"
+                >
+                  <div>
+                    <div class="text-sm font-medium text-gray-800">{{ option.libelle }}</div>
+                    <div class="text-xs text-gray-500">{{ option.code }}</div>
+                  </div>
+                </q-checkbox>
+              </div>
+
+              <div class="mt-6 text-sm text-gray-600 border-l-4 border-gray-300 pl-4">
+                <span v-if="delegationSelection.length === 0">
+                  Aucun profil sélectionné : les utilisateurs de ce profil ne pourront attribuer aucun profil.
+                </span>
+                <span v-else>
+                  {{ delegationSelection.length }} profil(s) attribuable(s) par les utilisateurs de ce profil.
+                </span>
+              </div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions align="right" class="q-pa-lg">
+            <q-btn
+              flat
+              color="grey-7"
+              label="Annuler"
+              @click="closeDelegations"
+              class="px-6"
+            />
+            <q-btn
+              color="teal-7"
+              label="Enregistrer"
+              @click="saveDelegations"
+              :loading="delegationSaving"
               class="px-8"
             >
               <q-icon name="save" class="mr-2" />
@@ -407,6 +671,66 @@ async function ShowPrivilege(data) {
     router.push(`/privilege/${data.code}`)
 
 }
+
+// --- Profils délégables ---------------------------------------------------
+// Définit, pour un profil donné, la liste des profils que ses utilisateurs
+// pourront attribuer depuis l'écran Gestion des Utilisateurs.
+let showDelegations = ref(false);
+let delegationProfil = ref({});
+let delegationOptions = ref([]);
+let delegationSelection = ref([]);
+let delegationSaving = ref(false);
+
+async function openDelegations(data) {
+  delegationProfil.value = data;
+  delegationOptions.value = [];
+  delegationSelection.value = [];
+  showDelegations.value = true;
+
+  try {
+    const response = await api.get(`/api/gu/securite/delegations/${data.code}`);
+    delegationOptions.value = response.data.profils;
+    delegationSelection.value = response.data.delegations;
+  } catch (error) {
+    showDelegations.value = false;
+    $q.notify({
+      type: "negative",
+      message: "Impossible de charger les profils délégables.",
+    });
+  }
+}
+
+function closeDelegations() {
+  showDelegations.value = false;
+  delegationProfil.value = {};
+  delegationOptions.value = [];
+  delegationSelection.value = [];
+}
+
+const saveDelegations = async () => {
+  delegationSaving.value = true;
+  try {
+    const response = await api.post(
+      `/api/gu/securite/delegations/${delegationProfil.value.code}`,
+      { delegations: delegationSelection.value }
+    );
+    $q.notify({
+      type: "positive",
+      message: response.data.message,
+    });
+    closeDelegations();
+    // Rafraîchit la colonne « Profils délégables »
+    await fetchData(searchProfils.value);
+  } catch (errors) {
+    $q.notify({
+      type: "negative",
+      message:
+        errors.response?.data?.message ??
+        "L'enregistrement des profils délégables a échoué.",
+    });
+  }
+  delegationSaving.value = false;
+};
 async function openAddModel() {
   addProfil.value = true;
   form.code = "";
@@ -428,6 +752,63 @@ function closeAddProfil() {
   form.description = "";
   form.limitation = "";
 }
+// --- Modification d'un profil ---------------------------------------------
+let editProfil = ref(false);
+let editSaving = ref(false);
+
+async function openEditModel(data) {
+  Code.value = data.code;
+  form.code = data.code;
+  form.libelle = data.libelle;
+  form.description = data.description;
+  // Les q-select travaillent sur les objets { code, value } : on retrouve
+  // l'option correspondant à la valeur stockée en base.
+  form.limitation = limitations.value.find((o) => o.code === data.limitation) ?? null;
+  form.role = Roles.value.find((o) => o.code === data.role) ?? null;
+  myerrors.value = false;
+  editProfil.value = true;
+}
+
+function closeEditProfil() {
+  editProfil.value = false;
+  myerrors.value = false;
+  form.code = "";
+  Code.value = "";
+  form.libelle = "";
+  form.role = "";
+  form.description = "";
+  form.limitation = "";
+}
+
+const updateData = async () => {
+  editSaving.value = true;
+  try {
+    const response = await api.put(`/api/gu/securite/${Code.value}`, {
+      libelle: form.libelle,
+      description: form.description,
+      role: form.role?.code,
+      limitation: form.limitation?.code,
+    });
+    $q.notify({
+      type: "positive",
+      message: response.data.message,
+    });
+    closeEditProfil();
+    await fetchData(searchProfils.value);
+  } catch (errors) {
+    if (errors.response && errors.response.status === 422) {
+      myerrors.value = errors.response.data.errors;
+    } else {
+      $q.notify({
+        type: "negative",
+        message:
+          errors.response?.data?.message ?? "La modification du profil a échoué.",
+      });
+    }
+  }
+  editSaving.value = false;
+};
+
 async function openDeleteModel(data) {
   deleteProfil.value = true;
   Code.value = data.code;
@@ -516,6 +897,14 @@ let profilsCols = reactive([
     format: (val) => `${val}`,
     sortable: true,
     style: "white-space: pre-wrap;",
+  },
+  {
+    name: "delegations_count",
+    label: "Profils délégables",
+    align: "left",
+    field: (row) => row.delegations_count ?? 0,
+    format: (val) => `${val}`,
+    sortable: true,
   },
   // {
   //   name: "fonction",

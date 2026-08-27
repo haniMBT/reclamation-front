@@ -82,7 +82,7 @@
                     color="negative"
                     @click="openDeleteUser(props.row)"
                     class="hover:bg-red-50"
-                    v-if="authStore.user.Matricule != props.row.Matricule && privilege && privilege.suppression==1"
+                    v-if="authStore.user.id != props.row.id && privilege && privilege.suppression==1"
                   >
                     <q-tooltip>Supprimer l'utilisateur</q-tooltip>
                   </q-btn>
@@ -109,7 +109,8 @@
                 </div>
               </q-td>
               <q-td key="Matricule" :props="props">
-                <span class="font-medium text-gray-900">{{ props.row.Matricule }}</span>
+                <span v-if="props.row.Matricule" class="font-medium text-gray-900">{{ props.row.Matricule }}</span>
+                <span v-else class="text-gray-400 italic">non renseigné</span>
               </q-td>
               <q-td key="Nom" :props="props">
                 <span class="text-gray-800">{{ props.row.Nom }}</span>
@@ -127,11 +128,16 @@
                 <span class="text-gray-800">{{ props.row.privilege }}</span>
  <!-- v-if="props.row.privilege &&
                    props.row.privilege != authStore.user.privilege && privilege && privilege.consultation==1" -->
+                <!-- Renvoi vers Gestion des Profils : masqué si l'utilisateur
+                     n'y a pas accès, même condition que l'entrée de menu -->
                 <q-icon
                     class="p-1 cursor-pointer" name="visibility" size="sm" @click="ShowPrivilege(props.row)" color="blue"
                    v-if="props.row.privilege &&
-                   props.row.privilege != authStore.user.privilege && privilege && privilege.consultation==1"
-                   />
+                   props.row.privilege != authStore.user.privilege && privilege && privilege.consultation==1
+                   && privilegeProfils && privilegeProfils.role=='Admin'"
+                   >
+                  <q-tooltip>Consulter le profil</q-tooltip>
+                </q-icon>
 
 
                 <q-icon  class="p-1 cursor-pointer" name="delete" size="sm" color="negative"
@@ -165,14 +171,15 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Matricule <span class="text-red-500">*</span>
+                      Matricule <span class="text-gray-400 font-normal">(facultatif)</span>
                     </label>
                     <q-input
                       v-model="form.Matricule"
                       outlined
                       dense
-                      placeholder="Entrez le matricule"
-                      :rules="[val => !!val || 'Le matricule est requis']"
+                      maxlength="6"
+                      placeholder="6 caractères, ou laissez vide"
+                      :rules="[val => !val || val.length === 6 || 'Le matricule doit faire 6 caractères']"
                     >
                       <template #prepend>
                         <q-icon name="badge" class="text-blue-600" />
@@ -219,20 +226,25 @@
 
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Email
+                      Identifiant <span class="text-red-500">*</span>
                     </label>
                     <q-input
                       v-model="form.email"
                       outlined
                       dense
-                      placeholder="exemple@exemple.exemple"
-                      type="email"
-                      :rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Email invalide']"
+                      placeholder="prenom.nom"
+                      type="text"
+                      :rules="[val => !val || regleIdentifiant.test(val) || messageIdentifiant]"
                     >
                       <template #prepend>
                         <q-icon name="email" class="text-blue-600" />
                       </template>
                     </q-input>
+                    <div class="mt-2 text-xs text-gray-600">
+                      Sert d'identifiant de connexion. Le « @ » n'est pas obligatoire.
+                      Sans adresse complète, cet utilisateur ne pourra pas recevoir de
+                      code de réinitialisation par mail.
+                    </div>
                     <ErrorValidation v-if="myerrors?.email" :myerrors="myerrors?.email" />
                   </div>
 
@@ -245,13 +257,18 @@
                       :options="drs"
                       outlined
                       dense
+                      :readonly="drs.length === 1"
+                      :bg-color="drs.length === 1 ? 'grey-2' : undefined"
                       placeholder="Sélectionnez la direction"
                       :rules="[val => !!val || 'La direction est requise']"
                     >
                       <template #prepend>
-                        <q-icon name="business" class="text-blue-600" />
+                        <q-icon name="business" :class="drs.length === 1 ? 'text-gray-500' : 'text-blue-600'" />
                       </template>
                     </q-select>
+                    <div v-if="drs.length === 1" class="mt-2 text-xs text-gray-600">
+                      Votre profil ne permet de rattacher un utilisateur qu'à votre direction.
+                    </div>
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
                   </div>
 
@@ -322,20 +339,25 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">
-                      Email
+                      Identifiant <span class="text-red-500">*</span>
                     </label>
                     <q-input
                       v-model="form.email"
                       outlined
                       dense
-                      placeholder="exemple@exemple.exemple"
-                      type="email"
-                      :rules="[val => !val || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Email invalide']"
+                      placeholder="prenom.nom"
+                      type="text"
+                      :rules="[val => !val || regleIdentifiant.test(val) || messageIdentifiant]"
                     >
                       <template #prepend>
                         <q-icon name="email" class="text-blue-600" />
                       </template>
                     </q-input>
+                    <div class="mt-2 text-xs text-gray-600">
+                      Sert d'identifiant de connexion. Le « @ » n'est pas obligatoire.
+                      Sans adresse complète, cet utilisateur ne pourra pas recevoir de
+                      code de réinitialisation par mail.
+                    </div>
                     <ErrorValidation v-if="myerrors?.email" :myerrors="myerrors?.email" />
                   </div>
 
@@ -350,13 +372,18 @@
                       option-value="code"
                       outlined
                       dense
-                      placeholder="Sélectionnez le profil"
-                      :rules="[val => !!val || 'Le profil est requis']"
+                      :disable="profils.length === 0"
+                      :placeholder="profils.length === 0 ? 'Aucun profil délégable' : 'Sélectionnez le profil'"
+                      :rules="[val => profils.length === 0 || !!val || 'Le profil est requis']"
                     >
                       <template #prepend>
                         <q-icon name="admin_panel_settings" class="text-blue-600" />
                       </template>
                     </q-select>
+                    <div v-if="profils.length === 0" class="mt-2 text-xs text-gray-600">
+                      Votre profil n'a aucun profil délégable. La liste se configure depuis
+                      Gestion des Profils, bouton « Profils délégables ».
+                    </div>
                     <ErrorValidation v-if="myerrors?.privilege" :myerrors="myerrors?.privilege" />
                   </div>
 
@@ -369,13 +396,18 @@
                       :options="drs"
                       outlined
                       dense
+                      :readonly="drs.length === 1"
+                      :bg-color="drs.length === 1 ? 'grey-2' : undefined"
                       placeholder="Sélectionnez la direction"
                       :rules="[val => !!val || 'La direction est requise']"
                     >
                       <template #prepend>
-                        <q-icon name="business" class="text-blue-600" />
+                        <q-icon name="business" :class="drs.length === 1 ? 'text-gray-500' : 'text-blue-600'" />
                       </template>
                     </q-select>
+                    <div v-if="drs.length === 1" class="mt-2 text-xs text-gray-600">
+                      Votre profil ne permet de rattacher un utilisateur qu'à votre direction.
+                    </div>
                     <ErrorValidation v-if="myerrors?.direction" :myerrors="myerrors?.direction" />
                   </div>
 
@@ -503,11 +535,21 @@ let fonctions = ref([]);
 let drs = ref([]);
 
 let privilege = ref(null);
+// Privilège sur le volet « privileges », pour savoir si l'utilisateur a accès
+// à Gestion des Profils et donc si le renvoi vers cet écran a un sens.
+let privilegeProfils = ref(null);
+
+// Identifiant de connexion : prenom.nom, ou une adresse complète pour les
+// comptes déjà en base. Doit rester aligné sur UserController::REGLE_EMAIL.
+const regleIdentifiant = /^(?:[^\s@.]+(?:\.[^\s@.]+)+|[^\s@]+@[^\s@]+)$/;
+const messageIdentifiant =
+  "L'identifiant doit être de la forme prenom.nom (ou une adresse complète), sans espace.";
 let actif = ref(null);
 let addUser = ref(false);
 let deleteUser = ref(false);
 let UpdateUser = ref(false);
-let Matricule = ref(false);
+let Matricule = ref(false);   // affichage seul (titres des dialogues)
+let userId = ref(null);       // cle d adressage des appels API
 let showNewpasswordEdit = ref(false);
 let showuserstable = ref(true);
 
@@ -547,13 +589,14 @@ const fetchData = async (search) => {
     const response = await api.post(`/api/gu/utilisateur/recherche`,data); // Replace with your backend API endpoint
     utilisateurs.value = response.data.utilisateurs;
     privilege.value = response.data.privilege;
+    privilegeProfils.value = response.data.privilege_profils;
     profils.value = response.data.profils.map(item => item.code);
     drs.value = response.data.drs?.map(item => item.DIRECTION);
     console.log(profils.value,'drs');
     showuserstable.value = false;
     await nextTick();
     showuserstable.value = true;
-    if (authStore.user.Matricule == Matricule.value && UpdateUser == true) {
+    if (authStore.user.id == userId.value && UpdateUser == true) {
       await authStore.getUser();
       await authStore.getPrivileges();
       await authStore.getDirections();
@@ -578,6 +621,7 @@ let form = reactive({
 async function openEditModel(data) {
   console.log(data, 'data');
 
+  userId.value = data.id;
   Matricule.value = data.Matricule;
   form.Nom = data.Nom;
   form.Prenom = data.Prenom;
@@ -590,6 +634,7 @@ async function openEditModel(data) {
 
 function closeEditModel() {
   form.direction = "";
+  userId.value = null;
   Matricule.value = "";
   form.Nom = "";
   form.Prenom = "";
@@ -605,7 +650,9 @@ async function openAddUser() {
   form.Nom = "";
   form.Prenom = "";
   form.email = "";
-  form.direction = "";
+  // Une seule direction proposée (visibilité L ou P) : le champ est verrouillé,
+  // autant le pré-remplir plutôt que d'exiger un choix qui n'en est pas un.
+  form.direction = drs.value.length === 1 ? drs.value[0] : "";
   form.password = "";
   form.Fonction = "";
   addUser.value = true;
@@ -624,12 +671,14 @@ function closeAddUser() {
 }
 async function openDeleteUser(data) {
   deleteUser.value = true;
+  userId.value = data.id;
   Matricule.value = data.Matricule;
   form.Nom = data.Nom;
   form.Prenom = data.Prenom;
 }
 function closeDeleteUser() {
   deleteUser.value = false;
+  userId.value = null;
   Matricule.value = "";
   form.Nom = "";
   form.Prenom = "";
@@ -678,9 +727,11 @@ let utlisateursCols = reactive([
   },
   {
     name: "Email",
-    label: "Email",
+    label: "Identifiant",
     align: "left",
-    field: (row) => row.email ?? "//",
+    // La colonne DB est « Email » : le champ lisait row.email, donc undefined,
+    // et le tri portait sur du vide pendant que la cellule affichait la valeur.
+    field: (row) => row.Email ?? "//",
     format: (val) => `${val}`,
     sortable: true,
   },
@@ -764,6 +815,13 @@ const sendData = async () => {
 
         myerrors.value = errors.response.data.errors;
       }
+      // Direction refusée par la visibilité : le message vient du serveur
+      if (errors.response && errors.response.status === 403) {
+        $q.notify({
+          type: "negative",
+          message: errors.response.data.message,
+        });
+      }
       // Handle any errors that occur during the request
     });
 };
@@ -779,7 +837,7 @@ console.log('data :', data);
 
   // Make a POST request to the Laravel API endpoint
   await api
-    .patch(`/api/gu/utilisateur/${Matricule.value}`, data)
+    .patch(`/api/gu/utilisateur/${userId.value}`, data)
     .then(async (response) => {
       await fetchData(searchUsers.value);
       message.value = response.data.message;
@@ -795,13 +853,20 @@ console.log('data :', data);
 
         myerrors.value = errors.response.data.errors;
       }
+      // Profil refusé par la délégation : le message vient du serveur
+      if (errors.response && errors.response.status === 403) {
+        $q.notify({
+          type: "negative",
+          message: errors.response.data.message,
+        });
+      }
       // Handle any errors that occur during the request
     });
 };
 const deleteData = async () => {
   // Make a POST request to the Laravel API endpoint
   await api
-    .get(`/api/gu/utilisateur/delete/${Matricule.value}`)
+    .get(`/api/gu/utilisateur/delete/${userId.value}`)
     .then(async (response) => {
       await fetchData(searchUsers.value);
       message.value = response.data.message;
@@ -837,10 +902,10 @@ const deleteData = async () => {
 // };
 
 const revokeProfile = async (data) => {
-  Matricule.value = data.Matricule;
+  userId.value = data.id;
   // Make a POST request to the Laravel API endpoint
   await api
-    .get(`/api/gu/utilisateur/revoke-profile/${Matricule.value}`)
+    .get(`/api/gu/utilisateur/revoke-profile/${userId.value}`)
     .then(async (response) => {
       console.log(searchUsers.value);
       await fetchData(searchUsers.value);

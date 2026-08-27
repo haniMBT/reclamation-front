@@ -135,32 +135,6 @@ export const useAuthStore = defineStore('auth', {
       LocalStorage.clear()
     },
 
-    // GESTION PROFIL - Mot de passe oublié
-    async forgotPassword(email) {
-      try {
-        const response = await api.post("/api/forgot-password", { email });
-        return { success: true, data: response.data };
-      } catch (error) {
-        return {
-          success: false,
-          error: error.response?.data?.message || 'Erreur lors de l\'envoi du code'
-        };
-      }
-    },
-
-    // GESTION PROFIL - Réinitialiser mot de passe avec code
-    async resetPassword(data) {
-      try {
-        const response = await api.post("/api/reset-password", data);
-        return { success: true, data: response.data };
-      } catch (error) {
-        return {
-          success: false,
-          error: error.response?.data?.message || 'Erreur lors de la réinitialisation'
-        };
-      }
-    },
-
     // GESTION PROFIL - Mettre à jour le profil utilisateur
     async updateProfile(formData) {
       try {
@@ -204,32 +178,6 @@ export const useAuthStore = defineStore('auth', {
     async changePasswordd(data) {
       try {
         const response = await api.post("/api/profile/change-password", data);
-        return { success: true, data: response.data };
-      } catch (error) {
-        return {
-          success: false,
-          error: error.response?.data?.message || 'Erreur lors du changement de mot de passe'
-        };
-      }
-    },
-
-    // GESTION PROFIL - Demander code pour changer mot de passe
-    async requestPasswordChangeCode() {
-      try {
-        const response = await api.post("/api/profile/request-password-change-code");
-        return { success: true, data: response.data };
-      } catch (error) {
-        return {
-          success: false,
-          error: error.response?.data?.message || 'Erreur lors de l\'envoi du code'
-        };
-      }
-    },
-
-    // GESTION PROFIL - Changer mot de passe avec code email
-    async changePasswordWithCode(data) {
-      try {
-        const response = await api.post("/api/profile/change-password-with-code", data);
         return { success: true, data: response.data };
       } catch (error) {
         return {

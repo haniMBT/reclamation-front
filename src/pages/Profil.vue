@@ -242,101 +242,6 @@
                   </form>
                 </div>
 
-                <!-- Option 2: Changement avec code email -->
-                <div class="bg-blue-50 rounded-lg p-6">
-                  <h4 class="text-lg font-semibold text-gray-800 mb-4">
-                    Changer le mot de passe avec code email
-                  </h4>
-                  <p class="text-gray-600 text-sm mb-4">
-                    Plus sécurisé : recevez un code par email pour changer votre mot de passe.
-                  </p>
-
-                  <!-- Étape 1: Demander le code -->
-                  <div v-if="!codeRequested">
-                    <q-btn
-                      @click="requestPasswordChangeCode"
-                      color="blue-6"
-                      icon="email"
-                      label="Recevoir un code par email"
-                      :loading="codeLoading"
-                      outline
-                    />
-                  </div>
-
-                  <!-- Étape 2: Saisir code + nouveau mot de passe -->
-                  <form v-else @submit.prevent="changePasswordWithCode" class="space-y-4">
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700 mb-2">
-                        Code de vérification <span class="text-red-500">*</span>
-                      </label>
-                      <input
-                        v-model="codeForm.code"
-                        type="text"
-                        maxlength="6"
-                        placeholder="123456"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-center font-mono text-lg tracking-widest"
-                        required
-                      />
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                          Nouveau mot de passe <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                          v-model="codeForm.password"
-                          type="password"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          minlength="8"
-                          required
-                        />
-                      </div>
-                      
-                      <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                          Confirmer le mot de passe <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                          v-model="codeForm.password_confirmation"
-                          type="password"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          minlength="8"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div v-if="codeMessage" class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                      <p class="text-blue-600 text-sm">{{ codeMessage }}</p>
-                    </div>
-
-                    <div v-if="codeError" class="bg-red-50 border border-red-200 rounded-lg p-3">
-                      <p class="text-red-600 text-sm">{{ codeError }}</p>
-                    </div>
-
-                    <div class="flex justify-between">
-                      <q-btn
-                        @click="resetCodeForm"
-                        color="grey"
-                        icon="refresh"
-                        label="Nouveau code"
-                        outline
-                        size="sm"
-                      />
-                      
-                      <q-btn
-                        type="submit"
-                        color="blue-6"
-                        icon="verified_user"
-                        label="Changer avec le code"
-                        :loading="codePasswordLoading"
-                        class="px-6"
-                      />
-                    </div>
-                  </form>
-                </div>
-
               </q-tab-panel>
             </q-tab-panels>
           </div>
@@ -375,12 +280,6 @@ const passwordForm = reactive({
   password_confirmation: ''
 });
 
-const codeForm = reactive({
-  code: '',
-  password: '',
-  password_confirmation: ''
-});
-
 // États de chargement et messages
 const profileLoading = ref(false);
 const profileMessage = ref('');
@@ -389,12 +288,6 @@ const profileError = ref('');
 const passwordLoading = ref(false);
 const passwordMessage = ref('');
 const passwordError = ref('');
-
-const codeLoading = ref(false);
-const codePasswordLoading = ref(false);
-const codeMessage = ref('');
-const codeError = ref('');
-const codeRequested = ref(false);
 
 // Initialiser les données du formulaire
 onMounted(() => {
@@ -500,70 +393,6 @@ const changePassword = async () => {
   passwordLoading.value = false;
 };
 
-// Demander code pour changement de mot de passe
-const requestPasswordChangeCode = async () => {
-  codeLoading.value = true;
-  codeMessage.value = '';
-  codeError.value = '';
-
-  const result = await authStore.requestPasswordChangeCode();
-  
-  if (result.success) {
-    codeRequested.value = true;
-    codeMessage.value = 'Code envoyé à votre adresse email';
-    
-    $q.notify({
-      type: 'positive',
-      message: 'Code envoyé à votre adresse email'
-    });
-  } else {
-    codeError.value = result.error;
-  }
-  
-  codeLoading.value = false;
-};
-
-// Changer mot de passe avec code
-const changePasswordWithCode = async () => {
-  if (codeForm.password !== codeForm.password_confirmation) {
-    codeError.value = 'Les mots de passe ne correspondent pas';
-    return;
-  }
-
-  codePasswordLoading.value = true;
-  codeMessage.value = '';
-  codeError.value = '';
-
-  const result = await authStore.changePasswordWithCode({
-    code: codeForm.code,
-    password: codeForm.password,
-    password_confirmation: codeForm.password_confirmation
-  });
-  
-  if (result.success) {
-    codeMessage.value = 'Mot de passe changé avec succès';
-    resetCodeForm();
-    
-    $q.notify({
-      type: 'positive',
-      message: 'Mot de passe changé avec succès'
-    });
-  } else {
-    codeError.value = result.error;
-  }
-  
-  codePasswordLoading.value = false;
-};
-
-// Réinitialiser le formulaire code
-const resetCodeForm = () => {
-  codeRequested.value = false;
-  codeForm.code = '';
-  codeForm.password = '';
-  codeForm.password_confirmation = '';
-  codeMessage.value = '';
-  codeError.value = '';
-};
 </script>
 
 <style scoped>

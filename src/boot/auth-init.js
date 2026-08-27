@@ -10,7 +10,7 @@ export default boot(async ({ app, router }) => {
   
   // Rediriger vers la page de connexion si pas d'access_token et pas sur les pages publiques
   router.beforeEach((to, from, next) => {
-    const publicPages = ['/acceuil', '/login', '/register', '/forgot-password', '/reset-password']
+    const publicPages = ['/acceuil', '/login', '/register']
     const authRequired = !publicPages.includes(to.path)
     
     if (authRequired && !authStore.access_token) {
