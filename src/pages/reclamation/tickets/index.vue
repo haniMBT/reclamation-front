@@ -178,12 +178,22 @@
         <p class="text-gray-500">{{ searchQuery ? 'Aucun résultat pour votre recherche' : 'Aucun ticket disponible' }}</p>
       </div>
 
+      <!-- Légende de l'alerte de délai (réclamations En attente / En cours) -->
+      <div v-if="alerteConfig && !loading && tickets.length" class="flex flex-wrap items-center gap-3 mb-3 text-xs text-gray-700" data-test="legende-alerte">
+        <span class="font-medium">Délai de traitement depuis la validation :</span>
+        <span class="alerte-pastille alerte-vert">Vert : moins de {{ alerteConfig.duree_vert }} j</span>
+        <span class="alerte-pastille alerte-orange">Orange : jusqu'à {{ alerteConfig.duree_vert + alerteConfig.duree_orange }} j</span>
+        <span class="alerte-pastille alerte-rouge">Rouge : au-delà</span>
+      </div>
+
       <!-- Tickets Grid -->
-      <div v-else class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div v-if="!loading && tickets.length" class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         <q-card
           v-for="ticket in tickets"
           :key="ticket.id"
-          class="bg-white shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+          :class="['shadow-sm hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1', alerteClass(ticket)]"
+          :title="alerteTitle(ticket)"
+          :data-alerte="ticket.alerte_delai || 'aucune'"
         >
           <q-card-section class="p-6">
             <div class="flex items-start justify-between mb-4">
@@ -352,6 +362,22 @@ const baseTicketOptions = ref([])
 const selectedBaseTicketId = ref(null)
 const selectedPriorites = ref([])
 const prioriteOptions = PRIORITE_OPTIONS
+// Alerte de délai (vert / orange / rouge) : durées paramétrées, null si non configurées
+const alerteConfig = ref(null)
+
+const alerteClass = (ticket) => {
+  const niveau = ticket?.alerte_delai
+  if (niveau === 'vert' || niveau === 'orange' || niveau === 'rouge') return `alerte-card alerte-${niveau}`
+  return 'bg-white'
+}
+
+const alerteTitle = (ticket) => {
+  const labels = { vert: 'vert', orange: 'orange', rouge: 'rouge' }
+  const niveau = ticket?.alerte_delai
+  if (!labels[niveau] || !ticket?.date_validation_createur) return undefined
+  const jours = Math.max(0, Math.floor((Date.now() - new Date(String(ticket.date_validation_createur).replace(' ', 'T')).getTime()) / 86400000))
+  return `Délai de traitement : ${labels[niveau]} — ${jours} jour(s) depuis la validation`
+}
 
 const pagination = reactive({
   page: 1,
@@ -383,6 +409,7 @@ const fetchTickets = async (props = {}) => {
       privilege.value = response.data.data.privilege
       isCommissionMember.value = !!response.data.data.is_commission_member
       tickets.value = response.data.data.items
+      alerteConfig.value = response.data.data.alerte_delai_config || null
       statusOptions.value = (response.data.data.available_statuses || []).map(s => ({ label: s, value: s }))
       pagination.page = response.data.data.meta.current_page
       pagination.rowsPerPage = response.data.data.meta.per_page
@@ -584,5 +611,25 @@ onMounted(async () => {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 300ms;
+}
+
+/* Alerte de délai : fonds pastel moyens (ni blancs ni trop clairs) + liseré franc ;
+   les textes de la carte sont assombris pour rester lisibles sur chaque couleur. */
+.alerte-vert { background-color: #bbf7d0 !important; --alerte-bord: #16a34a; }
+.alerte-orange { background-color: #fed7aa !important; --alerte-bord: #ea580c; }
+.alerte-rouge { background-color: #fecaca !important; --alerte-bord: #dc2626; }
+
+.alerte-card { border-left: 8px solid var(--alerte-bord); }
+.alerte-card .text-gray-600 { color: #1f2937; }
+.alerte-card .text-gray-500 { color: #374151; }
+.alerte-card .text-teal-700 { color: #134e4a; }
+.alerte-card .text-blue-600 { color: #1e3a8a; }
+
+.alerte-pastille {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  border-left: 6px solid var(--alerte-bord);
+  color: #1f2937;
 }
 </style>

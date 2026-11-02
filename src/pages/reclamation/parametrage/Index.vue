@@ -12,7 +12,7 @@
     </q-card>
   </div>
 
-  <div class="bg-gray-50" v-else-if="canAccessParametrage || privilege_pcr.role=='Admin'">
+  <div class="bg-gray-50" v-else-if="canAccessParametrage || privilege_pcr.role=='Admin' || canAccessAlertes">
     <div class="container mx-auto px-4 py-8">
       <!-- Header Section -->
       <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
@@ -48,6 +48,17 @@
               @click="openCommissionDialog"
             >
               Commission de recours
+            </q-btn>
+            <q-btn
+              icon="timer"
+              color="teal-7"
+              v-if="canAccessAlertes"
+              no-caps
+              class="px-6"
+              data-test="btn-delais-alerte"
+              @click="openAlertesDialog"
+            >
+              Délais d'alerte
             </q-btn>
             <q-btn
               icon="settings_suggest"
@@ -592,6 +603,95 @@
                       </q-card-actions>
                     </q-card>
               </q-dialog>
+
+      <!-- Dialog Délais d'alerte (vert / orange / rouge) -->
+      <q-dialog v-model="showAlertesDialog" persistent>
+        <q-card class="w-full" style="min-width: 420px; max-width: 560px;" data-test="dialog-delais-alerte">
+          <q-card-section class="flex items-center no-wrap bg-teal-50">
+            <q-icon name="timer" class="text-teal-700 mr-3" size="2rem" />
+            <div>
+              <div class="text-xl font-semibold text-teal-900">Délais d'alerte des réclamations</div>
+              <div class="text-sm text-teal-700">Réclamations « En attente » et « En cours », comptées en jours depuis leur validation par le client</div>
+            </div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-section class="q-pa-lg">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <q-input
+                v-model.number="alertesForm.duree_vert"
+                type="number"
+                min="1"
+                max="3650"
+                step="1"
+                outlined
+                dense
+                label="Durée du vert (jours)"
+                :readonly="!canEditAlertes"
+                :error="!!alertesErrors.duree_vert"
+                :error-message="alertesErrors.duree_vert"
+                data-test="input-duree-vert"
+              >
+                <template #prepend><q-icon name="circle" style="color:#16a34a" /></template>
+              </q-input>
+              <q-input
+                v-model.number="alertesForm.duree_orange"
+                type="number"
+                min="1"
+                max="3650"
+                step="1"
+                outlined
+                dense
+                label="Durée de l'orange (jours)"
+                :readonly="!canEditAlertes"
+                :error="!!alertesErrors.duree_orange"
+                :error-message="alertesErrors.duree_orange"
+                data-test="input-duree-orange"
+              >
+                <template #prepend><q-icon name="circle" style="color:#ea580c" /></template>
+              </q-input>
+            </div>
+
+            <div class="mt-5 text-gray-700 font-medium mb-2">Aperçu</div>
+            <div v-if="alertesPreview" class="flex flex-col gap-2" data-test="apercu-delais">
+              <div class="rounded px-3 py-2 text-sm" style="background:#bbf7d0;border-left:6px solid #16a34a;color:#14532d">
+                <b>Vert</b> : du jour 0 jusqu'au jour {{ alertesPreview.fin_vert }} (exclu)
+              </div>
+              <div class="rounded px-3 py-2 text-sm" style="background:#fed7aa;border-left:6px solid #ea580c;color:#7c2d12">
+                <b>Orange</b> : du jour {{ alertesPreview.fin_vert }} jusqu'au jour {{ alertesPreview.fin_orange }} (exclu)
+              </div>
+              <div class="rounded px-3 py-2 text-sm" style="background:#fecaca;border-left:6px solid #dc2626;color:#7f1d1d">
+                <b>Rouge</b> : à partir du jour {{ alertesPreview.fin_orange }}, jusqu'à la clôture
+              </div>
+            </div>
+            <div v-else class="text-sm text-gray-500">Saisissez deux nombres entiers de jours (1 minimum) pour voir l'aperçu.</div>
+            <div v-if="!canEditAlertes" class="mt-3 text-xs text-gray-500">Lecture seule : vous n'avez pas le droit de modifier ces délais.</div>
+          </q-card-section>
+
+          <q-separator />
+
+          <q-card-actions class="p-6 bg-gray-50">
+            <q-space />
+            <q-btn @click="closeAlertesDialog" color="grey-6" outline no-caps class="px-6" :disable="alertesSubmitting">
+              {{ canEditAlertes ? 'Annuler' : 'Fermer' }}
+            </q-btn>
+            <q-btn
+              v-if="canEditAlertes"
+              @click="saveAlertes"
+              color="teal-7"
+              no-caps
+              unelevated
+              class="px-6 ml-3"
+              :loading="alertesSubmitting"
+              :disable="!alertesPreview"
+              data-test="btn-enregistrer-delais"
+            >
+              Enregistrer
+            </q-btn>
+          </q-card-actions>
+        </q-card>
+      </q-dialog>
 
       <!-- Add Ticket Dialog -->
       <q-dialog v-model="addTicket" persistent>
@@ -2291,7 +2391,7 @@
     </q-card>
   </q-dialog>
 
-  <div v-if="!(canAccessParametrage || privilege_pcr.role=='Admin') && !initialLoading" class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+  <div v-if="!(canAccessParametrage || privilege_pcr.role=='Admin' || canAccessAlertes) && !initialLoading" class="min-h-screen flex items-center justify-center bg-gray-50 px-4">
     <q-card class="max-w-xl w-full bg-white shadow-sm border border-gray-200">
       <q-card-section class="flex items-center gap-4">
         <div class="bg-gray-100 p-3 rounded-full">
@@ -2334,6 +2434,20 @@ const directions = ref([]);
 const repondeurs = ref([]);
 const privilege = ref('');
 const privilege_pcr = ref('');
+// Volet spécial « parametrage_alertes » : délais d'alerte vert / orange (droits détaillés)
+const privilege_alertes = ref(null);
+const showAlertesDialog = ref(false);
+const alertesForm = ref({ duree_vert: null, duree_orange: null });
+const alertesErrors = ref({});
+const alertesSubmitting = ref(false);
+const canAccessAlertes = computed(() => Number(privilege_alertes.value?.consultation) === 1);
+const canEditAlertes = computed(() => Number(privilege_alertes.value?.modification) === 1);
+const alertesPreview = computed(() => {
+  const v = Number(alertesForm.value.duree_vert);
+  const o = Number(alertesForm.value.duree_orange);
+  if (!Number.isInteger(v) || !Number.isInteger(o) || v < 1 || o < 1 || v > 3650 || o > 3650) return null;
+  return { fin_vert: v, fin_orange: v + o };
+});
 const searchTickets = ref('');
 // Filtres: actif/inactif et direction pilote
 const activeFilter = ref(null);
@@ -2565,6 +2679,13 @@ const fetchData = async () => {
     repondeurs.value = response.data.repondeurs || [];
     privilege.value = response.data.privilege || null;
     privilege_pcr.value = response.data.privilege_pcr || null;
+    privilege_alertes.value = response.data.privilege_alertes || null;
+    if (response.data.alertes_delai) {
+      alertesForm.value = {
+        duree_vert: response.data.alertes_delai.duree_vert,
+        duree_orange: response.data.alertes_delai.duree_orange
+      };
+    }
     usersRaw.value = response.data.users || [];
     commissionRaw.value = response.data.commission_recours || [];
     // Pré-populer les sélections si une composition existe
@@ -2876,6 +2997,48 @@ const saveCommission = async () => {
     }
   } finally {
     commissionSubmitting.value = false;
+  }
+};
+
+const openAlertesDialog = () => {
+  alertesErrors.value = {};
+  showAlertesDialog.value = true;
+};
+
+const closeAlertesDialog = () => {
+  showAlertesDialog.value = false;
+};
+
+const saveAlertes = async () => {
+  alertesErrors.value = {};
+  if (!alertesPreview.value) {
+    $q.notify({ type: 'warning', message: 'Saisissez deux nombres entiers de jours (1 minimum).' });
+    return;
+  }
+  alertesSubmitting.value = true;
+  try {
+    const resp = await api.put('/api/rec/alertes-delai', {
+      duree_vert: Number(alertesForm.value.duree_vert),
+      duree_orange: Number(alertesForm.value.duree_orange)
+    });
+    if (resp.data?.success) {
+      $q.notify({ type: 'positive', message: resp.data.message || 'Délais d\'alerte enregistrés' });
+      closeAlertesDialog();
+    } else {
+      $q.notify({ type: 'negative', message: resp.data?.message || 'Échec de l\'enregistrement' });
+    }
+  } catch (err) {
+    console.error('Erreur enregistrement délais d\'alerte', err);
+    if (err.response?.status === 422) {
+      const errs = err.response.data?.errors || {};
+      alertesErrors.value = {
+        duree_vert: (errs.duree_vert || [])[0],
+        duree_orange: (errs.duree_orange || [])[0]
+      };
+    }
+    $q.notify({ type: 'negative', message: err.response?.data?.message || 'Erreur lors de l\'enregistrement' });
+  } finally {
+    alertesSubmitting.value = false;
   }
 };
 

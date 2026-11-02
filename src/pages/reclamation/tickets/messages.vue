@@ -53,19 +53,6 @@
     Réf : {{ ticket.reference }}
     <q-tooltip>Référence de la réclamation</q-tooltip>
   </q-chip>
-  <q-btn
-    v-if="canChangeReference"
-    icon="tag"
-    color="teal-7"
-    size="sm"
-    dense
-    no-caps
-    :label="ticket?.reference ? 'Modifier la référence' : 'Ajouter une référence'"
-    @click="openReferenceDialog"
-    class="ml-2"
-  >
-    <q-tooltip>Renseigner la référence de la réclamation (pilote uniquement)</q-tooltip>
-  </q-btn>
 </h1>
             <div v-if="hasCurrentTicket">
               <p class="text-gray-600 text-sm">
@@ -182,6 +169,20 @@
       <div v-if="hasCurrentTicket">
         <!-- Toolbar Section -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <!-- Limite des réponses du client : compteur, ou blocage jusqu'à la réponse du pilote -->
+          <q-banner
+            v-if="clientReplyNotice"
+            dense
+            rounded
+            class="mb-4"
+            :class="clientReplyNotice.type === 'warning' ? 'bg-orange-1 text-orange-10' : 'bg-blue-1 text-blue-10'"
+            data-test="avis-reponses-client"
+          >
+            <template #avatar>
+              <q-icon :name="clientReplyNotice.type === 'warning' ? 'block' : 'info'" />
+            </template>
+            {{ clientReplyNotice.text }}
+          </q-banner>
           <div class="flex justify-end gap-3">
             <q-btn
               icon="arrow_back"
@@ -927,6 +928,7 @@
           <div>
             <div class="text-xl font-semibold text-green-900">Réponse</div>
             <div class="text-sm text-green-700">Répondre au ticket {{ currentTicketId }}</div>
+            <div v-if="clientReplyNotice && clientReplyNotice.type === 'info'" class="text-xs text-green-800 mt-1" data-test="reponses-restantes">{{ clientReplyNotice.text }}</div>
           </div>
         </q-card-section>
 
@@ -2147,45 +2149,6 @@
       </q-card>
     </q-dialog>
 
-    <!-- Dialog: référence de la réclamation (pilote uniquement) -->
-    <q-dialog v-model="showReferenceDialog" persistent>
-      <q-card class="w-full" style="min-width: 420px; max-width: 520px;">
-        <q-card-section class="flex items-center bg-teal-50">
-          <q-icon name="tag" class="text-teal-700 mr-3" size="2rem" />
-          <div>
-            <div class="text-xl font-semibold text-teal-900">Référence de la réclamation</div>
-            <div class="text-sm text-teal-700">Saisissez la référence de la réclamation (obligatoire avant la clôture)</div>
-          </div>
-        </q-card-section>
-        <q-separator />
-        <q-card-section class="q-pa-lg">
-          <q-input
-            v-model="referenceForm.reference"
-            outlined
-            dense
-            maxlength="255"
-            counter
-            label="Référence"
-            @keyup.enter="saveReference"
-          >
-            <template #prepend>
-              <q-icon name="tag" class="text-teal-700" />
-            </template>
-          </q-input>
-        </q-card-section>
-        <q-separator />
-        <q-card-actions align="right" class="q-pa-md bg-white">
-          <q-btn flat label="Annuler" color="grey-7" @click="closeReferenceDialog" :disable="referenceSaving" />
-          <q-btn
-            label="Enregistrer"
-            color="teal-8"
-            :loading="referenceSaving"
-            :disable="!referenceForm.reference || !referenceForm.reference.trim() || referenceSaving"
-            @click="saveReference"
-          />
-        </q-card-actions>
-      </q-card>
-    </q-dialog>
       </div>
     </div>
   </div>
@@ -2242,6 +2205,9 @@ const pilotChangeTargets = ref([])
 // L'utilisateur courant est-il l'ancien pilote autorisé à supprimer sa direction
 // (état 'changement_accepter') ? Renvoyé par le backend.
 const canDeleteFormerPilotDirection = ref(false)
+// Limite des réponses du client (3 d'affilée, après la 1re réponse du pilote) : état renvoyé par le backend.
+// null tant que non chargé ; applies=false une fois le recours clôturé (aucune réponse possible).
+const clientReply = ref(null)
 const repondeursByDirection = (dir) => {
   if (!dir) return []
   return (repondeurs.value || [])
@@ -2307,51 +2273,6 @@ const canChangePriorite = computed(() => {
   if (status === 'clôturé' || status === 'Recours clôturé') return false
   return true
 })
-
-// Référence de la réclamation (pilote uniquement)
-const showReferenceDialog = ref(false)
-const referenceForm = ref({ reference: '' })
-const referenceSaving = ref(false)
-
-const canChangeReference = computed(() => {
-  if (!isPilot.value) return false
-  const status = ticket.value?.status
-  if (status === 'clôturé' || status === 'Recours clôturé') return false
-  return true
-})
-
-const openReferenceDialog = () => {
-  referenceForm.value.reference = ticket.value?.reference || ''
-  showReferenceDialog.value = true
-}
-
-const closeReferenceDialog = () => {
-  showReferenceDialog.value = false
-}
-
-const saveReference = async () => {
-  const value = (referenceForm.value.reference || '').trim()
-  if (!currentTicketId.value || !value) return
-  referenceSaving.value = true
-  try {
-    const resp = await api.put(`/api/rec/tickets/${currentTicketId.value}/reference`, {
-      reference: value
-    })
-    if (resp.data?.success) {
-      if (ticket.value) ticket.value.reference = resp.data.data.reference
-      $q.notify({ type: 'positive', message: resp.data.message || 'Référence mise à jour' })
-      closeReferenceDialog()
-    } else {
-      $q.notify({ type: 'negative', message: resp.data?.message || 'Échec de la mise à jour' })
-    }
-  } catch (error) {
-    console.error('Erreur mise à jour référence:', error)
-    const msg = error.response?.data?.message || 'Erreur lors de la mise à jour de la référence'
-    $q.notify({ type: 'negative', message: msg })
-  } finally {
-    referenceSaving.value = false
-  }
-}
 
 const openPrioriteDialog = () => {
   prioriteForm.value.priorite = ticket.value?.priorite || 'normal'
@@ -2528,7 +2449,35 @@ const clientMessages = computed(() => {
 });
 
 // Détermine si le client peut envoyer une réponse
+// - réclamation en cours et phase de recours : le client a 3 réponses d'affilée (après la 1re réponse du pilote, ou du
+//   président de la commission en recours), le pilote / le président répondent sans limite ;
+// - état non chargé ou recours clôturé : fonctionnement historique par alternance (reply_permission).
 const canClientReply = computed(() => {
+  const cr = clientReply.value
+  if (cr && cr.applies !== false) {
+    return ticket.value?.user_id == authStore.user.id ? !!cr.can_reply : true
+  }
+  return canClientReplyLegacy.value
+});
+
+// Message d'information du client sur sa limite de réponses (null si non concerné)
+const clientReplyNotice = computed(() => {
+  const cr = clientReply.value
+  const status = ticket.value?.status
+  if (!cr || cr.applies === false) return null
+  if (ticket.value?.user_id != authStore.user.id || ticket_direction.value != null) return null
+  if (status === 'clôturé' || status === 'Recours clôturé') return null
+  if (!cr.has_pilot_replied) return null // il attend la première réponse du pilote
+  // En phase de recours, c'est le président de la commission qui répond à la place du pilote
+  const enRecours = status === 'Recours'
+  if (cr.can_reply) {
+    return { type: 'info', text: `Il vous reste ${cr.remaining} réponse${cr.remaining > 1 ? 's' : ''} sur ${cr.max} avant la prochaine réponse ${enRecours ? 'du président de la commission' : 'du pilote'}.` }
+  }
+  return { type: 'warning', text: `Vous avez envoyé ${cr.max} réponses sans réponse ${enRecours ? 'du président de la commission' : 'du pilote'}. Vous pourrez répondre à nouveau dès qu'il aura répondu.` }
+})
+
+// Fonctionnement historique (alternance 1 pour 1), conservé pour la phase de recours
+const canClientReplyLegacy = computed(() => {
   let reponse=null;
 if(ticket.value.reply_permission=='employe_Répondeur'){
   if(ticket.value.user_id==authStore.user.id){
@@ -2950,6 +2899,7 @@ const loadMessages = async () => {
       repondeurs.value = response.data.repondeurs || [] // Récupérer les infos du créateur
       pilotChangeTargets.value = response.data.pilot_change_targets || []
       canDeleteFormerPilotDirection.value = !!response.data.can_delete_former_pilot_direction
+      clientReply.value = response.data.client_reply || null
       if(!showCloseDialog.value){
         // Clôture recours -> conclusion_recours ; sinon conclusion pilote
         closeConclusion.value = ticket.value.status === 'Recours'
@@ -2997,6 +2947,7 @@ const loadMessagesDirections = async () => {
       repondeurs.value = response.data.repondeurs || []
       pilotChangeTargets.value = response.data.pilot_change_targets || []
       canDeleteFormerPilotDirection.value = !!response.data.can_delete_former_pilot_direction
+      clientReply.value = response.data.client_reply || null
       if (!showCloseDialog.value && ticket.value) {
         // Clôture recours -> conclusion_recours ; sinon conclusion pilote
         closeConclusion.value = ticket.value.status === 'Recours'
@@ -3810,17 +3761,6 @@ const getDirectionLabel = (code) => {
      return
    }
    if (canShowCloseButton.value) {
-     // Clôture pilote (hors recours) : la référence de la réclamation est obligatoire.
-     const isRecoursClosure = ticket.value?.status === 'Recours'
-     if (!isRecoursClosure && !(ticket.value?.reference || '').trim()) {
-       $q.notify({
-         type: 'warning',
-         message: 'Veuillez renseigner la référence de la réclamation avant de pouvoir la clôturer.',
-         position: 'top'
-       })
-       openReferenceDialog()
-       return
-     }
      showCloseDialog.value = true
    } else {
      $q.notify({ type: 'warning', message: 'Clôture non autorisée dans l’état actuel du ticket', position: 'top' })

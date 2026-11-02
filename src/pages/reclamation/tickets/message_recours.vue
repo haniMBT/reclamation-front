@@ -1684,6 +1684,9 @@ const loadingCommissionMembers = ref(false)
 // Commission de recours: détection et overrides d'autorisations pour la page recours
 const isMembreRecours = ref(false)
 const isPresidentRecours = ref(false)
+// Limite des réponses du client (3 d'affilée) : état renvoyé par le backend. En phase de recours le président
+// de la commission répond, lui, sans limite jusqu'à la clôture du recours.
+const clientReply = ref(null)
 const currentUserId = computed(() => authStore.user?.id || authStore.userProfile?.id)
 const currentUserFullName = computed(() => `${authStore.user?.Prenom ?? ''} ${authStore.user?.Nom ?? ''}`.trim())
 
@@ -1893,7 +1896,19 @@ const clientMessages = computed(() => {
 });
 
 // Détermine si le client peut envoyer une réponse
+// - le président de la commission (non-créateur) répond sans limite jusqu'à la clôture du recours ;
+// - le client a 3 réponses d'affilée (après la 1re réponse du président) ;
+// - état non chargé ou recours clôturé : fonctionnement historique par alternance (reply_permission).
 const canClientReply = computed(() => {
+  const cr = clientReply.value
+  if (cr && cr.applies !== false) {
+    return ticket.value?.user_id == authStore.user.id ? !!cr.can_reply : true
+  }
+  return canClientReplyLegacy.value
+});
+
+// Fonctionnement historique (alternance 1 pour 1)
+const canClientReplyLegacy = computed(() => {
   let reponse=null;
 if(ticket.value.reply_permission=='employe_Répondeur'){
   if(ticket.value.user_id==authStore.user.id){
@@ -2195,6 +2210,7 @@ const loadMessages = async () => {
       // Commission flags from loadMessages
       isMembreRecours.value = !!response.data.is_commission_member
       isPresidentRecours.value = !!response.data.is_commission_president
+      clientReply.value = response.data.client_reply || null
       // Options membres commission depuis loadMessages
       const commission = response.data?.commission_recours || []
       commissionMemberOptions.value = commission.map(m => ({
@@ -2247,6 +2263,7 @@ const loadMessagesDirections = async () => {
       // Flags commission
       isMembreRecours.value = !!response.data.is_commission_member
       isPresidentRecours.value = !!response.data.is_commission_president
+      clientReply.value = response.data.client_reply || null
       // Membres commission
       const commission = response.data?.commission_recours || []
       commissionMemberOptions.value = commission.map(m => ({

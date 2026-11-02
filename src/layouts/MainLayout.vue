@@ -224,7 +224,7 @@
           </q-item>
 
           <!-- Paramétrage -->
-          <q-item v-if="AllPrivilege?.privilege_parametrage?.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr?.role=='Admin'" to="/reclamations/parametrage" clickable v-ripple class="stellar-menu-item nebula-card">
+          <q-item v-if="AllPrivilege?.privilege_parametrage?.role=='Admin' || AllPrivilege?.privilege_parametrage_pcr?.role=='Admin' || AllPrivilege?.privilege_parametrage_alertes?.consultation==1" to="/reclamations/parametrage" clickable v-ripple class="stellar-menu-item nebula-card">
             <q-item-section avatar>
               <div class="crystal-container">
                 <div class="crystal crystal-purple">
